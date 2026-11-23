@@ -1,0 +1,23 @@
+{
+  "name": "gemelo-bogota-asistente",
+  "version": "0.1.0",
+  "private": true,
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "cf-typegen": "wrangler types"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "1.9.0",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-plugin": "1.8.3",
+    "typescript": "5.9.3",
+    "vitest": "4.1.12",
+    "wrangler": "4.163.0"
+  }
+}

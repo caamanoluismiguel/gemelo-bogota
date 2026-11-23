@@ -1,0 +1,50 @@
+# Worker del asistente «Pregúntale a Bogotá».
+# Este archivo es PÚBLICO. Aquí no va ningún secreto.
+# Los secretos se cargan solo con:
+#   npx wrangler secret put ANTHROPIC_API_KEY
+#   npx wrangler secret put TURNSTILE_SECRET
+name = "gemelo-bogota-asistente"
+main = "src/index.ts"
+compatibility_date = "2026-11-01"
+workers_dev = true
+preview_urls = false
+
+# Registros: solo los console.* del código (que nunca incluyen preguntas ni IPs).
+# Los registros automáticos de cada invocación se apagan porque traen datos del pedido.
+[observability]
+enabled = true
+head_sampling_rate = 1
+
+[observability.logs]
+enabled = true
+invocation_logs = false
+
+[vars]
+# Orígenes que pueden llamar al Worker desde el navegador, separados por coma.
+# Cambiar al dominio real del visor antes de desplegar.
+ORIGENES_PERMITIDOS = "https://caamanoluismiguel.github.io"
+# Nombres de host que Turnstile debe reportar (los del sitio). Separados por coma.
+HOSTS_TURNSTILE = "caamanoluismiguel.github.io"
+# El Worker deja de llamar al modelo al llegar a este gasto en el mes (UTC).
+# La Console de Anthropic tiene el límite duro de 20 USD; esto corta antes.
+TOPE_MENSUAL_USD = "18"
+# Preguntas por visitante por hora.
+LIMITE_POR_HORA = "5"
+# Salida máxima por respuesta, razonamiento incluido.
+MAX_TOKENS = "3000"
+# Esfuerzo de razonamiento de claude-opus-5-5: low, medium, high, xhigh o max.
+ESFUERZO = "medium"
+# «si» para atender; cualquier otro valor apaga el asistente sin desplegar código.
+ASISTENTE_ACTIVO = "si"
+
+[[durable_objects.bindings]]
+name = "CONTADOR_GASTO"
+class_name = "ContadorGasto"
+
+[[durable_objects.bindings]]
+name = "LIMITE_VISITANTE"
+class_name = "LimiteVisitante"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["ContadorGasto", "LimiteVisitante"]
