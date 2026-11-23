@@ -24,3 +24,6 @@ __pycache__/
 
 # Mapa base: descargas y teselas generadas (pesadas, se sirven fuera del repo)
 mapa-base/salida/
+
+# Ejemplo local de la tarjeta del cielo (lo vivo se publica en gemelo-bogota-vivo)
+data/cielo/
