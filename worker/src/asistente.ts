@@ -21,8 +21,6 @@ import type { ContadorGasto } from "./presupuesto";
 import { armarMensaje, PROMPT_SISTEMA } from "./prompt";
 import { MENSAJES } from "./respuestas";
 
-/** Respaldo del lado del servidor si claude-opus-5-5 declina por política. */
-
 type Linea =
   | { tipo: "texto"; texto: string }
   | { tipo: "corte" }
