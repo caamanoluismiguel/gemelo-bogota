@@ -296,7 +296,7 @@ describe("respuesta simulada del modelo", () => {
     expect(cuerpo.thinking).toEqual({ type: "adaptive" });
     expect(cuerpo.output_config).toEqual({ effort: "medium" });
     expect(cuerpo.max_tokens).toBe(3000);
-    expect(cuerpo.fallbacks).toBe("default");
+    expect(cuerpo.fallbacks).toBeUndefined();
     expect(cuerpo.system[0].cache_control).toEqual({ type: "ephemeral" });
     expect(cuerpo.messages[0].content).toContain("<pregunta>");
     expect(cuerpo.messages[0].content).toContain("localidad: Kennedy");

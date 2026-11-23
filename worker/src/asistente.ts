@@ -22,7 +22,6 @@ import { armarMensaje, PROMPT_SISTEMA } from "./prompt";
 import { MENSAJES } from "./respuestas";
 
 /** Respaldo del lado del servidor si claude-opus-5-5 declina por política. */
-const BETA_RESPALDO = "server-side-fallback-2026-07-01";
 
 type Linea =
   | { tipo: "texto"; texto: string }
@@ -70,8 +69,6 @@ export function responderEnVivo(p: Parametros): Response {
       thinking: { type: "adaptive" },
       output_config: { effort: p.config.esfuerzo },
       messages: [{ role: "user", content: armarMensaje(p.entrada) }],
-      betas: [BETA_RESPALDO],
-      fallbacks: "default",
     });
     try {
       for await (const ev of stream) {

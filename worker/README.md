@@ -72,7 +72,7 @@ Si algo se rechaza antes de llamar al modelo, la respuesta es JSON con `error` y
 * `client.beta.messages.stream` del SDK oficial `@anthropic-ai/sdk` (versión fija en `package.json`).
 * Razonamiento adaptativo (`thinking: {type: "adaptive"}`) y `output_config.effort` desde `ESFUERZO`.
 * Instrucciones fijas en `src/prompt.ts`, en el bloque `system` con `cache_control`. No deben cambiar entre preguntas.
-* **Respaldo del lado del servidor activado** (`fallbacks: "default"` con la beta `server-side-fallback-2026-07-01`): si `claude-opus-5-5` declina por política, Anthropic reintenta con su modelo de respaldo por defecto. Ese intento se cobra a la tarifa del modelo de respaldo y el contador lo suma aparte. Para apagarlo, quitar esas dos líneas en `src/asistente.ts`.
+* **Sin respaldo a otro modelo** (decisión de LM, 23 nov 2026: solo `claude-opus-5-5`). Si el modelo declina, el visitante recibe el mensaje de rechazo. Para encender el respaldo del servidor habría que agregar `betas: ["server-side-fallback-2026-07-01"]` y `fallbacks: "default"` en `src/asistente.ts`.
 * Sin `temperature` ni respuesta precargada (el modelo no los acepta).
 
 ## Privacidad
