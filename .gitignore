@@ -21,3 +21,6 @@ node_modules/
 .venv/
 __pycache__/
 .DS_Store
+
+# Mapa base: descargas y teselas generadas (pesadas, se sirven fuera del repo)
+mapa-base/salida/
