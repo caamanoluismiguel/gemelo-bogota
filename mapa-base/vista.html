@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mapa base de Bogotá · vista local</title>
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.1/dist/maplibre-gl.css"
+  integrity="sha384-uTttxo/aOKbdE5RlD/SPzSDoDmNvGlUYPjONi2MN/b7c9HPSvW07OIuyP7uL6jxK" crossorigin="anonymous">
+<script src="https://unpkg.com/maplibre-gl@5.24.1/dist/maplibre-gl.js"
+  integrity="sha384-nXMl9YiLoSG5KBPTFgvxVuIqQQcqIvo0bFrvoEaGJC6r7IibIzF1S36Zbf/sKBtL" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/pmtiles@4.5.0/dist/pmtiles.js"
+  integrity="sha384-pbKNZbDshUsLnZMIVsn/t+j3xEY9PGfuX5Z22l5rcy/obXz3EwaMx1F5d9sRsJMn" crossorigin="anonymous"></script>
+<style>
+  html, body, #mapa { margin: 0; height: 100%; font: 14px/1.4 system-ui, sans-serif; color: #1f1f1f; background: #f4f2ee; }
+  #panel { position: absolute; top: 10px; left: 10px; max-width: 290px; max-height: calc(100% - 60px); overflow: auto;
+    background: #fff; border: 1px solid #d6d3cc; border-radius: 8px; padding: 10px 12px; box-shadow: 0 1px 4px rgba(0,0,0,.12); }
+  #panel h1 { font-size: 15px; margin: 0 0 6px; }
+  #panel label { display: block; margin: 3px 0; cursor: pointer; }
+  #panel small { color: #555; }
+  .leyenda { display: flex; gap: 2px; margin: 4px 0 2px; }
+  .leyenda span { flex: 1; height: 10px; }
+  .escala { display: flex; justify-content: space-between; font-size: 11px; color: #444; }
+  #zoom { font-variant-numeric: tabular-nums; }
+  details summary { cursor: pointer; font-weight: 600; margin-top: 6px; }
+  @media (max-width: 480px) { #panel { max-width: calc(100% - 40px); font-size: 13px; } }
+</style>
+</head>
+<body>
+<div id="mapa"></div>
+<div id="panel">
+  <h1>Mapa base de Bogotá</h1>
+  <small>Vista local de prueba. Zoom <span id="zoom"></span></small>
+  <details open class="plegable">
+    <summary>Capas</summary>
+    <label><input type="checkbox" data-grupo="pisos" checked> Pisos de Catastro</label>
+    <small>Hasta z15, promedio por sector catastral; desde z16, cada construcción.</small>
+    <label><input type="checkbox" data-grupo="osm3d"> Edificios de OSM con altura</label>
+    <small>En 3D solo donde OSM trae <code>height</code>; el resto, gris con borde punteado: altura desconocida. Desde z15.</small>
+    <label><input type="checkbox" data-grupo="localidades" checked> Localidades</label>
+    <label><input type="checkbox" data-grupo="upl" checked> UPL</label>
+    <label><input type="checkbox" data-grupo="sectores"> Sectores catastrales (barrios)</label>
+    <label><input type="checkbox" data-grupo="legalizados"> Barrios legalizados</label>
+    <label><input type="checkbox" data-grupo="base" checked> Calles, agua y verde (OSM)</label>
+  </details>
+  <details open class="plegable">
+    <summary>Pisos</summary>
+    <div class="leyenda" id="leyenda"></div>
+    <div class="escala"><span>0 a 1</span><span>2</span><span>3</span><span>4 y 5</span><span>6 a 9</span><span>10 a 19</span><span>20 o más</span></div>
+    <small>Número de pisos de Catastro. No es altura en metros.</small>
+  </details>
+</div>
+<script>
+'use strict';
+// Origen de los .pmtiles: por defecto salida/ al lado de esta página.
+// Con ?datos=https://... se prueba otro servidor (por ejemplo Pages o R2). Solo https o relativo.
+const param = new URLSearchParams(location.search).get('datos');
+const base = (param && /^https:\/\//.test(param)) ? param.replace(/\/?$/, '/') : new URL('salida/', location.href).href;
+const url = (f) => 'pmtiles://' + new URL(f, base).href;
+
+const protocolo = new pmtiles.Protocol({ metadata: true });
+maplibregl.addProtocol('pmtiles', protocolo.tile);
+
+const PISOS_COLOR = ['#fbe3cf', '#f7c9a3', '#f2ad7e', '#e98d5e', '#d96a44', '#bd4a33', '#8f2d27'];
+const pasos = (campo) => ['step', ['to-number', ['get', campo], 0],
+  PISOS_COLOR[0], 2, PISOS_COLOR[1], 3, PISOS_COLOR[2], 4, PISOS_COLOR[3], 6, PISOS_COLOR[4], 10, PISOS_COLOR[5], 20, PISOS_COLOR[6]];
+document.getElementById('leyenda').innerHTML = PISOS_COLOR.map(c => `<span style="background:${c}"></span>`).join('');
+
+const OSM = '<a href="https://www.openstreetmap.org/copyright">© colaboradores de OpenStreetMap</a> (ODbL)';
+const LIM = 'Límites: SDP y UAECD, <a href="https://datosabiertos.bogota.gov.co/">Datos Abiertos Bogotá</a> (CC BY 4.0)';
+const CAT = 'Construcciones y pisos: UAECD, <a href="https://datosabiertos.bogota.gov.co/dataset/construccion">Datos Abiertos Bogotá</a> (CC BY 4.0)';
+
+const estilo = {
+  version: 8,
+  glyphs: 'https://protomaps.github.io/basemaps-assets/fonts/{fontstack}/{range}.pbf',
+  sources: {
+    osm: { type: 'vector', url: url('osm-bogota.pmtiles'), attribution: OSM },
+    limites: { type: 'vector', url: url('limites-bogota.pmtiles'), attribution: LIM },
+    catastro: { type: 'vector', url: url('catastro-pisos-bogota.pmtiles'), attribution: CAT }
+  },
+  layers: [
+    { id: 'fondo', type: 'background', paint: { 'background-color': '#f4f2ee' } },
+    { id: 'verde', type: 'fill', source: 'osm', 'source-layer': 'verde', metadata: { grupo: 'base' },
+      paint: { 'fill-color': ['match', ['get', 'clase'], 'reserva', '#dde9d3', 'paramo', '#e3e8cf', 'bosque', '#bcd6b0', '#cfe3c4'] } },
+    { id: 'agua', type: 'fill', source: 'osm', 'source-layer': 'agua', metadata: { grupo: 'base' },
+      filter: ['==', ['geometry-type'], 'Polygon'], paint: { 'fill-color': '#a9cbe6' } },
+    { id: 'agua-lineas', type: 'line', source: 'osm', 'source-layer': 'agua', metadata: { grupo: 'base' },
+      filter: ['==', ['geometry-type'], 'LineString'],
+      paint: { 'line-color': '#86b4da', 'line-width': ['interpolate', ['linear'], ['zoom'], 10, 0.6, 15, 2.5] } },
+    { id: 'pisos-sector', type: 'fill', source: 'catastro', 'source-layer': 'pisos_sector', maxzoom: 16, metadata: { grupo: 'pisos' },
+      paint: { 'fill-color': pasos('pisos_prom'), 'fill-opacity': 0.75 } },
+    { id: 'construcciones', type: 'fill', source: 'catastro', 'source-layer': 'construcciones', minzoom: 16, metadata: { grupo: 'pisos' },
+      paint: { 'fill-color': pasos('pisos'), 'fill-outline-color': '#7a6a5e' } },
+    { id: 'vias', type: 'line', source: 'osm', 'source-layer': 'vias', metadata: { grupo: 'base' },
+      layout: { 'line-cap': 'round', 'line-join': 'round' },
+      paint: {
+        'line-color': ['match', ['get', 'clase'], 'troncal', '#c9a24a', 'primaria', '#d6b46a', 'peatonal', '#b9b4aa', 'ciclorruta', '#5f9a6b', '#ffffff'],
+        'line-width': ['interpolate', ['exponential', 1.6], ['zoom'],
+          9, ['match', ['get', 'clase'], 'troncal', 1.6, 'primaria', 1.1, 0.5],
+          16, ['match', ['get', 'clase'], 'troncal', 12, 'primaria', 9, 'secundaria', 7, 'terciaria', 6, 'local', 4.5, 'peatonal', 1.5, 'ciclorruta', 1.5, 3]],
+        'line-dasharray': ['match', ['get', 'clase'], 'peatonal', ['literal', [2, 1]], ['literal', [1, 0]]]
+      } },
+    { id: 'osm-sin-altura', type: 'fill', source: 'osm', 'source-layer': 'edificios', metadata: { grupo: 'osm3d' },
+      filter: ['!', ['get', 'altura_conocida']], layout: { visibility: 'none' },
+      paint: { 'fill-color': '#d9d6d0', 'fill-opacity': 0.8 } },
+    { id: 'osm-sin-altura-borde', type: 'line', source: 'osm', 'source-layer': 'edificios', metadata: { grupo: 'osm3d' },
+      filter: ['!', ['get', 'altura_conocida']], layout: { visibility: 'none' },
+      paint: { 'line-color': '#8a857c', 'line-width': 0.8, 'line-dasharray': [2, 2] } },
+    { id: 'osm-con-altura', type: 'fill-extrusion', source: 'osm', 'source-layer': 'edificios', metadata: { grupo: 'osm3d' },
+      filter: ['==', ['get', 'altura_conocida'], true], layout: { visibility: 'none' },
+      paint: { 'fill-extrusion-color': '#9aa7b8', 'fill-extrusion-height': ['get', 'altura_m'],
+        'fill-extrusion-base': ['coalesce', ['get', 'min_altura_m'], 0], 'fill-extrusion-opacity': 0.9 } },
+    { id: 'legalizados', type: 'line', source: 'limites', 'source-layer': 'barrios_legalizados', metadata: { grupo: 'legalizados' },
+      layout: { visibility: 'none' }, paint: { 'line-color': '#7b4fa0', 'line-width': 1 } },
+    { id: 'sectores', type: 'line', source: 'limites', 'source-layer': 'sectores', metadata: { grupo: 'sectores' },
+      layout: { visibility: 'none' }, paint: { 'line-color': '#6d6d6d', 'line-width': 0.7 } },
+    { id: 'upl', type: 'line', source: 'limites', 'source-layer': 'upl', minzoom: 10, metadata: { grupo: 'upl' },
+      paint: { 'line-color': '#3d5a80', 'line-width': 1.2, 'line-dasharray': [3, 2] } },
+    { id: 'localidades', type: 'line', source: 'limites', 'source-layer': 'localidades', metadata: { grupo: 'localidades' },
+      paint: { 'line-color': '#2b2b2b', 'line-width': ['interpolate', ['linear'], ['zoom'], 9, 1.2, 14, 2.5] } },
+    { id: 'rotulos', type: 'symbol', source: 'limites', 'source-layer': 'rotulos', metadata: { grupo: 'localidades' },
+      layout: { 'text-field': ['get', 'nombre'], 'text-font': ['Noto Sans Medium'],
+        'text-size': ['match', ['get', 'nivel'], 'localidad', 13, 'upl', 11.5, 10.5],
+        'text-transform': ['match', ['get', 'nivel'], 'localidad', 'uppercase', 'none'], 'text-max-width': 8 },
+      paint: { 'text-color': '#222', 'text-halo-color': '#fff', 'text-halo-width': 1.4 } }
+  ]
+};
+
+const mapa = new maplibregl.Map({
+  container: 'mapa', style: estilo, center: [-74.105, 4.65], zoom: 10.3, minZoom: 8, maxZoom: 19,
+  maxBounds: [[-74.9, 3.4], [-73.6, 5.0]], hash: true, attributionControl: { compact: true }
+});
+mapa.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-right');
+mapa.addControl(new maplibregl.ScaleControl({ unit: 'metric' }), 'bottom-left');
+
+// En teléfono el panel arranca plegado para no tapar el mapa; la atribución también.
+if (matchMedia('(max-width: 480px)').matches) {
+  document.querySelectorAll('.plegable').forEach(d => d.removeAttribute('open'));
+}
+mapa.on('load', () => {
+  const at = document.querySelector('.maplibregl-ctrl-attrib');
+  if (at && matchMedia('(max-width: 480px)').matches) at.classList.remove('maplibregl-compact-show');
+});
+
+const zoomEl = document.getElementById('zoom');
+const verZoom = () => { zoomEl.textContent = mapa.getZoom().toFixed(1); };
+mapa.on('zoom', verZoom); verZoom();
+
+document.querySelectorAll('[data-grupo]').forEach(caja => {
+  const aplicar = () => {
+    for (const capa of estilo.layers) {
+      if (capa.metadata && capa.metadata.grupo === caja.dataset.grupo && mapa.getLayer(capa.id)) {
+        mapa.setLayoutProperty(capa.id, 'visibility', caja.checked ? 'visible' : 'none');
+      }
+    }
+    if (caja.dataset.grupo === 'osm3d' && caja.checked && mapa.getPitch() < 30) mapa.easeTo({ pitch: 50 });
+  };
+  caja.addEventListener('change', aplicar);
+  mapa.on('load', aplicar);
+});
+
+// Ventana con los datos de lo que se toca. Se arma con textContent: nada del dato entra como HTML.
+const consultables = ['construcciones', 'pisos-sector', 'osm-con-altura', 'osm-sin-altura', 'legalizados'];
+mapa.on('click', (e) => {
+  const capas = consultables.filter(id => mapa.getLayer(id) && mapa.getLayoutProperty(id, 'visibility') !== 'none');
+  const f = mapa.queryRenderedFeatures(e.point, { layers: capas })[0];
+  if (!f) return;
+  const p = f.properties, filas = [];
+  if (f.layer.id === 'construcciones') {
+    filas.push(['Pisos (Catastro)', p.pisos], ['Sótanos', p.sotanos], ['Altura en metros', 'desconocida']);
+  } else if (f.layer.id === 'pisos-sector') {
+    filas.push(['Sector', p.nombre], ['Pisos promedio (ponderado por área)', p.pisos_prom],
+      ['Pisos máximo', p.pisos_max], ['Construcciones', p.construcciones]);
+  } else if (f.layer.id === 'legalizados') {
+    filas.push(['Barrio legalizado', p.nombre], ['Código', p.codigo]);
+  } else {
+    filas.push(['Altura (OSM height)', p.altura_conocida ? p.altura_m + ' m' : 'desconocida'],
+      ['Pisos en OSM', p.pisos_osm ?? 'sin dato'], ['Fuente de la altura', p.fuente_altura]);
+  }
+  const caja = document.createElement('div');
+  for (const [k, v] of filas) {
+    const d = document.createElement('div');
+    const b = document.createElement('b'); b.textContent = k + ': ';
+    d.append(b, document.createTextNode(String(v ?? 'sin dato')));
+    caja.append(d);
+  }
+  new maplibregl.Popup({ maxWidth: '260px' }).setLngLat(e.lngLat).setDOMContent(caja).addTo(mapa);
+});
+for (const id of consultables) {
+  mapa.on('mouseenter', id, () => { mapa.getCanvas().style.cursor = 'pointer'; });
+  mapa.on('mouseleave', id, () => { mapa.getCanvas().style.cursor = ''; });
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,7 @@
+{
+  "attributes": {"type": false, "id": false, "version": false, "changeset": false, "timestamp": false, "uid": false, "user": false, "way_nodes": false},
+  "format_options": {},
+  "linear_tags": ["highway", "waterway"],
+  "area_tags": ["building", "natural", "landuse", "leisure", "boundary", "waterway", "area"],
+  "exclude_tags": []
+}
