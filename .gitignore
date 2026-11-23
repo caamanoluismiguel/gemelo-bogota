@@ -1,0 +1,23 @@
+# Trabajo interno: nunca al repo público
+privado/
+panel/
+ENCARGO.md
+DECISIONES*.md
+
+# Secretos
+.env
+.env.*
+!.env.example
+.dev.vars
+*.pem
+*.key
+.cdsapirc
+.netrc
+.wrangler/
+
+# Datos y dependencias
+datos-crudos/
+node_modules/
+.venv/
+__pycache__/
+.DS_Store

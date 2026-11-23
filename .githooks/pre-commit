@@ -1,0 +1,11 @@
+#!/bin/sh
+# Bloquea el commit si hay secretos en lo preparado.
+set -e
+if command -v gitleaks >/dev/null 2>&1; then
+  gitleaks git --staged --redact --no-banner || { echo "gitleaks encontró un posible secreto. Commit bloqueado."; exit 1; }
+else
+  echo "Falta gitleaks (brew install gitleaks). Commit bloqueado."; exit 1
+fi
+if  git diff --cached -U0 -- . ':(exclude).githooks/pre-commit' | grep -E '^\+' | grep -Eq 'AIza[0-9A-Za-z_-]{20,}|sk-ant-[0-9A-Za-z_-]{10,}|sk_(live|test)_|sbp_[0-9a-f]{20,}|whsec_|postgres(ql)?://[^ ]*:[^ ]*@'; then
+  echo "Patrón de clave detectado en lo preparado. Commit bloqueado."; exit 1
+fi
