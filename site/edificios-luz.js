@@ -147,9 +147,10 @@ void main() {
     cara = smoothstep(-0.05, 0.2, dot(n, normalize(L.xy + vec2(1e-6))));
     inc = max(dot(vec3(n, 0.0), L), 0.0);
   }
-  // El material casi sin color: el tono lo pone la luz.
+  // El color de fachada (ladrillo, pañete o concreto) se queda; la luz lo calienta o lo enfría.
+  // La cubierta va un poco más oscura y menos saturada que los muros.
   float gris = dot(v_base, vec3(0.299, 0.587, 0.114));
-  vec3 base = mix(vec3(gris), v_base, 0.3);
+  vec3 base = v_techo > 0.5 ? mix(vec3(gris), v_base, 0.55) * 0.86 : mix(vec3(gris), v_base, 0.92);
   vec3 c = base * mix(u_frio, u_calido * (0.88 + 0.14 * inc), cara);
   c *= v_techo > 0.5 ? u_techo : mix(u_ao, 1.0, sqrt(clamp(v_h / 9.0, 0.0, 1.0)));
   c = mix(c, u_bruma.rgb, u_bruma.a * smoothstep(u_lejos_m.x, u_lejos_m.y, v_lejos));

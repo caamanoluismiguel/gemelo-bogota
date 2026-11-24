@@ -25,14 +25,20 @@
   const PISOS_COLOR = ['#fbe3cf', '#f7c9a3', '#f2ad7e', '#e98d5e', '#d96a44', '#bd4a33', '#8f2d27'];
   const pasos = (campo) => ['step', ['to-number', ['get', campo], 0],
     PISOS_COLOR[0], 2, PISOS_COLOR[1], 3, PISOS_COLOR[2], 4, PISOS_COLOR[3], 6, PISOS_COLOR[4], 10, PISOS_COLOR[5], 20, PISOS_COLOR[6]];
-  // Material neutro: grises fríos con variación sutil (se lee como material, no como dato). Fríos
-  // porque la luz del sol bajo es cálida: así la fachada a la sombra queda gris y no café.
-  // De noche (solo con 3D y sombras) el material baja a grises azulados oscuros.
-  const NEUTRO_DIA = ['#d3d7dd', '#d0d4da', '#cdd1d8', '#cacfd6', '#c8ccd3', '#c5cad1', '#c2c7cf'];
-  const NEUTRO_NOCHE = ['#565b66', '#535863', '#50555f', '#4d525c', '#4a4f59', '#474c56', '#444953'];
+  // Material de la lente «Cómo se ve»: color de fachada ilustrativo por número de pisos
+  // (B.colorFachada, en comun.js). De noche baja a tonos oscuros que guardan algo del color.
+  // En el crepúsculo civil (sol de 0 a −6°) se mezcla en línea recta.
+  const NOCHE_MATERIAL = '#1c2230';
   let noche = 0;   // 0 de día, 1 de noche; en medio durante el crepúsculo civil (sol de 0 a −6°)
-  const neutro = (campo) => { const c = noche <= 0 ? NEUTRO_DIA : noche >= 1 ? NEUTRO_NOCHE : NEUTRO_DIA.map((d, i) => B.mezclarColor(d, NEUTRO_NOCHE[i], noche));
-    return ['step', ['to-number', ['get', campo], 0], c[0], 2, c[1], 3, c[2], 4, c[3], 6, c[4], 10, c[5], 20, c[6]]; };
+  const MAX_PISOS = 70;
+  const neutro = (campo) => {
+    const exp = ['match', ['min', MAX_PISOS, ['max', 1, ['round', ['to-number', ['coalesce', ['get', campo], 1], 1]]]]];
+    for (let p = 1; p <= MAX_PISOS; p++) exp.push(p, B.mezclarColor(B.colorFachada(p), NOCHE_MATERIAL, 0.62 * noche));
+    exp.push(B.colorFachada(1));
+    return exp;
+  };
+  const VERDE_2D = ['match', ['get', 'clase'], 'reserva', '#dde9d3', 'paramo', '#e3e8cf', 'bosque', '#bcd6b0', '#cfe3c4'];
+  const VERDE_3D = ['match', ['get', 'clase'], 'reserva', '#9fc287', 'paramo', '#b3bf86', 'bosque', '#76a763', '#93c27c'];
   const leyenda = document.getElementById('leyenda');
   for (const c of PISOS_COLOR) { const s = document.createElement('span'); s.style.background = c; leyenda.append(s); }
 
@@ -63,7 +69,7 @@
     layers: [
       { id: 'fondo', type: 'background', paint: { 'background-color': '#f4f2ee' } },
       { id: 'verde', type: 'fill', source: 'osm', 'source-layer': 'verde', metadata: { grupo: 'base' },
-        paint: { 'fill-color': ['match', ['get', 'clase'], 'reserva', '#dde9d3', 'paramo', '#e3e8cf', 'bosque', '#bcd6b0', '#cfe3c4'] } },
+        paint: { 'fill-color': VERDE_2D } },
       { id: 'agua', type: 'fill', source: 'osm', 'source-layer': 'agua', metadata: { grupo: 'base' },
         filter: ['==', ['geometry-type'], 'Polygon'], paint: { 'fill-color': '#a9cbe6' } },
       { id: 'agua-lineas', type: 'line', source: 'osm', 'source-layer': 'agua', metadata: { grupo: 'base' },
@@ -118,10 +124,28 @@
     ]
   };
 
+  // Arranque (ronda 6). Sin enlace compartido, el visor abre en 3D, con «Cómo se ve» y la
+  // barra del sol a la hora de ahora. Un enlace manda sobre eso: ?3d=1 o ?3d=0 dice si va en
+  // 3D; si no lo dice pero trae la vista (#zoom/lat/lon/giro/inclinación), va en 3D solo si la
+  // vista viene inclinada, así los enlaces de antes en 2D siguen abriendo en 2D.
+  const q0 = new URLSearchParams(location.search);
+  const vista0 = location.hash.replace(/^#/, '').split('/');
+  const conVista = vista0.length >= 3 && vista0.slice(0, 3).every((v) => v !== '' && Number.isFinite(Number(v)));
+  const porDefecto = !q0.has('3d') && !conVista;
+  const pide3d = q0.has('3d') ? q0.get('3d') === '1' : conVista ? Number(vista0[4]) > 0 : true;
+  const VISTA_2D = { center: [-74.105, 4.65], zoom: movil.matches ? 9.9 : 10.4, pitch: 0, bearing: 0 };
+  // Entrada al 3D y primer cuadro sin enlace: Chapinero por la Calle 72 mirando al norte,
+  // con los cerros a la derecha.
+  const VISTA_CALLE = {
+    escritorio: { center: [-74.0585, 4.6535], zoom: 17.3, pitch: 79, bearing: 15 },
+    movil: { center: [-74.0585, 4.6535], zoom: 17.0, pitch: 80, bearing: 15 }
+  };
+  const vistaArranque = porDefecto ? VISTA_CALLE[movil.matches ? 'movil' : 'escritorio'] : VISTA_2D;
+
   let mapa;
   try {
     mapa = new maplibregl.Map({
-    container: 'mapa', style: estilo, center: [-74.105, 4.65], zoom: movil.matches ? 9.9 : 10.4, minZoom: 8, maxZoom: 19, maxPitch: 85,
+    container: 'mapa', style: estilo, center: vistaArranque.center, zoom: vistaArranque.zoom, pitch: vistaArranque.pitch, bearing: vistaArranque.bearing, minZoom: 8, maxZoom: 19, maxPitch: 85,
     maxBounds: [[-74.9, 3.4], [-73.6, 5.0]], hash: true, attributionControl: { compact: true },
     cooperativeGestures: false
     });
@@ -208,12 +232,6 @@
   const CIELO_DIA = { 'sky-color': '#89c2e8', 'sky-horizon-blend': 0.3, 'horizon-color': '#e8e4dd',
     'fog-color': '#f0ece6', 'horizon-fog-blend': 0.2, 'fog-ground-blend': 0.05, 'atmosphere-blend': 0.75 };
 
-  // Entrada al 3D: Chapinero por la Calle 72 mirando al norte, con los cerros a la derecha.
-  const VISTA_CALLE = {
-    escritorio: { center: [-74.0585, 4.6535], zoom: 17.3, pitch: 79, bearing: 15 },
-    movil: { center: [-74.0585, 4.6535], zoom: 17.0, pitch: 80, bearing: 15 }
-  };
-
   // Noche (solo con 3D y sombras, la pide sol-barra.js): el mapa base y los edificios bajan
   // a colores oscuros planos. Con 2D o de día, los colores de siempre.
   const NOCHE = {
@@ -292,8 +310,16 @@
   }
   lente3d.addEventListener('change', aplicarLente);
 
-  function poner3d() {
+  // El 3D queda en el enlace (?3d=1 o ?3d=0) para que quien lo abra vea lo mismo.
+  function escribir3d(on) {
+    const q = new URLSearchParams(location.search);
+    if (q.get('3d') === (on ? '1' : '0')) return;
+    q.set('3d', on ? '1' : '0');
+    history.replaceState(history.state, '', location.pathname + '?' + q.toString() + location.hash);
+  }
+  function poner3d(ev) {
     const on = caja3d.checked;
+    const alArrancar = ev === 'arranque';
     ponerTerreno(on);
     // Mostrar u ocultar el selector de lente.
     lente3d.hidden = !on;
@@ -312,12 +338,19 @@
     // Cielo y atmósfera: con 3D el cielo estático de día; sol-barra.js lo anima si hay sombras.
     if (on) { mapa.setSky(CIELO_DIA); } else { mapa.setSky({}); }
     if (!on) fijarNoche(false);
+    // Verdes: con 3D, más saturados para que los parques se lean verdes a la altura de la calle
+    // (la bruma del horizonte los lava). En 2D, los de siempre.
+    if (noche === 0) mapa.setPaintProperty('verde', 'fill-color', on ? VERDE_3D : VERDE_2D);
     // Leyenda y escala según la lente activa.
     aplicarLente();
     // freezeElevation y el terreno puesto después de arrancar el giro: sin eso MapLibre 5.24 deja
     // la altura de la cámara congelada en la de antes de llegar las teselas (0 m) y la cámara
     // queda bajo el suelo de la sabana, con el mapa en blanco. Así la altura sigue al terreno.
-    if (on) {
+    if (alArrancar) {
+      // Al arrancar la cámara ya está donde debe (la del enlace o la de inicio): no se mueve.
+      // El giro sin movimiento basta para que la altura siga al terreno.
+      mapa.easeTo({ pitch: mapa.getPitch(), duration: 0, freezeElevation: true });
+    } else if (on) {
       const zoom = mapa.getZoom();
       if (zoom < 15) {
         // Chapinero, Calle 72, a la altura de la calle: se ven las fachadas, el cielo y los cerros.
@@ -329,9 +362,10 @@
       mapa.easeTo({ pitch: 0, bearing: 0, duration: 900, freezeElevation: true });
     }
     mapa.setTerrain(on ? { source: 'terreno', exaggeration: 1 } : null);
+    escribir3d(on);
     window.dispatchEvent(new CustomEvent('bogotwin:3d', { detail: { on } }));
   }
-  caja3d.addEventListener('change', () => { if (mapa.isStyleLoaded()) poner3d(); else mapa.once('load', poner3d); });
+  caja3d.addEventListener('change', () => { if (mapa.isStyleLoaded()) poner3d(); else mapa.once('load', () => poner3d()); });
   // Los créditos completos arrancan cerrados (botón ⓘ), en teléfono y en escritorio, para no
   // tapar la ciudad. OpenStreetMap queda siempre a la vista con su enlace a la licencia, como
   // pide la guía de atribución de la OSMF; el resto está a un toque en la ⓘ.
@@ -354,6 +388,28 @@
   const cajaSombras = document.getElementById('ver-sombras');
   const glMapa = mapa.painter && mapa.painter.context && mapa.painter.context.gl;
   const conWebGL2 = typeof WebGL2RenderingContext !== 'undefined' && glMapa instanceof WebGL2RenderingContext;
+  // Arranque en 3D (o vuelta al 2D de siempre si no hay WebGL2 o si el relieve no carga).
+  const arranca3d = pide3d && conWebGL2;
+  if (!arranca3d && porDefecto) mapa.jumpTo(VISTA_2D);
+  if (arranca3d) {
+    caja3d.checked = true;
+    mapa.once('load', () => poner3d('arranque'));
+    // Si el relieve falla antes del primer cuadro en 3D, se vuelve al 2D sin ruido.
+    // Mientras escucha, los demás errores se siguen mostrando como siempre; los del relieve que
+    // lleguen tarde, ya en 2D, se callan.
+    let primerCuadro = false, caido = false;
+    const alFallar3d = (e) => {
+      if (!e || !/^terreno/.test(e.sourceId || '')) { console.error((e && e.error) || e); return; }
+      if (caido || primerCuadro) return;
+      caido = true;
+      console.warn('El 3D no cargó; queda el mapa en 2D.');
+      caja3d.checked = false;
+      poner3d();
+      if (porDefecto) { if (B.quitarSombras) B.quitarSombras(); mapa.jumpTo(VISTA_2D); }
+    };
+    mapa.on('error', alFallar3d);
+    mapa.once('idle', () => { primerCuadro = true; if (!caido) mapa.off('error', alFallar3d); });
+  }
   B.mapaApi = { mapa, movil, plegar, fijarAlto, pmCat, panel, teselaUrl: (f) => new URL(f, base).href, es3d: () => caja3d.checked, fijarNoche, panelAbierto: () => !panel.classList.contains('plegado'), cieloDia: CIELO_DIA };
   // Luz propia de los edificios en la vista de calle (edificios-luz.js): cara al sol cálida,
   // cara a la sombra fría y el pie de las fachadas un poco más oscuro. Se baja solo al entrar a
@@ -404,6 +460,9 @@
       // Un enlace con ?sombras=1 o ?sol=... abre con las sombras prendidas.
       const q = new URLSearchParams(location.search);
       if (q.get('sombras') === '1' || q.has('sol')) { cajaSombras.checked = true; ponerSombras(); }
+      // Al abrir sin enlace, la barra del sol entra cuando la ciudad ya está de pie: así el
+      // primer cuadro 3D no compite con las teselas que piden las sombras.
+      else if (porDefecto && arranca3d) { cajaSombras.checked = true; mapa.once('idle', () => { if (cajaSombras.checked) ponerSombras(); }); }
     }
   }
 

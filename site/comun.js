@@ -124,6 +124,23 @@
     return t < 0.5 ? a : b;
   }
 
+  // Colores de fachada (ronda 6), ilustrativos: Bogotá es de ladrillo, pero Catastro no dice
+  // el color de cada edificio. Hasta 11 pisos, ladrillo y terracota con algo de pañete claro;
+  // de 12 pisos para arriba, concreto y vidrio. La clave es el número de pisos, lo único que
+  // las teselas traen igual en todas las escalas (de lejos se unen construcciones con los
+  // mismos pisos), así que el color no cambia entre teselas ni al acercarse.
+  // Uno por cada número de pisos hasta 11. Las casas de 1 a 3 pisos son la mayoría de la
+  // ciudad, así que llevan ladrillo; el pañete claro queda en 6 y 10 pisos, que son pocos.
+  const LADRILLO = ['#b4683f', '#a65a3e', '#8a4634', '#b9804e', '#9c513b', '#e4d9c6', '#7b4031', '#c28b58',
+    '#ae6545', '#ece6db', '#93503a'];
+  const CONCRETO = ['#b8b2a8', '#a4aeb8', '#dedbd4', '#c4bfb6', '#b0b8c0'];
+  function colorFachada(pisos) {
+    const p = Math.max(1, Math.round(Number(pisos) || 1));
+    if (p < 12) return LADRILLO[p - 1];
+    const h = (Math.imul(p, 2654435761) >>> 0) ^ (p * 40503);
+    return CONCRETO[(h >>> 3) % CONCRETO.length];
+  }
+
   // Se suma a lo que ya haya (sol.js y sombra-geom.js cuelgan sus piezas aquí también).
-  window.Bogotwin = Object.assign(window.Bogotwin || {}, { el, enlace, marca, marcaDe, meta, valor, edad, edadTexto, minutosDesde, num, horaLocal, fechaLocal, sinTildes, nombrePropio, frase, MARCAS, mezclarColor, mezclarValor });
+  window.Bogotwin = Object.assign(window.Bogotwin || {}, { el, enlace, marca, marcaDe, meta, valor, edad, edadTexto, minutosDesde, num, horaLocal, fechaLocal, sinTildes, nombrePropio, frase, MARCAS, mezclarColor, mezclarValor, colorFachada });
 })();

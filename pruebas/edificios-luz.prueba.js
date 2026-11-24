@@ -39,4 +39,17 @@ vm.runInNewContext(fs.readFileSync(path.join(__dirname, '..', 'site', 'comun.js'
 const B = ventana.Bogotwin;
 revisar('mezclarColor va de un color al otro', B.mezclarColor('#000000', '#ffffff', 0.5).toLowerCase() === '#808080' && B.mezclarColor('#102030', '#ffffff', 0) === '#102030');
 revisar('mezclarValor mezcla números y listas', Math.abs(B.mezclarValor(0, 10, 0.3) - 3) < 1e-9 && JSON.stringify(B.mezclarValor([0, 2], [10, 4], 0.5)) === '[5,3]');
+
+// Fachadas: ladrillo y terracota con algunos pañetes claros; de 12 pisos arriba, concreto y vidrio.
+const hex = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16) / 255);
+const bajos = Array.from({ length: 11 }, (_, i) => hex(B.colorFachada(i + 1)));
+const altos = Array.from({ length: 59 }, (_, i) => hex(B.colorFachada(i + 12)));
+revisar('el color de fachada es estable para los mismos pisos', [1, 3, 7, 15, 40].every((p) => B.colorFachada(p) === B.colorFachada(p) && B.colorFachada(String(p)) === B.colorFachada(p)));
+revisar('bajo 12 pisos casi todo es ladrillo (rojo sobre azul)', bajos.filter((c) => c[0] - c[2] > 0.12).length >= 8);
+revisar('de 12 pisos arriba, tonos de concreto poco saturados', altos.every((c) => tono(c) < 0.1));
+revisar('no hay dos tonos para un mismo edificio en zooms distintos', B.colorFachada(0) === B.colorFachada(1) && B.colorFachada(null) === B.colorFachada(1));
+const sombraLadrillo = bajos[0].map((v, i) => v * mediodia.frio[i]), solLadrillo = bajos[0].map((v, i) => v * mediodia.calido[i]);
+revisar('a la sombra el ladrillo conserva su tono', sombraLadrillo[0] > sombraLadrillo[2] && lum(sombraLadrillo) / lum(solLadrillo) < 0.5);
+const fuente = fs.readFileSync(path.join(__dirname, '..', 'site', 'edificios-luz.js'), 'utf8');
+revisar('el sombreador guarda el color de la fachada y apaga un poco el techo', /mix\(vec3\(gris\), v_base, 0\.92\)/.test(fuente) && /v_techo > 0\.5 \? mix\(vec3\(gris\), v_base, 0\.55\) \* 0\.86/.test(fuente));
 cierre('Luz de los edificios');
