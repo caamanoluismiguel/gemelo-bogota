@@ -50,6 +50,7 @@ a { color: var(--acento); }
 .dato .que { display: block; font-size: 13px; }
 .meta { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: center; font-size: 12px; color: var(--tinta-2); margin-top: 2px; }
 .meta .viejo { color: var(--aviso); font-weight: 600; }
+.hora-dato.viejo { color: var(--aviso); font-weight: 600; }
 .marca { display: inline-block; font-size: 11px; font-weight: 600; padding: 0 6px; border-radius: 4px; border: 1px solid currentColor; line-height: 17px; white-space: nowrap; }
 .marca[data-marca="medido"] { color: var(--m-medido); }
 .marca[data-marca="de_fuente"] { color: var(--m-fuente); }
