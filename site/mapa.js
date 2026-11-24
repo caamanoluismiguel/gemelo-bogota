@@ -450,10 +450,23 @@
   // Los créditos completos arrancan cerrados (botón ⓘ), en teléfono y en escritorio, para no
   // tapar la ciudad. OpenStreetMap queda siempre a la vista con su enlace a la licencia, como
   // pide la guía de atribución de la OSMF; el resto está a un toque en la ⓘ.
+  // MapLibre vuelve a abrirlos cada vez que cambia el texto, y las fuentes PMTiles (la foto
+  // aérea) suman su crédito después de la primera carga: se cierran de nuevo mientras la
+  // persona no los haya abierto con la ⓘ.
+  let abrioCreditos = false;
+  const cerrarCreditos = () => {
+    const c = document.querySelector('.maplibregl-ctrl-attrib');
+    if (!c || abrioCreditos) return;
+    c.classList.remove('maplibregl-compact-show'); c.removeAttribute('open');
+  };
+  mapa.on('sourcedata', cerrarCreditos);
+  mapa.on('styledata', cerrarCreditos);
   mapa.once('idle', () => {
     const c = document.querySelector('.maplibregl-ctrl-attrib');
     if (!c) return;
-    c.classList.remove('maplibregl-compact-show'); c.removeAttribute('open');
+    const boton = c.querySelector('.maplibregl-ctrl-attrib-button');
+    if (boton) boton.addEventListener('click', () => { abrioCreditos = true; });
+    cerrarCreditos();
     const corto = document.createElement('div');
     corto.className = 'maplibregl-ctrl osm-corto';
     const a = document.createElement('a');
