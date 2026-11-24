@@ -29,8 +29,10 @@
   const FRAGMENTO = `#version 300 es
 precision mediump float;
 uniform vec4 u_color;
+uniform vec2 u_desvanecer;  // m donde la sombra empieza y termina de apagarse con la distancia
+in float v_lejos;
 out vec4 color;
-void main() { color = u_color; }`;
+void main() { color = u_color * (1.0 - smoothstep(u_desvanecer.x, u_desvanecer.y, v_lejos)); }`;
 
   // Con terreno (paso 9): la sombra se pinta primero en un búfer aparte con mezcla MAX (cada
   // píxel queda con el alfa más alto, sin sumar) y luego ese búfer se pega sobre el mapa.
@@ -100,7 +102,8 @@ void main() {
   //   alActualizar(estado) }
   function crear(opciones) {
     const op = Object.assign({ id: 'sombras', capaFuente: 'construcciones', margen: 1, maxTeselas: 64, dedup: true, zoomTerreno: 16,
-      alzarProfundidad: 3, desfase: [-8, -16], nucleo: 2.5, borde: 4.0, color: '#3b3a36', alfaNucleo: 0.28, alfaBorde: 0.12 }, opciones);
+      alzarProfundidad: 3, desfase: [-8, -16], nucleo: 2.5, borde: 4.0, color: '#3b3a36', alfaNucleo: 0.28, alfaBorde: 0.12,
+      desvanecer: [260, 620] }, opciones);
     let mapa = null, gl = null, prog = null, loc = null;
     let sombra = null;            // [m al oriente, m al norte] por m de alto, o null (sol bajo)
     const teselas = new Map();    // "x/y" → { x, y, vao, bufs, n, tipoIdx, unidadesM, listo }
@@ -313,7 +316,7 @@ void main() {
         gl.linkProgram(prog);
         if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) throw new Error('programa: ' + gl.getProgramInfoLog(prog));
         loc = { a_pos: 0, a_corre: 1, a_pisos: 2, a_elev: 3 };
-        for (const u of ['u_matriz', 'u_sombra', 'u_m_piso', 'u_unidades_m', 'u_color', 'u_alzar']) loc[u] = gl.getUniformLocation(prog, u);
+        for (const u of ['u_matriz', 'u_sombra', 'u_m_piso', 'u_unidades_m', 'u_color', 'u_alzar', 'u_camara', 'u_desvanecer']) loc[u] = gl.getUniformLocation(prog, u);
         fb.prog = gl.createProgram();
         gl.attachShader(fb.prog, compilar(gl, gl.VERTEX_SHADER, PEGAR_V));
         gl.attachShader(fb.prog, compilar(gl, gl.FRAGMENT_SHADER, PEGAR_F));
@@ -375,6 +378,12 @@ void main() {
         const visibles = [];
         for (const t of teselas.values()) if (t.n && enVista(t, vista)) visibles.push(t);
         est.dibujadas = visibles.length;
+        // Con terreno la cámara va casi a ras de calle: la sombra lejana, vista de canto, se
+        // vuelve rayas grises hasta el horizonte. Se apaga con la distancia al suelo bajo la
+        // cámara (op.desvanecer, en m). En 2D no se apaga.
+        const cam = mapa.terrain && op.desvanecer ? sueloBajoCamara() : null;
+        const n2 = 2 ** Z;
+        gl.uniform2f(loc.u_desvanecer, cam ? op.desvanecer[0] : 1e9, cam ? op.desvanecer[1] : 2e9);
         for (const [mPiso, color] of pasadas) {
           gl.uniform1f(loc.u_m_piso, mPiso);
           gl.uniform4fv(loc.u_color, color);
@@ -383,10 +392,20 @@ void main() {
             matriz.set(m64);
             gl.uniformMatrix4fv(loc.u_matriz, false, matriz);
             gl.uniform1f(loc.u_unidades_m, t.unidadesM);
+            gl.uniform2f(loc.u_camara, cam ? (cam.x * n2 - t.x) * t.ext : 0, cam ? (cam.y * n2 - t.y) * t.ext : 0);
             gl.bindVertexArray(t.vao);
             gl.drawElements(gl.TRIANGLES, t.n, t.tipoIdx, 0);
           }
         }
+    }
+
+    // Suelo bajo la cámara en Mercator (0 a 1). transform.getCameraLngLat no es API pública:
+    // si falta, se usa el centro del mapa (la sombra se apaga igual, solo más adelante).
+    function sueloBajoCamara() {
+      const t = mapa.transform;
+      let ll = null;
+      try { ll = t && t.getCameraLngLat ? t.getCameraLngLat() : null; } catch (e) { ll = null; }
+      return raiz.maplibregl.MercatorCoordinate.fromLngLat(ll || mapa.getCenter());
     }
 
     function prepararBufer(w, h) {

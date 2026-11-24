@@ -57,6 +57,10 @@
         <div class="escala" aria-hidden="true"><span>0 a 1</span><span>2</span><span>3</span><span>4 y 5</span><span>6 a 9</span><span>10 a 19</span><span>20+</span></div>
         <p class="nota">Número de pisos según Catastro, no altura en metros. De lejos ves el promedio de cada sector; acércate para ver cada construcción. <span class="marca" data-marca="de_fuente">de fuente</span></p>
         <label><input type="checkbox" id="ver-3d"> Levantar la ciudad en 3D</label>
+        <div class="lente-3d" id="lente-3d" hidden>
+          <label><input type="radio" name="lente" value="como-se-ve" checked> Cómo se ve</label>
+          <label><input type="radio" name="lente" value="pisos"> Pisos de cada construcción</label>
+        </div>
         <p class="nota">Los cerros con su altura real <span class="marca" data-marca="de_fuente">de fuente</span> y los edificios a 3 m por piso, un dibujo y no una medida: Catastro publica los pisos, no la altura. <span class="marca" data-marca="supuesto">supuesto</span></p>
         <label class="solo-sombras"><input type="checkbox" id="ver-sombras"> Sombras de los edificios</label>
         <p class="nota solo-sombras" id="sombras-nota">Las sombras se dibujan de cerca, calle por calle. Son un dibujo, no una medida. <span class="marca" data-marca="inferido">inferido</span> <span class="marca" data-marca="supuesto">supuesto</span></p>
@@ -65,6 +69,7 @@
           <summary>Cómo se calcula la sombra</summary>
           <p class="nota">Ponemos el sol donde está en la fecha y la hora que elijas, siempre en hora de Bogotá. Cada construcción tira su sombra al lado contrario del sol.</p>
           <p class="nota">Catastro publica los pisos, no la altura. Por eso la sombra va en dos tonos: la parte oscura cuenta 2,5 m por piso y la clara llega hasta 4 m por piso. La sombra de verdad cae en algún punto de esa franja. <span class="marca" data-marca="supuesto">supuesto</span></p>
+          <p class="nota">Las construcciones de un piso (bodegas, naves, casas con cubierta alta) suelen medir más de 4 m y su sombra aquí sale corta. <span class="marca" data-marca="supuesto">supuesto</span></p>
           <p class="nota">El 3D levanta los edificios con 3 m por piso, que queda dentro de esa misma franja. <span class="marca" data-marca="supuesto">supuesto</span></p>
           <p class="nota">La sombra de los cerros es el velo gris de la mañana y de la tarde. Los cerros salen del Modelo Digital de Terreno 2025 de Bogotá y, fuera del Distrito, de Copernicus. La misma elevación da el relieve que ves y la hora a la que el sol pasa los cerros, cada 100 m al pie de los cerros y cada 500 m en la sabana. <span class="marca" data-marca="inferido">inferido</span></p>
           <p class="nota">No dibujamos la sombra de los árboles ni de las nubes. Con el 3D cada sombra se apoya en el suelo a la altura de su construcción, pero se dibuja plana: en las lomas se corre un poco.</p>

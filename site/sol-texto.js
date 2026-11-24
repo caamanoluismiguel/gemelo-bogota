@@ -99,8 +99,29 @@
 
   // Luz de MapLibre para el sol (paso 11): [radio, azimut, ángulo desde el cenit].
   // Por debajo de 5° la luz se deja en 5° para que las fachadas no queden negras.
+  // Color e intensidad cambian con la altura del sol: dorado bajo, neutro alto, frío de noche.
   function luz(sol) {
-    return { anchor: 'map', color: '#ffffff', intensity: 0.5, position: [1.5, ((sol.azimut % 360) + 360) % 360, 90 - Math.max(5, sol.altura)] };
+    const alt = sol.altura;
+    const az = ((sol.azimut % 360) + 360) % 360;
+    const zenith = 90 - Math.max(5, alt);
+
+    // Más intensidad, más diferencia entre la fachada al sol y la de la sombra (MapLibre
+    // deja la cara opuesta en 1 − intensidad). La luz cálida va sobre un material frío
+    // (mapa.js): con una luz muy naranja o muy fuerte la cara a la sombra se ve café. De noche
+    // la luz es tenue y casi neutra: lo oscuro lo ponen los colores de noche de mapa.js (una
+    // luz muy azul tiñe todo de morado).
+    let color = '#ffffff', intensity = 0.48;
+    if (alt <= 0) {
+      color = '#d0d8e8'; intensity = 0.3;
+    } else if (alt < 8) {
+      color = '#ffe8cf'; intensity = 0.56;
+    } else if (alt < 20) {
+      color = '#ffeedc'; intensity = 0.56;
+    } else if (alt < 40) {
+      color = '#fff4ea'; intensity = 0.52;
+    }
+
+    return { anchor: 'map', color, intensity, position: [1.5, az, zenith] };
   }
 
   const solTexto = { horaTexto, fechaTexto, diaTexto, diaDelAnio, fechaDeDia, ajustarHora, leerSol, escribirSol,

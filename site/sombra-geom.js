@@ -35,11 +35,14 @@ uniform vec2 u_sombra;     // m al oriente y al norte por cada m de alto
 uniform float u_m_piso;    // 2,5 núcleo, 4,0 borde
 uniform float u_unidades_m;// unidades de tesela por metro en esta tesela
 uniform float u_alzar;    // m que se acerca solo la profundidad (con terreno), 0 en 2D
+uniform vec2 u_camara;    // suelo bajo la cámara, en unidades de esta tesela
+out float v_lejos;        // m del suelo bajo la cámara a este punto
 void main() {
   float alto = a_pisos * u_m_piso;
   vec2 corrido = a_corre * alto * u_sombra * u_unidades_m;
   // en la tesela y crece hacia el sur: el norte resta
   vec2 p = a_pos + vec2(corrido.x, -corrido.y);
+  v_lejos = length(p - u_camara) / u_unidades_m;
   vec4 pos = u_matriz * vec4(p, a_elev, 1.0);
   // La sombra queda donde está en pantalla; solo su profundidad es la de un plano u_alzar m
   // más arriba, para que el terreno (que MapLibre dibuja con otra malla) no la tape.

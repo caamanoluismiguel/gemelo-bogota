@@ -25,6 +25,14 @@
   const PISOS_COLOR = ['#fbe3cf', '#f7c9a3', '#f2ad7e', '#e98d5e', '#d96a44', '#bd4a33', '#8f2d27'];
   const pasos = (campo) => ['step', ['to-number', ['get', campo], 0],
     PISOS_COLOR[0], 2, PISOS_COLOR[1], 3, PISOS_COLOR[2], 4, PISOS_COLOR[3], 6, PISOS_COLOR[4], 10, PISOS_COLOR[5], 20, PISOS_COLOR[6]];
+  // Material neutro: grises fríos con variación sutil (se lee como material, no como dato). Fríos
+  // porque la luz del sol bajo es cálida: así la fachada a la sombra queda gris y no café.
+  // De noche (solo con 3D y sombras) el material baja a grises azulados oscuros.
+  const NEUTRO_DIA = ['#d3d7dd', '#d0d4da', '#cdd1d8', '#cacfd6', '#c8ccd3', '#c5cad1', '#c2c7cf'];
+  const NEUTRO_NOCHE = ['#565b66', '#535863', '#50555f', '#4d525c', '#4a4f59', '#474c56', '#444953'];
+  let deNoche = false;
+  const neutro = (campo) => { const c = deNoche ? NEUTRO_NOCHE : NEUTRO_DIA;
+    return ['step', ['to-number', ['get', campo], 0], c[0], 2, c[1], 3, c[2], 4, c[3], 6, c[4], 10, c[5], 20, c[6]]; };
   const leyenda = document.getElementById('leyenda');
   for (const c of PISOS_COLOR) { const s = document.createElement('span'); s.style.background = c; leyenda.append(s); }
 
@@ -113,7 +121,7 @@
   let mapa;
   try {
     mapa = new maplibregl.Map({
-    container: 'mapa', style: estilo, center: [-74.105, 4.65], zoom: movil.matches ? 9.9 : 10.4, minZoom: 8, maxZoom: 19,
+    container: 'mapa', style: estilo, center: [-74.105, 4.65], zoom: movil.matches ? 9.9 : 10.4, minZoom: 8, maxZoom: 19, maxPitch: 85,
     maxBounds: [[-74.9, 3.4], [-73.6, 5.0]], hash: true, attributionControl: { compact: true },
     cooperativeGestures: false
     });
@@ -196,22 +204,125 @@
     }
     for (const id of ['relieve', 'relieve-fuera']) if (mapa.getLayer(id)) mapa.setLayoutProperty(id, 'visibility', on ? 'visible' : 'none');
   }
+  // Cielo estático por defecto (día pleno). sol-barra.js lo reemplaza cuando hay sombras activas.
+  const CIELO_DIA = { 'sky-color': '#89c2e8', 'sky-horizon-blend': 0.3, 'horizon-color': '#e8e4dd',
+    'fog-color': '#f0ece6', 'horizon-fog-blend': 0.2, 'fog-ground-blend': 0.05, 'atmosphere-blend': 0.75 };
+
+  // Entrada al 3D: Chapinero por la Calle 72 mirando al norte, con los cerros a la derecha.
+  const VISTA_CALLE = {
+    escritorio: { center: [-74.0585, 4.6535], zoom: 17.3, pitch: 79, bearing: 15 },
+    movil: { center: [-74.0585, 4.6535], zoom: 17.0, pitch: 80, bearing: 15 }
+  };
+
+  // Noche (solo con 3D y sombras, la pide sol-barra.js): el mapa base y los edificios bajan
+  // a colores oscuros planos. Con 2D o de día, los colores de siempre.
+  const NOCHE = {
+    fondo: { 'background-color': '#1b212c' },
+    verde: { 'fill-color': '#1f2a26' },
+    agua: { 'fill-color': '#1a2c40' },
+    'agua-lineas': { 'line-color': '#24405a' },
+    vias: { 'line-color': ['match', ['get', 'clase'], 'troncal', '#5c4f33', 'primaria', '#4f4733', 'peatonal', '#30343c', 'ciclorruta', '#2a4030', '#343a46'] },
+    localidades: { 'line-color': '#9aa0ab' },
+    upl: { 'line-color': '#6c86ad' },
+    rotulos: { 'text-color': '#dfe2e8', 'text-halo-color': '#1b212c' },
+    'estaciones-rotulo': { 'text-color': '#f0b4b2', 'text-halo-color': '#1b212c' },
+    'relieve-fuera': { 'fill-color': '#1b212c' },
+    relieve: { 'hillshade-shadow-color': '#0c1017', 'hillshade-highlight-color': '#3a4252', 'hillshade-accent-color': '#161b24' }
+  };
+  const DIA = {};
+  function fijarNoche(si) {
+    si = !!si;
+    if (si === deNoche) return;
+    deNoche = si;
+    for (const id of Object.keys(NOCHE)) {
+      if (!mapa.getLayer(id)) continue;
+      for (const k of Object.keys(NOCHE[id])) {
+        const clave = id + '|' + k;
+        if (!(clave in DIA)) DIA[clave] = mapa.getPaintProperty(id, k);
+        mapa.setPaintProperty(id, k, si ? NOCHE[id][k] : DIA[clave]);
+      }
+    }
+    aplicarLente();
+  }
+
+  // Lente del 3D: «como-se-ve» (neutro) o «pisos» (coropleta naranja).
+  const lente3d = document.getElementById('lente-3d');
+  function lenteActual() { const r = lente3d.querySelector('input[name="lente"]:checked'); return r ? r.value : 'como-se-ve'; }
+  function colorPor3d(campo) { return lenteActual() === 'pisos' ? pasos(campo) : neutro(campo); }
+
+  // Vista de calle (3D con «Cómo se ve»): la ciudad ocupa la pantalla. Al entrar, el panel se
+  // pliega a su barra de título y la barra del sol queda en su forma corta; los dos se abren
+  // con un toque. Si el foco estaba dentro del panel, pasa al botón que lo vuelve a abrir.
+  let vistaCalle = false;
+  function ponerVistaCalle() {
+    const si = caja3d.checked && lenteActual() === 'como-se-ve';
+    if (si === vistaCalle) return;
+    vistaCalle = si;
+    document.body.classList.toggle('vista-calle', si);
+    if (si && !panel.classList.contains('plegado')) {
+      const conFoco = panel.querySelector('#cuerpo').contains(document.activeElement);
+      plegar(true);
+      if (conFoco) boton.focus();
+    } else {
+      fijarAlto();
+    }
+  }
+
+  function aplicarLente() {
+    ponerVistaCalle();
+    const ley = document.getElementById('leyenda');
+    const esc = ley && ley.nextElementSibling;
+    if (!caja3d.checked) {
+      // Sin 3D, la leyenda y la escala siguen a la capa de pisos (siempre visibles si pisos está marcada).
+      if (ley) ley.hidden = false;
+      if (esc && esc.classList.contains('escala')) esc.hidden = false;
+      return;
+    }
+    const esPisos = lenteActual() === 'pisos';
+    if (mapa.getLayer('sectores-3d')) mapa.setPaintProperty('sectores-3d', 'fill-extrusion-color', esPisos ? pasos('pisos_prom') : neutro('pisos_prom'));
+    if (mapa.getLayer('construcciones-3d')) mapa.setPaintProperty('construcciones-3d', 'fill-extrusion-color', esPisos ? pasos('pisos') : neutro('pisos'));
+    // Leyenda y escala: solo con la lente «pisos».
+    if (ley) ley.hidden = !esPisos;
+    if (esc && esc.classList.contains('escala')) esc.hidden = !esPisos;
+  }
+  lente3d.addEventListener('change', aplicarLente);
+
   function poner3d() {
     const on = caja3d.checked;
     ponerTerreno(on);
+    // Mostrar u ocultar el selector de lente.
+    lente3d.hidden = !on;
     if (on && !mapa.getLayer('construcciones-3d')) {
       const antes = mapa.getLayer('rotulos') ? 'rotulos' : undefined;
+      // Sin degradado vertical: cada fachada de un solo tono, la del sol y la de la sombra.
       mapa.addLayer({ id: 'sectores-3d', type: 'fill-extrusion', source: 'catastro', 'source-layer': 'pisos_sector', maxzoom: 16,
-        paint: { 'fill-extrusion-color': pasos('pisos_prom'), 'fill-extrusion-height': alto('pisos_prom'), 'fill-extrusion-opacity': 0.9 } }, antes);
+        paint: { 'fill-extrusion-color': colorPor3d('pisos_prom'), 'fill-extrusion-height': alto('pisos_prom'), 'fill-extrusion-opacity': 0.95,
+          'fill-extrusion-vertical-gradient': false } }, antes);
       mapa.addLayer({ id: 'construcciones-3d', type: 'fill-extrusion', source: 'catastro', 'source-layer': 'construcciones', minzoom: 16,
-        paint: { 'fill-extrusion-color': pasos('pisos'), 'fill-extrusion-height': alto('pisos'), 'fill-extrusion-opacity': 0.95 } }, antes);
+        paint: { 'fill-extrusion-color': colorPor3d('pisos'), 'fill-extrusion-height': alto('pisos'), 'fill-extrusion-opacity': 0.95,
+          'fill-extrusion-vertical-gradient': false } }, antes);
     }
     for (const id of ['sectores-3d', 'construcciones-3d']) if (mapa.getLayer(id)) mapa.setLayoutProperty(id, 'visibility', on ? 'visible' : 'none');
     for (const id of ['pisos-sector', 'construcciones']) mapa.setLayoutProperty(id, 'visibility', on ? 'none' : (document.querySelector('[data-grupo="pisos"]').checked ? 'visible' : 'none'));
+    // Cielo y atmósfera: con 3D el cielo estático de día; sol-barra.js lo anima si hay sombras.
+    if (on) { mapa.setSky(CIELO_DIA); } else { mapa.setSky({}); }
+    if (!on) fijarNoche(false);
+    // Leyenda y escala según la lente activa.
+    aplicarLente();
     // freezeElevation y el terreno puesto después de arrancar el giro: sin eso MapLibre 5.24 deja
     // la altura de la cámara congelada en la de antes de llegar las teselas (0 m) y la cámara
     // queda bajo el suelo de la sabana, con el mapa en blanco. Así la altura sigue al terreno.
-    mapa.easeTo({ pitch: on ? 55 : 0, bearing: on ? -20 : 0, duration: 900, freezeElevation: true });
+    if (on) {
+      const zoom = mapa.getZoom();
+      if (zoom < 15) {
+        // Chapinero, Calle 72, a la altura de la calle: se ven las fachadas, el cielo y los cerros.
+        mapa.flyTo(Object.assign({ duration: 1800, freezeElevation: true }, VISTA_CALLE[movil.matches ? 'movil' : 'escritorio']));
+      } else {
+        mapa.easeTo({ pitch: Math.max(mapa.getPitch(), 75), duration: 900, freezeElevation: true });
+      }
+    } else {
+      mapa.easeTo({ pitch: 0, bearing: 0, duration: 900, freezeElevation: true });
+    }
     mapa.setTerrain(on ? { source: 'terreno', exaggeration: 1 } : null);
     window.dispatchEvent(new CustomEvent('bogotwin:3d', { detail: { on } }));
   }
@@ -238,7 +349,7 @@
   const cajaSombras = document.getElementById('ver-sombras');
   const glMapa = mapa.painter && mapa.painter.context && mapa.painter.context.gl;
   const conWebGL2 = typeof WebGL2RenderingContext !== 'undefined' && glMapa instanceof WebGL2RenderingContext;
-  B.mapaApi = { mapa, movil, plegar, fijarAlto, pmCat, panel, teselaUrl: (f) => new URL(f, base).href, es3d: () => caja3d.checked, panelAbierto: () => !panel.classList.contains('plegado') };
+  B.mapaApi = { mapa, movil, plegar, fijarAlto, pmCat, panel, teselaUrl: (f) => new URL(f, base).href, es3d: () => caja3d.checked, fijarNoche, panelAbierto: () => !panel.classList.contains('plegado'), cieloDia: CIELO_DIA };
   if (cajaSombras) {
     if (!conWebGL2) {
       for (const n of document.querySelectorAll('.solo-sombras')) n.hidden = true;

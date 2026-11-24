@@ -20,9 +20,9 @@ a { color: var(--acento); }
 .oculto { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 
 #panel { position: fixed; top: 12px; left: 12px; bottom: 12px; width: 360px; display: flex; flex-direction: column;
-  background: var(--papel); border: 1px solid var(--borde); border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,.10); z-index: 2; }
+  background: var(--papel); border: 1px solid var(--borde); border-radius: 10px; box-shadow: 0 1px 2px rgba(0,0,0,.12), 0 4px 12px rgba(0,0,0,.08), 0 12px 32px rgba(0,0,0,.06); z-index: 2; }
 .cabeza { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; padding: 12px 14px 8px; border-bottom: 1px solid var(--borde); }
-.cabeza h1 { font-size: 19px; margin: 0; letter-spacing: .2px; }
+.cabeza h1 { font-size: 24px; font-weight: 800; letter-spacing: -0.3px; margin: 0; }
 .sub { margin: 2px 0 0; color: var(--tinta-2); font-size: 13px; }
 #plegar { font: inherit; font-size: 13px; padding: 6px 10px; min-height: 36px; border: 1px solid var(--borde); border-radius: 8px; background: var(--fondo); color: var(--tinta); cursor: pointer; }
 #cuerpo { overflow: auto; padding: 10px 14px 14px; flex: 1; }
@@ -45,8 +45,8 @@ a { color: var(--acento); }
 .nota-inline { color: var(--tinta-2); font-size: 12px; }
 
 .dato { margin: 6px 0 8px; }
-.dato .valor { font-size: 22px; font-weight: 650; font-variant-numeric: tabular-nums; }
-.dato .valor.chico { font-size: 15px; font-weight: 600; }
+.dato .valor { font-size: 28px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.dato .valor.chico { font-size: 18px; font-weight: 600; }
 .dato .que { display: block; font-size: 13px; }
 .meta { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: center; font-size: 12px; color: var(--tinta-2); margin-top: 2px; }
 .meta .viejo { color: var(--aviso); font-weight: 600; }
@@ -65,9 +65,14 @@ details.mas summary { cursor: pointer; font-weight: 600; margin-top: 10px; min-h
 .capas label { display: flex; gap: 8px; align-items: flex-start; margin: 6px 0; cursor: pointer; min-height: 28px; }
 .capas input { width: 18px; height: 18px; margin: 1px 0 0; flex: none; }
 .leyenda { display: flex; gap: 2px; margin: 2px 0 2px 26px; }
+.leyenda[hidden] { display: none; }
 .leyenda span { flex: 1; height: 10px; }
 .escala { display: flex; justify-content: space-between; font-size: 11px; color: var(--tinta-2); margin-left: 26px; }
+.escala[hidden] { display: none; }
 .capas .nota { margin-left: 26px; }
+.lente-3d { margin: 4px 0 4px 26px; }
+.lente-3d label { display: flex; gap: 6px; align-items: center; margin: 3px 0; cursor: pointer; font-size: 13px; color: var(--tinta-2); }
+.lente-3d input { width: 16px; height: 16px; margin: 0; flex: none; }
 .marcas-ayuda ul { padding-left: 0; list-style: none; margin: 0; }
 .marcas-ayuda li { margin: 4px 0; }
 .pie { margin-top: 16px; padding-top: 10px; border-top: 1px solid var(--borde); }
@@ -80,7 +85,7 @@ details.mas summary { cursor: pointer; font-weight: 600; margin-top: 10px; min-h
   #panel { top: auto; left: 0; right: 0; bottom: 0; width: auto; max-height: 62vh; border-radius: 12px 12px 0 0; border-bottom: 0; }
   #panel.plegado { max-height: none; bottom: 0; }
   .cabeza { padding: 10px 14px 8px; }
-  .cabeza h1 { font-size: 17px; }
+  .cabeza h1 { font-size: 20px; font-weight: 800; letter-spacing: -0.3px; }
   .maplibregl-ctrl-bottom-left, .maplibregl-ctrl-bottom-right { bottom: var(--alto-panel, 0px); }
 }
 
@@ -101,7 +106,7 @@ details.mas summary { cursor: pointer; font-weight: 600; margin-top: 10px; min-h
 .fila-sombra { margin-top: 4px; }
 .aviso-hoja, #sombras-hoja { font-size: 12.5px; color: var(--tinta-2); margin: 4px 0 0 26px; }
 #sol-barra { position: absolute; z-index: 3; left: 384px; right: 12px; bottom: 24px; max-width: 600px; margin: 0 auto;
-  background: var(--papel); border: 1px solid var(--borde); border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,.10);
+  background: var(--papel); border: 1px solid var(--borde); border-radius: 10px; box-shadow: 0 1px 2px rgba(0,0,0,.12), 0 4px 12px rgba(0,0,0,.08), 0 12px 32px rgba(0,0,0,.06);
   padding: 8px 12px 6px; font-size: 13px; color: var(--tinta); }
 #sol-barra[hidden] { display: none; }
 #sol-barra button { font: inherit; cursor: pointer; }
@@ -109,9 +114,9 @@ details.mas summary { cursor: pointer; font-weight: 600; margin-top: 10px; min-h
 .sb-fila { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .sb-ahora { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 0 12px; border-radius: 16px;
   border: 1px solid var(--acento); background: var(--acento); color: #fff; font-weight: 600; }
-.sb-ahora[aria-pressed="true"] { background: var(--papel); color: var(--tinta); border-color: var(--borde); }
+.sb-ahora[aria-pressed="true"] { background: var(--m-medido); color: #fff; border-color: var(--m-medido); }
 .sb-punto { width: 9px; height: 9px; border-radius: 50%; border: 1.5px solid #cfcac0; background: transparent; }
-.sb-ahora[aria-pressed="true"] .sb-punto { background: var(--m-medido); border-color: var(--m-medido); }
+.sb-ahora[aria-pressed="true"] .sb-punto { background: #fff; border-color: #fff; }
 .sb-fecha { margin: 0; flex: 1; min-width: 0; font-variant-numeric: tabular-nums; }
 .sb-zona { color: var(--tinta-2); font-size: 12px; }
 .sb-quitar { min-height: 32px; padding: 0 10px; border: 1px solid var(--borde); border-radius: 6px; background: var(--papel); color: var(--tinta-2); }
@@ -170,3 +175,25 @@ details.mas summary { cursor: pointer; font-weight: 600; margin-top: 10px; min-h
 .osm-corto a { color: var(--tinta); text-decoration: none; }
 .osm-corto a:hover, .osm-corto a:focus-visible { text-decoration: underline; }
 .maplibregl-ctrl-bottom-right .maplibregl-compact-show + .maplibregl-ctrl.osm-corto { display: none; }
+
+/* Vista de calle (3D con «Cómo se ve»): el panel queda en su barra de título y la barra del
+   sol en su forma corta, para que la ciudad ocupe la pantalla. «Ver datos» y «Más» los abren. */
+.sb-mas { display: none; }
+.vista-calle .sb-mas { display: inline-block; }
+.vista-calle #panel.plegado .sub { display: none; }
+.vista-calle #panel.plegado { width: auto; }
+.vista-calle #panel.plegado .cabeza { align-items: center; gap: 14px; padding: 8px 10px 8px 14px; border-bottom: 0; }
+.vista-calle #panel.plegado .cabeza h1 { font-size: 18px; }
+.vista-calle #sol-barra:not(.sb-abierta) { max-width: 460px; padding: 6px 10px 2px; }
+.vista-calle #sol-barra:not(.sb-abierta) #sb-c-dia,
+.vista-calle #sol-barra:not(.sb-abierta) .sb-honesta,
+.vista-calle #sol-barra:not(.sb-abierta) .sb-estado,
+.vista-calle #sol-barra:not(.sb-abierta) .sb-pestanas { display: none; }
+.vista-calle #sol-barra:not(.sb-abierta) #sb-c-hora { display: grid; }
+.vista-calle #sol-barra:not(.sb-abierta) .sb-controles { grid-template-columns: 1fr; margin-top: 2px; }
+@media (max-width: 600px) {
+  .vista-calle #panel.plegado .cabeza { justify-content: space-between; }
+  .vista-calle #sol-barra:not(.sb-abierta) .sb-fecha { order: 0; flex: 1 1 0; flex-basis: 0; font-size: 12px; }
+  .vista-calle #sol-barra:not(.sb-abierta) .sb-ahora { padding: 0 10px; }
+  .vista-calle #sol-barra:not(.sb-abierta) .sb-nombre { display: none; }
+}

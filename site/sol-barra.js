@@ -19,6 +19,7 @@
   const ZOOM_SOMBRA = 16;
   const LUZ_FIJA = { anchor: 'viewport', color: '#ffffff', intensity: 0.5, position: [1.15, 210, 30] };
   const RELIEVE_FIJO = 315;                       // luz del noroccidente, la de siempre
+  const ALFA_2D = [0.28, 0.12], ALFA_3D = [0.6, 0.26];   // núcleo y borde de la sombra
   const VELO_OPACIDAD = 0.25;                     // gris de la sombra de los cerros (supuesto)
   const LEJOS_SIN_VELO = 'Las sombras se ven de cerca, calle por calle.';
   const LEJOS_CON_VELO = 'De lejos ves la sombra de los cerros. La de los edificios se ve de cerca.';
@@ -55,6 +56,7 @@
     <button type="button" role="tab" id="sb-p-dia" aria-controls="sb-c-dia" aria-selected="false" tabindex="-1">Día</button>
   </div>
   <p class="sb-fecha"><span id="sb-fecha"></span> <span class="sb-zona" id="sb-zona" hidden>hora de Bogotá</span></p>
+  <button type="button" id="sb-mas" class="sb-quitar sb-mas" aria-expanded="false" aria-controls="sb-c-dia sb-estado-ver sb-honesta-p">Más</button>
   <button type="button" id="sb-quitar" class="sb-quitar" aria-label="Quitar las sombras">Quitar</button>
 </div>
 <div class="sb-controles" id="sb-controles">
@@ -79,7 +81,7 @@
 <div class="sb-lejos" id="sb-lejos" hidden><span id="sb-lejos-texto">${LEJOS_SIN_VELO}</span> <button type="button" id="sb-acercar">Acercarme</button></div>
 <p class="sb-estado" id="sb-estado-ver" aria-hidden="true"></p>
 <div class="sb-noche" id="sb-noche" hidden><button type="button" data-min="540">Ver a las 9 a. m.</button><button type="button" data-min="960">Ver a las 4 p. m.</button></div>
-<p class="sb-honesta"><span id="sb-honesta">${HONESTA_CON_CERROS}</span> <span class="marca" data-marca="supuesto">supuesto</span></p>
+<p class="sb-honesta" id="sb-honesta-p"><span id="sb-honesta">${HONESTA_CON_CERROS}</span> <span class="marca" data-marca="supuesto">supuesto</span></p>
 <p class="oculto" id="sb-estado" aria-live="polite"></p>`;
     document.body.append(barra);
     // La CSP no deja estilos en línea dentro del HTML: las posiciones se ponen por el DOM.
@@ -91,6 +93,13 @@
       todo();
     });
     $('#sb-quitar').addEventListener('click', () => { if (B.quitarSombras) B.quitarSombras(); });
+    // En la vista de calle la barra va corta (solo la hora); «Más» abre el día y las notas.
+    $('#sb-mas').addEventListener('click', () => {
+      const abrir = !barra.classList.contains('sb-abierta');
+      barra.classList.toggle('sb-abierta', abrir);
+      $('#sb-mas').setAttribute('aria-expanded', String(abrir));
+      $('#sb-mas').textContent = abrir ? 'Menos' : 'Más';
+    });
     $('#sb-acercar').addEventListener('click', () => mapa.easeTo({ zoom: 16.5, duration: reducido.matches ? 0 : 800, freezeElevation: true }));
     for (const b of barra.querySelectorAll('#sb-noche button')) {
       b.addEventListener('click', () => { S.ahora = false; S.min = Number(b.dataset.min); todo(); $('#sb-hora').focus(); });
@@ -190,29 +199,80 @@
       S.solDibujado = S.sol;
       sombras.fijarSol(S.sol);
       ponerLuz();
+      ponerCielo();
       V.sucio = true;
     }
     if (S.ahora) S.cielo = T.cielo(B.ultimoCielo && B.ultimoCielo.fuentes && B.ultimoCielo.fuentes.metar);
+    fijarAlfa();
     sombras.fijarIntensidad(S.ahora ? S.cielo.intensidad : 1);
     velo();
     pintar();
     escribirUrl();
   }
 
+  // Con 3D la sombra va más oscura: al ras de la calle el gris suave del 2D no se lee.
+  function fijarAlfa() {
+    const tres = api.es3d();
+    sombras.fijarOpcion('alfaNucleo', tres ? ALFA_3D[0] : ALFA_2D[0]);
+    sombras.fijarOpcion('alfaBorde', tres ? ALFA_3D[1] : ALFA_2D[1]);
+  }
+
   // Paso 11: con 3D, la luz de las fachadas y del relieve viene del sol.
   function ponerLuz() {
-    const conSol = S.activo && api.es3d() && S.sol && S.sol.altura > 0;
-    mapa.setLight(conSol ? T.luz(S.sol) : LUZ_FIJA);
+    const tres = S.activo && api.es3d() && S.sol;
+    const conSol = tres && S.sol.altura > 0;
+    // De noche con 3D: luz fría y tenue (T.luz la da para el sol bajo el horizonte).
+    mapa.setLight(tres ? T.luz(S.sol) : LUZ_FIJA);
     if (mapa.getLayer('relieve')) {
       mapa.setPaintProperty('relieve', 'hillshade-illumination-direction', conSol ? Math.round(S.sol.azimut) % 360 : RELIEVE_FIJO);
     }
+  }
+
+  // ── Cielo por hora del sol ─────────────────────────────────────────────
+  function lerpHex(a, b, t) {
+    t = Math.max(0, Math.min(1, t));
+    const pa = parseInt(a.slice(1), 16), pb = parseInt(b.slice(1), 16);
+    const r = Math.round(((pa >> 16) & 255) * (1 - t) + ((pb >> 16) & 255) * t);
+    const g = Math.round(((pa >> 8) & 255) * (1 - t) + ((pb >> 8) & 255) * t);
+    const bl = Math.round((pa & 255) * (1 - t) + (pb & 255) * t);
+    return '#' + ((r << 16) | (g << 8) | bl).toString(16).padStart(6, '0');
+  }
+  function lerp(a, b, t) { return a + (b - a) * Math.max(0, Math.min(1, t)); }
+
+  function cieloPorAltura(alt) {
+    if (alt < -6) {
+      return { 'sky-color': '#0a1628', 'sky-horizon-blend': 0.4, 'horizon-color': '#1a2a40',
+        'fog-color': '#141e2e', 'horizon-fog-blend': 0.3, 'fog-ground-blend': 0.6, 'atmosphere-blend': 1.0 };
+    }
+    if (alt < 0) {
+      const t = (alt + 6) / 6;
+      return { 'sky-color': lerpHex('#0a1628', '#2a4a7a', t), 'sky-horizon-blend': lerp(0.4, 0.5, t),
+        'horizon-color': lerpHex('#1a2a40', '#d4956a', t), 'fog-color': lerpHex('#141e2e', '#8a7060', t),
+        'horizon-fog-blend': 0.3, 'fog-ground-blend': lerp(0.5, 0.3, t), 'atmosphere-blend': 1.0 };
+    }
+    if (alt < 15) {
+      const t = alt / 15;
+      return { 'sky-color': lerpHex('#4a7ab0', '#6fa8dc', t), 'sky-horizon-blend': lerp(0.5, 0.35, t),
+        'horizon-color': lerpHex('#d4956a', '#e0d0b8', t), 'fog-color': lerpHex('#8a7060', '#d8d0c8', t),
+        'horizon-fog-blend': lerp(0.3, 0.25, t), 'fog-ground-blend': lerp(0.3, 0.1, t), 'atmosphere-blend': lerp(1.0, 0.8, t) };
+    }
+    return { 'sky-color': '#89c2e8', 'sky-horizon-blend': 0.3, 'horizon-color': '#e8e4dd',
+      'fog-color': '#f0ece6', 'horizon-fog-blend': 0.2, 'fog-ground-blend': 0.05, 'atmosphere-blend': 0.75 };
+  }
+
+  function ponerCielo() {
+    const tres = api.es3d();
+    if (api.fijarNoche) api.fijarNoche(S.activo && tres && S.sol && S.sol.altura <= 0);
+    if (!tres) return;
+    const alt = S.sol ? S.sol.altura : -10;
+    mapa.setSky(cieloPorAltura(alt));
   }
 
   function estadoTexto() {
     const z = mapa.getZoom(), tres = api.es3d(), alt = S.sol.altura;
     const noche = alt <= 0;
     let texto = '', lejos = false;
-    if (z < ZOOM_SOMBRA && !tres) lejos = true;
+    if (z < ZOOM_SOMBRA && !tres && !noche) lejos = true;
     if (noche) {
       if (S.ahora) {
         const sp = SOL.salidaPuesta(S.anio, S.mes, S.dia, LAT, LON);
@@ -234,7 +294,7 @@
       const mediodia = SOL.posicion(SOL.mediodia(S.anio, S.mes, S.dia, LON), LAT, LON).altura;
       if (mediodia >= 87) partes.push(S.ahora ? 'Hoy el sol pasa casi encima: al mediodía casi no hay sombra.' : 'Ese día el sol pasa casi encima: al mediodía casi no hay sombra.');
       const primer = primerSolAqui();
-      if (primer != null) partes.push(`Aquí el sol pasa los cerros a las ${T.horaTexto(Math.round(primer))}.`);
+      if (primer != null) partes.push(`Aquí el sol pasa los cerros a las ${T.horaTexto(Math.round(primer))}`.replace(/\.?$/, '.'));
       if (S.ahora && S.cielo.texto) partes.push(S.cielo.texto);
       texto = partes.join(' ');
     }
@@ -458,6 +518,9 @@
     mapa.moveLayer('construcciones', 'vias');
     sombras = null;
     ponerLuz();
+    // Restaurar el cielo estático de día si el 3D sigue encendido; borrarlo si no.
+    if (api.fijarNoche) api.fijarNoche(false);
+    if (api.es3d()) mapa.setSky(api.cieloDia); else mapa.setSky({});
     mostrarBarra();
     escribirUrl();
   }
@@ -467,7 +530,10 @@
   addEventListener('bogotwin:3d', () => {
     if (!S.activo) return;
     sombras.rearmarTodo();
+    fijarAlfa();
+    sombras.fijarIntensidad(S.ahora ? S.cielo.intensidad : 1);
     ponerLuz();
+    ponerCielo();
     V.sucio = true;
     velo();
     pintar();
