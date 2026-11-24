@@ -94,4 +94,67 @@ const conRedondeo = saltos.filter((_, i) => i % 2 === 0), sinRedondeo = saltos.f
 revisar('entre vecinos del mismo alto no quedan muros de menos de 1,5 m (antes 0,1 a 0,8 m)', conRedondeo.every((d) => d === 0 || d >= 1.5) && sinRedondeo.some((d) => d > 0.05 && d < 1.5),
   `${conRedondeo.filter((d) => d > 0).length} escalones de 1,5 m, ${conRedondeo.filter((d) => d === 0).length} pares parejos`);
 revisar('el redondeo mueve el techo 75 cm o menos', [2584.8, 2585.13, 2585.55, 2586.3, 2600.74].every((e) => Math.abs(esc(e) - e) <= 0.75));
+// Ronda 10: foto aérea en los techos.
+revisar('sin foto (2D, error o sin teselas) el techo es el tono de siempre', L.pesoFoto(6, 0, 1) === 0 && L.pesoFoto(6, 1, 0) === 0 && L.pesoFoto(6, NaN, 1) === 0
+  && /if \(v_techo > 0\.5 && u_foto > 0\.0 && fotoAlto > 0\.0\)/.test(fuente) && /gl\.uniform1f\(loc\.u_foto, conFoto \? F\.opacidad : 0\)/.test(fuente)
+  && /const conFoto = F\.lista && F\.mos\.length === 2 && F\.opacidad > 0;/.test(fuente));
+revisar('el peso de la foto en el sombreador sale de la misma cuenta que pesoFoto', /float fotoAlto = 1\.0 - smoothstep\(u_foto_alto\.x, u_foto_alto\.y, v_alto\);/.test(fuente) && /float peso = 0\.92 \* u_foto \* clamp\(fs\.a, 0\.0, 1\.0\) \* fotoAlto;/.test(fuente)
+  && /if \(fs\.a < 0\.999\) fs \+= textureGrad\(u_fotoL, v_uvL, gLx, gLy\) \* dentro\(v_uvL\) \* \(1\.0 - fs\.a\)/.test(fuente)
+  && Math.abs(L.pesoFoto(9, 1, 1) - 0.92) < 1e-9);
+revisar('casas y edificios bajos llevan foto; las torres no (la foto inclina los altos)', L.pesoFoto(3, 1, 1) > 0.9 && L.pesoFoto(12, 1, 1) > 0.9 && L.pesoFoto(36, 1, 1) === 0
+  && [3, 9, 15, 18, 21, 24, 27].every((h, i, l) => i === 0 || L.pesoFoto(h, 1, 1) <= L.pesoFoto(l[i - 1], 1, 1)));
+revisar('una tesela a medio entrar pesa a medias (sin parpadeo)', Math.abs(L.pesoFoto(6, 0.5, 1) - 0.46) < 1e-9 && Math.abs(L.pesoFoto(6, 1, 0.5) - 0.46) < 1e-9);
+revisar('el ajuste de color es el mismo de la capa raster de MapLibre', L.factorSaturacion(-0.22) === 0.22 && Math.abs(L.factorContraste(-0.08) - 0.92) < 1e-12
+  && Math.abs(L.factorContraste(0.5) - 2) < 1e-12 && L.factorSaturacion(0) === 0);
+{
+  const S = 0.0001, [ox, oy] = L.origenCascada(0.3, 0.47, 15, S);
+  const dentro = (x, y) => x > ox && x < ox + S && y > oy && y < oy + S;
+  const [ox2] = L.origenCascada(0.3 + S / 50, 0.47, 15, S);
+  revisar('el mosaico cubre la cámara y lo que tiene adelante, y no se mueve por un paso corto', dentro(0.3, 0.47) && dentro(0.3 + Math.sin(15 * Math.PI / 180) * 0.7 * S, 0.47 - Math.cos(15 * Math.PI / 180) * 0.7 * S) && ox2 === ox);
+}
+revisar('el mosaico cercano es más fino que la foto z18 y el lejano cubre la foto del piso', L.CASCADAS[0].lado / L.CASCADAS[0].px < 0.6 && L.CASCADAS[1].lado >= 2000 && L.CASCADAS.every((c) => c.px <= 2048));
+revisar('la foto se lee con las derivadas tomadas fuera de los if (sin costuras en el mip)', /vec2 gCx = dFdx\(v_uvC\)/.test(fuente) && /textureGrad\(u_fotoC, v_uvC, gCx, gCy\)/.test(fuente) && /generateMipmap/.test(fuente));
+
+// Ronda 10: tipos de fachada por edificio, estables de día y de noche.
+const mapaJs = fs.readFileSync(path.join(__dirname, '..', 'site', 'mapa.js'), 'utf8');
+const nocheMat = (mapaJs.match(/const NOCHE_MATERIAL = '(#[0-9a-f]{6})'/i) || [])[1];
+revisar('el color de noche de las pruebas es el de mapa.js', !!nocheMat && L.hexRgb(nocheMat).every((v, i) => Math.abs(v - L.NOCHE_MATERIAL[i]) < 1e-9), nocheMat);
+const PAL = B.PALETA_FACHADA.map(L.hexRgb), GRUPO = L.gruposPaleta(PAL);
+const indice = (rgb) => GRUPO[L.indicePaleta(rgb, PAL)];
+const usados = new Set();
+for (let p = 1; p <= 60; p++) { usados.add(B.colorFachada(p)); for (let t = 0; t < 16; t++) usados.add(B.colorFachada(p, t)); }
+revisar('la paleta del sombreador tiene todos los colores de fachada y cabe en 24', PAL.length <= 24 && [...usados].every((c) => B.PALETA_FACHADA.includes(c)), `${PAL.length} colores`);
+let saltan = 0, total = 0;
+for (const c of B.PALETA_FACHADA) {
+  const i0 = indice(L.hexRgb(c));
+  for (let k = 0; k <= 20; k++) {
+    const mezclado = L.hexRgb(B.mezclarColor(c, nocheMat, 0.62 * k / 20));   // redondeado a 8 bits, como llega a la GPU
+    total++;
+    if (indice(mezclado) !== i0 || i0 !== GRUPO[B.PALETA_FACHADA.indexOf(c)]) saltan++;
+  }
+}
+revisar('los grupos de color dejan casi todos los colores aparte', new Set(GRUPO).size >= PAL.length - 5, `${new Set(GRUPO).size} grupos de ${PAL.length}`);
+revisar('al pasar del día a la noche ningún edificio cambia de fachada ni de ventanas', saltan === 0, `${saltan} de ${total}`);
+revisar('la semilla del sombreador es la de semilla() en JS', /v_semilla = floor\(fract\(ip \* 0\.754877 \+ pisos \* 0\.56984 \+ ip \* pisos \* 0\.0131\) \* 997\.0\)/.test(fuente)
+  && /hA < 0\.4 \? 4 : hA < 0\.75 \? 5 : 6\) : \(hA < 0\.42 \? 0 : hA < 0\.62 \? 1 : hA < 0\.84 \? 2 : 3\)/.test(fuente));
+{
+  // Reparto en los edificios que salen de verdad: cada tono de cada número de pisos.
+  const cuenta = new Array(7).fill(0), tiendas = [0, 0], tintes = [0, 0, 0, 0];
+  let bajosN = 0, torresN = 0;
+  for (let p = 1; p <= 40; p++) for (let t = 0; t < 16; t++) {
+    const alto = 3 * p, torre = alto > 35.5;
+    const s = L.semilla(indice(L.hexRgb(B.colorFachada(p, t))), alto);
+    const f = L.fachada(s, torre, alto);
+    cuenta[f.tipo]++;
+    if (torre) { torresN++; tintes[f.tinte]++; } else bajosN++;
+    if (!torre && alto < 21.5) { tiendas[1]++; if (f.tienda) tiendas[0]++; }
+  }
+  const parte = (i, n) => cuenta[i] / n;
+  const msg = L.TIPOS_FACHADA.map((n, i) => `${n} ${Math.round(100 * parte(i, i < 4 ? bajosN : torresN))} %`).join(', ');
+  revisar('edificios bajos: los cuatro tipos salen, ninguno pasa de la mitad', [0, 1, 2, 3].every((i) => parte(i, bajosN) >= 0.08 && parte(i, bajosN) <= 0.5), msg);
+  revisar('torres: los tres tipos salen, ninguno pasa de 60 %', [4, 5, 6].every((i) => parte(i, torresN) >= 0.12 && parte(i, torresN) <= 0.6), msg);
+  revisar('locales en el primer piso de una parte de los edificios bajos (25 a 75 %)', tiendas[0] / tiendas[1] >= 0.25 && tiendas[0] / tiendas[1] <= 0.75, `${tiendas[0]} de ${tiendas[1]}`);
+  revisar('los cuatro tintes de vidrio salen en las torres', tintes.every((n) => n > 0), tintes.join(', '));
+  revisar('dos semillas seguidas no dan siempre el mismo tipo', new Set(Array.from({ length: 20 }, (_, s) => L.fachada(s, false, 9).tipo)).size === 4);
+}
 cierre('Luz de los edificios');

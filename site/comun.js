@@ -151,6 +151,10 @@
     const h = (Math.imul(p, 2654435761) >>> 0) ^ (p * 40503);
     return CONCRETO[(h >>> 3) % CONCRETO.length];
   }
+  // Todos los colores de fachada de día, sin repetir (ronda 10). edificios-luz.js los usa para
+  // reconocer el color de cada edificio aunque de noche venga mezclado hacia el oscuro: así el
+  // tipo de fachada y sus ventanas no cambian al mover la hora.
+  const PALETA_FACHADA = [...new Set([...TONO_LADRILLO, ...CONCRETO, ...LADRILLO])];
   // La misma regla como expresión de MapLibre para «construcciones». porPisos: la expresión de
   // siempre (por pisos), que queda para las teselas sin tono. cambiar(color): la mezcla de noche.
   function exprFachada(porPisos, cambiar) {
@@ -163,5 +167,5 @@
   }
 
   // Se suma a lo que ya haya (sol.js y sombra-geom.js cuelgan sus piezas aquí también).
-  window.Bogotwin = Object.assign(window.Bogotwin || {}, { el, enlace, marca, marcaDe, meta, valor, edad, edadTexto, minutosDesde, num, horaLocal, fechaLocal, sinTildes, nombrePropio, frase, MARCAS, mezclarColor, mezclarValor, colorFachada, exprFachada });
+  window.Bogotwin = Object.assign(window.Bogotwin || {}, { el, enlace, marca, marcaDe, meta, valor, edad, edadTexto, minutosDesde, num, horaLocal, fechaLocal, sinTildes, nombrePropio, frase, MARCAS, mezclarColor, mezclarValor, colorFachada, exprFachada, PALETA_FACHADA });
 })();
