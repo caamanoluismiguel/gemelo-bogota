@@ -36,6 +36,36 @@ LICENCIAS = {
         "fuentes": ["arboladourbano.zip"],
         "scripts": ["scripts/arboles.sh", "scripts/arboles.sql"],
     },
+    "orto-urbana-bogota.pmtiles": {
+        "licencia": "CC BY 4.0",
+        "atribucion": "Ortoimagen urbana 2025, SDP, publicada por IDECA (UAECD). Modificada: reproyectada, recortada en teselas y comprimida.",
+        "fuentes": [],
+        "scripts": ["scripts/orto.sh", "scripts/orto_bajar.py", "scripts/orto_armar.py"],
+    },
+    "orto-urbana-cerca-bogota.pmtiles": {
+        "licencia": "CC BY 4.0",
+        "atribucion": "Ortoimagen urbana 2025, SDP, publicada por IDECA (UAECD). Modificada: reproyectada, recortada en teselas y comprimida.",
+        "fuentes": [],
+        "scripts": ["scripts/orto.sh", "scripts/orto_bajar.py", "scripts/orto_armar.py"],
+    },
+    "orto-cerros-bogota.pmtiles": {
+        "licencia": "CC BY 4.0",
+        "atribucion": "Ortoimagen Cerros Orientales 2025, SDP, publicada por IDECA (UAECD). Modificada: reproyectada, recortada en teselas y comprimida.",
+        "fuentes": [],
+        "scripts": ["scripts/orto.sh", "scripts/orto_bajar.py", "scripts/orto_armar.py"],
+    },
+    "orto-cerros-lejos-bogota.pmtiles": {
+        "licencia": "CC BY 4.0",
+        "atribucion": "Ortoimagen Cerros Orientales 2025, SDP, publicada por IDECA (UAECD). Modificada: reproyectada, recortada en teselas y comprimida.",
+        "fuentes": [],
+        "scripts": ["scripts/orto.sh", "scripts/orto_bajar.py", "scripts/orto_armar.py"],
+    },
+    "orto-rural-bogota.pmtiles": {
+        "licencia": "CC BY 4.0",
+        "atribucion": "Ortoimagen satelital rural 2025, UAECD, publicada por IDECA. Producida por SIGLA S.A.S. con imágenes EarthScanner y Pléiades. Modificada: reproyectada, recortada en teselas y comprimida.",
+        "fuentes": [],
+        "scripts": ["scripts/orto.sh", "scripts/orto_bajar.py", "scripts/orto_armar.py"],
+    },
 }
 HERRAMIENTAS = {
     "tippecanoe (incluye tile-join)": ["tippecanoe", "--version"],

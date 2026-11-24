@@ -32,6 +32,31 @@
       "bytes": 8664795,
       "sha256": "d4c61f9e410dcbec1a87cad7901c385d81992f2eb94b7e2f40a09a4e1387580d",
       "licencia": "CC BY 4.0"
+    },
+    "orto-urbana-bogota.pmtiles": {
+      "bytes": 420242796,
+      "sha256": "9a21296cf298c8a694d6e436cd0ff60827e36f60ddbbd792d930a36ee359b788",
+      "licencia": "CC BY 4.0"
+    },
+    "orto-urbana-cerca-bogota.pmtiles": {
+      "bytes": 55808640,
+      "sha256": "5ce3a77fbfa7c29af179df5c14b778aae539ec92d298d9132c99845332348be8",
+      "licencia": "CC BY 4.0"
+    },
+    "orto-cerros-bogota.pmtiles": {
+      "bytes": 7342165,
+      "sha256": "4a1269fa21294ff1ee5a63713f75066f0ce483989a9afb5e0a935fa22f81b298",
+      "licencia": "CC BY 4.0"
+    },
+    "orto-cerros-lejos-bogota.pmtiles": {
+      "bytes": 29356,
+      "sha256": "9e54c344603543b879a5ec060a0618adbf028e8704f99e084c807beaf1ca9d4f",
+      "licencia": "CC BY 4.0"
+    },
+    "orto-rural-bogota.pmtiles": {
+      "bytes": 2286756,
+      "sha256": "c21013ca9a79542b8c63a8c09405f516ec59e0155329102c073f305df7ea8adc",
+      "licencia": "CC BY 4.0"
     }
   }
 }

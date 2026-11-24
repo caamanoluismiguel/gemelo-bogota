@@ -231,14 +231,21 @@
   }
   // Foto aérea del suelo (ronda 7): Ortoimagen urbana 2025 de la SDP, publicada por IDECA (CC BY 4.0).
   // Solo en 3D: en 2D el mapa es para leer datos (la coropleta de pisos, las capas) y la foto
-  // les quitaría contraste; en 3D es la vista «cómo se ve». Se pide desde z16 (minzoom de la
-  // fuente: nunca más lejos) y aparece de a poco entre z16 y z17. bounds: fuera de la zona
-  // urbana el servicio devuelve una imagen blanca, así que no se pide. Sin prefetch. Si una
-  // tesela falla o tarda, debajo sigue el mapa de siempre (ver el aviso de errores más abajo).
-  const ORTO = 'Ortoimagen urbana 2025 © <a href="https://www.sdp.gov.co/">SDP</a>, publicada por <a href="https://www.ideca.gov.co/">IDECA</a> (UAECD), <a href="https://creativecommons.org/licenses/by/4.0/deed.es">CC BY 4.0</a>';
-  const ORTO_URL = 'https://serviciosgis.catastrobogota.gov.co/image/rest/services/imagenesfunciones/orthourbana2025funcion/ImageServer/exportImage?bbox={bbox-epsg-3857}&bboxSR=3857&imageSR=3857&size=256,256&format=jpg&f=image';
-  const ORTO_FUENTE = { type: 'raster', tiles: [ORTO_URL], tileSize: 256, minzoom: 16, maxzoom: 20,
-    bounds: [-74.2250, 4.4862, -74.0189, 4.8380], attribution: ORTO };
+  // les quitaría contraste; en 3D es la vista «cómo se ve». Las teselas se bajaron una sola vez
+  // del servicio de IDECA, se pasaron a WebP y van en PMTiles propios junto a los edificios
+  // (mapa-base/scripts/orto.sh): el visor no le pide nada a ningún servidor del Distrito.
+  // La urbana tiene z16 a z18 en toda la ciudad y z19 solo en el centro (Chapinero, Teusaquillo
+  // y el centro histórico), en un archivo aparte: fuera de esa caja se estira z18. Aparece de a
+  // poco entre z16 y z17. Si una tesela falla o tarda, debajo sigue el mapa de siempre (ver el
+  // aviso de errores más abajo).
+  const MODIFICADA = ' Modificada: reproyectada, recortada en teselas y comprimida.';
+  const SDP = '<a href="https://www.sdp.gov.co/">SDP</a>';
+  const CREDITO_ORTO = (nombre, titular) => nombre + ' © ' + (titular || SDP) + ', publicada por <a href="https://www.ideca.gov.co/">IDECA</a> (UAECD), <a href="https://creativecommons.org/licenses/by/4.0/deed.es">CC BY 4.0</a>.' + MODIFICADA;
+  const ORTO = CREDITO_ORTO('Ortoimagen urbana 2025');
+  const ORTO_FUENTE = { type: 'raster', url: url('orto-urbana-bogota.pmtiles'), tileSize: 256, minzoom: 16, maxzoom: 18,
+    bounds: [-74.2292, 4.4833, -74.0148, 4.8393], attribution: ORTO };
+  const ORTO_CERCA_FUENTE = { type: 'raster', url: url('orto-urbana-cerca-bogota.pmtiles'), tileSize: 256, minzoom: 19, maxzoom: 19,
+    bounds: [-74.0857, 4.6263, -74.0341, 4.6805], attribution: ORTO };
   // Más apagada y menos saturada que la foto cruda, para que quede bajo las fachadas de
   // ladrillo y tome la luz de la hora (el tinte y la bruma la tocan como al resto). De noche
   // baja con NOCHE.orto.
@@ -246,40 +253,47 @@
     'raster-brightness-max': 0.9, 'raster-contrast': -0.08, 'raster-saturation': -0.22, 'raster-fade-duration': 250 };
   // Ronda 7b: los Cerros Orientales con la Ortoimagen Cerros 2025 (25 cm, 14 feb 2025, CC BY 4.0).
   // Desde la vista de calle los cerros quedan a 2,5 a 4 km y se dibujan con teselas z13 a z15,
-  // así que esta fuente se pide desde z13. bounds: la extensión del servicio. Dentro de esa caja
-  // la foto es una franja; fuera de ella el servicio pinta blanco (su NoData es 255), por eso
-  // va con noData=255 y format=jpgpng: JPEG donde todo es foto, PNG con transparencia en el
-  // borde, y debajo sigue el mapa. Donde hay foto tapa el verde y el sombreado del relieve; en
-  // 2D no se agrega.
-  const ORTO_CERROS = 'Ortoimagen Cerros Orientales 2025 © <a href="https://www.sdp.gov.co/">SDP</a>, publicada por <a href="https://www.ideca.gov.co/">IDECA</a> (UAECD), <a href="https://creativecommons.org/licenses/by/4.0/deed.es">CC BY 4.0</a>';
-  const ORTO_CERROS_URL = 'https://serviciosgis.catastrobogota.gov.co/image/rest/services/imagenesfunciones/orthocerros2025funcion/ImageServer/exportImage?bbox={bbox-epsg-3857}&bboxSR=3857&imageSR=3857&size=256,256&format=jpgpng&noData=255&f=image';
-  const ORTO_CERROS_FUENTE = { type: 'raster', tiles: [ORTO_CERROS_URL], tileSize: 256, minzoom: 13, maxzoom: 20,
-    bounds: [-74.0918, 4.4600, -73.9899, 4.8262], attribution: ORTO_CERROS };
-  // Más allá de unos 8 km MapLibre pide teselas z11 o menos y el servicio solo dibuja con
-  // píxeles de 40 m o menos (más grueso devuelve vacío). Una segunda fuente fija en z11 con
-  // imágenes de 512 px (38 m por píxel) cubre los cerros del norte: son pocas teselas en toda
-  // la caja (unas 200 KB en la vista de arranque) y las cercanas quedan encima.
-  const ORTO_CERROS_LEJOS = Object.assign({}, ORTO_CERROS_FUENTE, { minzoom: 11, maxzoom: 11,
-    tiles: [ORTO_CERROS_URL.replace('size=256,256', 'size=512,512')] });
-  // Los cerros siempre se ven de lejos: un poco más claros, menos contraste y menos saturados
-  // que la foto del suelo, como los vela el aire (la niebla de MapLibre sobre el terreno es débil
-  // a 2.600 m de altura y no alcanza sola).
+  // así que el archivo va de z13 a z16 (más cerca se estira z16). La foto es una franja: fuera
+  // de ella la tesela es transparente y debajo sigue el mapa. Donde hay foto tapa el verde y el
+  // sombreado del relieve; en 2D no se agrega.
+  const ORTO_CERROS = CREDITO_ORTO('Ortoimagen Cerros Orientales 2025');
+  const ORTO_CERROS_FUENTE = { type: 'raster', url: url('orto-cerros-bogota.pmtiles'), tileSize: 256, minzoom: 13, maxzoom: 16,
+    bounds: [-74.1028, 4.4340, -73.9599, 4.8283], attribution: ORTO_CERROS };
+  // Más allá de unos 8 km MapLibre pide teselas z11 o menos. Un archivo aparte con las cinco
+  // teselas z11 de los cerros, en imágenes de 512 px (38 m por píxel), cubre los cerros del
+  // norte; pesa unos 30 KB y las cercanas quedan encima.
+  const ORTO_CERROS_LEJOS = { type: 'raster', url: url('orto-cerros-lejos-bogota.pmtiles'), tileSize: 256, minzoom: 11, maxzoom: 11,
+    bounds: [-74.1797, 4.3902, -73.8281, 4.9159], attribution: ORTO_CERROS };
+  // La Ortoimagen satelital rural 2025 (50 cm, © UAECD, CC BY 4.0) solo cubre la ruralidad del sur:
+  // de z11 a z14, bajo todas las demás. Al occidente y al norte no hay foto rural
+  // del Distrito, ahí sigue el mapa.
+  const ORTO_RURAL = CREDITO_ORTO('Ortoimagen satelital rural 2025', 'UAECD');
+  const ORTO_RURAL_FUENTE = { type: 'raster', url: url('orto-rural-bogota.pmtiles'), tileSize: 256, minzoom: 11, maxzoom: 14,
+    bounds: [-74.5313, 3.6888, -74.0039, 4.5655], attribution: ORTO_RURAL };
+  // Los cerros y lo rural siempre se ven de lejos: un poco más claros, menos contraste y menos
+  // saturados que la foto del suelo, como los vela el aire (la niebla de MapLibre sobre el
+  // terreno es débil a 2.600 m de altura y no alcanza sola).
   const ORTO_CERROS_PINTURA = Object.assign({}, ORTO_PINTURA, { 'raster-opacity': 1, 'raster-brightness-min': 0.1,
     'raster-contrast': -0.22, 'raster-saturation': -0.35 });
+  const ORTO_CAPAS = ['orto-rural', 'orto-cerros-lejos', 'orto-cerros', 'orto', 'orto-cerca'];
   function ponerOrto(on) {
     if (on && !mapa.getSource('orto')) {
+      mapa.addSource('orto-rural', ORTO_RURAL_FUENTE);
       mapa.addSource('orto-cerros-lejos', ORTO_CERROS_LEJOS);
       mapa.addSource('orto-cerros', ORTO_CERROS_FUENTE);
       mapa.addSource('orto', ORTO_FUENTE);
-      // Sobre el mapa base (fondo, verde, agua, calles) y bajo todo lo demás; la de los cerros
-      // bajo la urbana.
+      mapa.addSource('orto-cerca', ORTO_CERCA_FUENTE);
+      // Sobre el mapa base (fondo, verde, agua, calles) y bajo todo lo demás; de abajo hacia
+      // arriba: rural, cerros lejanos, cerros, la urbana y su z19 del centro.
       const capas = mapa.getStyle().layers.map((l) => l.id);
       const encima = capas[capas.indexOf('vias') + 1];
+      mapa.addLayer({ id: 'orto-rural', type: 'raster', source: 'orto-rural', metadata: { grupo: 'orto' }, paint: Object.assign({}, ORTO_CERROS_PINTURA) }, encima);
       mapa.addLayer({ id: 'orto-cerros-lejos', type: 'raster', source: 'orto-cerros-lejos', metadata: { grupo: 'orto' }, paint: Object.assign({}, ORTO_CERROS_PINTURA) }, encima);
       mapa.addLayer({ id: 'orto-cerros', type: 'raster', source: 'orto-cerros', minzoom: 13, metadata: { grupo: 'orto' }, paint: Object.assign({}, ORTO_CERROS_PINTURA) }, encima);
       mapa.addLayer({ id: 'orto', type: 'raster', source: 'orto', minzoom: 16, metadata: { grupo: 'orto' }, paint: Object.assign({}, ORTO_PINTURA) }, encima);
+      mapa.addLayer({ id: 'orto-cerca', type: 'raster', source: 'orto-cerca', minzoom: 19, metadata: { grupo: 'orto' }, paint: Object.assign({}, ORTO_PINTURA) }, encima);
     }
-    for (const id of ['orto-cerros-lejos', 'orto-cerros', 'orto']) if (mapa.getLayer(id)) mapa.setLayoutProperty(id, 'visibility', on ? 'visible' : 'none');
+    for (const id of ORTO_CAPAS) if (mapa.getLayer(id)) mapa.setLayoutProperty(id, 'visibility', on ? 'visible' : 'none');
   }
 
   // Una tesela de la foto que falla no es un error del visor: queda el mapa de abajo. MapLibre
@@ -306,8 +320,10 @@
     'estaciones-rotulo': { 'text-color': '#f0b4b2', 'text-halo-color': '#1b212c' },
     'relieve-fuera': { 'fill-color': '#1b212c' },
     orto: { 'raster-brightness-max': 0.32, 'raster-saturation': -0.6, 'raster-contrast': -0.2 },
+    'orto-cerca': { 'raster-brightness-max': 0.32, 'raster-saturation': -0.6, 'raster-contrast': -0.2 },
     'orto-cerros': { 'raster-brightness-max': 0.3, 'raster-brightness-min': 0, 'raster-saturation': -0.6, 'raster-contrast': -0.2 },
     'orto-cerros-lejos': { 'raster-brightness-max': 0.3, 'raster-brightness-min': 0, 'raster-saturation': -0.6, 'raster-contrast': -0.2 },
+    'orto-rural': { 'raster-brightness-max': 0.3, 'raster-brightness-min': 0, 'raster-saturation': -0.6, 'raster-contrast': -0.2 },
     relieve: { 'hillshade-shadow-color': '#0c1017', 'hillshade-highlight-color': '#3a4252', 'hillshade-accent-color': '#161b24' }
   };
   // La noche llega de a poco (panel de textura, punto 3): t va de 0 (día) a 1 (noche) y los

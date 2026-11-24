@@ -2,7 +2,7 @@
 # Uso desde mapa-base/:  make todo   |  make bajar  |  make limites  |  make osm  |  make catastro
 # Herramientas: brew install tippecanoe pmtiles osmium-tool duckdb
 .NOTPARALLEL:
-.PHONY: todo bajar limites osm catastro arboles buscador medir manifiesto servir
+.PHONY: todo bajar limites osm catastro arboles orto orto-bajar buscador medir manifiesto servir
 
 todo: bajar limites osm catastro arboles buscador medir manifiesto
 
@@ -21,6 +21,14 @@ catastro:
 
 arboles:
 	nice -n 10 sh scripts/arboles.sh
+
+# Ortoimágenes 2025 (IDECA, CC BY 4.0). Se bajan una vez (horas; se puede cortar y repetir)
+# y se arman aparte: no entran en «todo» para no volver a pedirle nada al servidor.
+orto-bajar:
+	sh scripts/orto.sh bajar
+
+orto:
+	sh scripts/orto.sh armar
 
 medir:
 	sh scripts/medir.sh
