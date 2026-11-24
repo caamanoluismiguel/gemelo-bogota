@@ -129,6 +129,14 @@ revisar("resumen de 7 días", res["a24h"]["lluvia"]["porcentaje"] is not None an
 revisar("pendientes antes de las 00:30", acierto.pendientes(set(), d, 10) == [d - timedelta(days=2)])
 revisar("pendientes después de las 00:30", acierto.pendientes({str(d - timedelta(days=2))}, d, 45) == [d - timedelta(days=1)])
 
+import subprocess
+with tempfile.TemporaryDirectory() as tmp:
+    r = subprocess.run([sys.executable, "-I", str(RAIZ / "pipelines/pronostico/acierto.py"), "--sitio", tmp],
+                       capture_output=True, text=True)
+    j = comun.leer_json(Path(tmp) / "pronostico" / "acierto.json") or {}
+    revisar("acierto se publica vacío la primera vez", r.returncode == 0 and j.get("dias") == []
+            and j["resumen"]["ultimos_7_dias"]["a24h"]["lluvia"]["porcentaje"] is None)
+
 # --- pronóstico --------------------------------------------------------------
 revisar("hora Z de Open-Meteo", pron.hora_z("2026-11-24T23:00") == "2026-11-24T23:00:00Z")
 ems = [{"emitido": "2026-11-20T00:00:00Z"}, {"emitido": "2026-11-24T00:00:00Z"}, {"emitido": "2026-11-24T00:00:00Z"}]

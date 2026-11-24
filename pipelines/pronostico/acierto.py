@@ -183,14 +183,13 @@ def main() -> int:
     hoy = local.date()
     faltan = pendientes(hechos, hoy, local.hour * 60 + local.minute)
     emisiones = comun.leer_ndjson_gz(a.sitio / "pronostico" / "emitidos-5d.ndjson.gz")
+    nuevos = 0
     if not faltan:
         print("acierto: nada pendiente")
-        return 0
-    if not emisiones:
+    elif not emisiones:
         print("acierto: todavía no hay emisiones guardadas")
-        return 0
-    primera = min(comun.de_iso(e["emitido"]) for e in emisiones)
-    nuevos = 0
+        faltan = []
+    primera = min((comun.de_iso(e["emitido"]) for e in emisiones), default=None)
     for d in faltan:
         # Un día que empezó antes de la primera emisión + 24 h no tiene nada que calificar a 24 h.
         if comun.inicio_dia_bogota(d + timedelta(days=1)) <= primera + timedelta(hours=24):
@@ -205,11 +204,13 @@ def main() -> int:
         nuevos += 1
         t = fila["temperatura"]["a24h"]
         print(f"acierto {d}: {t['horas']} h a 24 h, error medio {t['error_medio_c']} °C; lluvia {fila['lluvia']['a24h']}")
-    if not nuevos:
+    if not nuevos and previo:
         print("acierto: sin días nuevos que calificar")
         return 0
+    # La primera vez se publica el archivo aunque no haya días calificados: resumen en cero y
+    # porcentajes en null. Así quien lo lea encuentra el formato y no un 404.
     dias = sorted(dias, key=lambda f: f["fecha_bogota"])[-DIAS_GUARDADOS:]
-    hasta = date.fromisoformat(dias[-1]["fecha_bogota"])
+    hasta = date.fromisoformat(dias[-1]["fecha_bogota"]) if dias else hoy - timedelta(days=1)
     salida = {
         "esquema": "bogotwin/acierto/1",
         "generado": comun.iso(consulta),
