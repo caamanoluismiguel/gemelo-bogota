@@ -3,6 +3,7 @@
 # Los secretos se cargan solo con:
 #   npx wrangler secret put ANTHROPIC_API_KEY
 #   npx wrangler secret put TURNSTILE_SECRET
+#   npx wrangler secret put GITHUB_TOKEN_COSECHA   (cosecha de datos vivos, src/cosecha.ts)
 name = "gemelo-bogota-asistente"
 main = "src/index.ts"
 compatibility_date = "2026-11-01"
@@ -18,6 +19,10 @@ head_sampling_rate = 1
 [observability.logs]
 enabled = true
 invocation_logs = false
+
+# Cada 10 minutos lanza la cosecha de datos vivos en GitHub Actions (src/cosecha.ts).
+[triggers]
+crons = ["*/10 * * * *"]
 
 [vars]
 # Orígenes que pueden llamar al Worker desde el navegador, separados por coma.
