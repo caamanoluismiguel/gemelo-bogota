@@ -15,8 +15,14 @@
   // Las teselas z16 de Catastro que baja el mapa se copian para las sombras (si están prendidas)
   // antes de que MapLibre las pase a su hilo de trabajo, donde el búfer queda inservible.
   const RE_CAT = /catastro-pisos-bogota\.pmtiles\/(\d+)\/(\d+)\/(\d+)$/;
+  // Una tesela de foto que el archivo no tiene (los cerros siguen la forma de la montaña, no un
+  // rectángulo) llega vacía; MapLibre no la puede leer como imagen y la deja «cargando» para
+  // siempre, así el mapa nunca queda quieto. Va un pixel transparente en su lugar.
+  const PIXEL_VACIO = Uint8Array.from(atob('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII='), (c) => c.charCodeAt(0));
+  const RE_FOTO = /\.(webp|png|jpe?g)$/;
   maplibregl.addProtocol('pmtiles', async (params, abort) => {
     const r = await protocolo.tile(params, abort);
+    if (RE_FOTO.test(params.url) && (!r || !r.data || !r.data.byteLength)) return { data: PIXEL_VACIO.slice().buffer };
     const m = B.recibirCatastro && RE_CAT.exec(params.url);
     if (m && m[1] === '16' && r && r.data) B.recibirCatastro(16, +m[2], +m[3], new Uint8Array(r.data.slice(0)));
     return r;
@@ -461,7 +467,9 @@
   };
   mapa.on('sourcedata', cerrarCreditos);
   mapa.on('styledata', cerrarCreditos);
-  mapa.once('idle', () => {
+  // Lo que espera a que el mapa quede quieto entra igual a los 12 s si una tesela se demora.
+  const cuandoQuieto = (fn) => { let hecho = false; const una = () => { if (!hecho) { hecho = true; fn(); } }; mapa.once('idle', una); setTimeout(una, 12000); };
+  cuandoQuieto(() => {
     const c = document.querySelector('.maplibregl-ctrl-attrib');
     if (!c) return;
     const boton = c.querySelector('.maplibregl-ctrl-attrib-button');
@@ -581,7 +589,7 @@
       if (q.get('sombras') === '1' || q.has('sol')) { cajaSombras.checked = true; ponerSombras(); }
       // Al abrir sin enlace, la barra del sol entra cuando la ciudad ya está de pie: así el
       // primer cuadro 3D no compite con las teselas que piden las sombras.
-      else if (porDefecto && arranca3d) { cajaSombras.checked = true; mapa.once('idle', () => { if (cajaSombras.checked) ponerSombras(); }); }
+      else if (porDefecto && arranca3d) { cajaSombras.checked = true; cuandoQuieto(() => { if (cajaSombras.checked) ponerSombras(); }); }
     }
   }
 
