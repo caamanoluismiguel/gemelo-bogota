@@ -1,17 +1,29 @@
 # Registro diario de noches frías: guarda la mínima medida de anoche y el
 # pronóstico de las 3 noches siguientes en data/noches-frias/AAAA-MM-DD.json.
-# No usa secretos. Solo pide permiso de escritura para hacer el commit del día.
+# No usa secretos. Pide escritura para el commit del día y para lanzar pages.
+#
+# Motor: el Worker gemelo-bogota-asistente (worker/src/cosecha.ts) lo lanza a las
+# 11:40, 13:40 y 16:40 UTC. Los tres cron de aquí abajo quedan de vigía, porque GitHub
+# atrasa o se salta los cron (el 24 nov 2026 arrancó 9 h 56 min tarde).
+# El script es idempotente: si el archivo del día existe, no lo toca. Con --rellenar
+# registra lo MEDIDO de las noches que falten en los últimos 29 días (el METAR guarda 30),
+# así una corrida que llega después de la medianoche de Bogotá no pierde la noche.
 name: noches-frias
 
 on:
   schedule:
-    # 11:30 UTC = 06:30 en Bogotá (UTC-5, sin horario de verano).
-    # GitHub puede retrasar el cron; la ventana de la noche ya cerró a las 06:00.
-    - cron: "30 11 * * *"
+    # 06:37, 08:37 y 11:37 en Bogotá (UTC-5, sin horario de verano).
+    - cron: "37 11,13,16 * * *"
   workflow_dispatch:
+    inputs:
+      motor:
+        description: "Quién lanza la corrida"
+        required: false
+        default: "manual"
 
 permissions:
   contents: write
+  actions: write
 
 concurrency:
   group: noches-frias
@@ -33,13 +45,14 @@ jobs:
         # Se guarda igual y el trabajo se marca como fallido al final.
         run: |
           set +e
-          python3 pipelines/noches-frias/registrar.py
+          python3 pipelines/noches-frias/registrar.py --rellenar 29
           codigo=$?
           echo "codigo=$codigo" >> "$GITHUB_OUTPUT"
           if [ "$codigo" -ge 2 ]; then exit "$codigo"; fi
           exit 0
 
       - name: Commit del día
+        id: commit
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -51,12 +64,20 @@ jobs:
           fecha=$(TZ=America/Bogota date +%F)
           git commit -m "chore(datos): noches frías $fecha"
           for intento in 1 2 3; do
-            if git push origin HEAD:main; then exit 0; fi
+            if git push origin HEAD:main; then echo "nuevo=si" >> "$GITHUB_OUTPUT"; exit 0; fi
             git pull --rebase origin main
             sleep $((intento * 10))
           done
           echo "No se pudo hacer push después de 3 intentos."
           exit 1
+
+      - name: Publicar el sitio
+        # Solo si hubo commit: el sitio pesa 561 MB y no se republica en vano.
+        # Un push hecho con GITHUB_TOKEN no dispara pages; workflow_dispatch sí.
+        if: steps.commit.outputs.nuevo == 'si'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run pages.yml --repo "$GITHUB_REPOSITORY" --ref main
 
       - name: Avisar si alguna fuente falló
         if: steps.registro.outputs.codigo == '1'
