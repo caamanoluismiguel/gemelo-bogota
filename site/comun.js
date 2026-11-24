@@ -134,13 +134,34 @@
   const LADRILLO = ['#b4683f', '#a65a3e', '#8a4634', '#b9804e', '#9c513b', '#e4d9c6', '#7b4031', '#c28b58',
     '#ae6545', '#ece6db', '#93503a'];
   const CONCRETO = ['#b8b2a8', '#a4aeb8', '#dedbd4', '#c4bfb6', '#b0b8c0'];
-  function colorFachada(pisos) {
+  // Ronda 7: las teselas nuevas traen «tono» (0 a 15, sacado del código de lote), así que cada
+  // edificio tiene su color dentro de la misma paleta y dos casas vecinas de iguales pisos ya
+  // no salen iguales. Sin tono (teselas viejas, o de lejos en z14 y z15) sigue la clave por pisos.
+  // 13 ladrillos y terracotas y 3 pañetes claros: la ciudad baja sigue siendo de ladrillo.
+  const TONO_LADRILLO = ['#b4683f', '#a65a3e', '#8a4634', '#b9804e', '#9c513b', '#7b4031', '#c28b58', '#ae6545',
+    '#93503a', '#a8603f', '#8f4a35', '#b87048', '#9e5a40', '#e4d9c6', '#ece6db', '#d9c8ae'];
+  function colorFachada(pisos, tono) {
     const p = Math.max(1, Math.round(Number(pisos) || 1));
+    const t = tono == null || tono === '' ? NaN : Math.round(Number(tono));
+    if (Number.isFinite(t)) {
+      const i = ((t % 16) + 16) % 16;
+      return p < 12 ? TONO_LADRILLO[i] : CONCRETO[i % CONCRETO.length];
+    }
     if (p < 12) return LADRILLO[p - 1];
     const h = (Math.imul(p, 2654435761) >>> 0) ^ (p * 40503);
     return CONCRETO[(h >>> 3) % CONCRETO.length];
   }
+  // La misma regla como expresión de MapLibre para «construcciones». porPisos: la expresión de
+  // siempre (por pisos), que queda para las teselas sin tono. cambiar(color): la mezcla de noche.
+  function exprFachada(porPisos, cambiar) {
+    const c = cambiar || ((x) => x);
+    const tono = ['%', ['to-number', ['get', 'tono'], 0], 16];
+    return ['case', ['!', ['has', 'tono']], porPisos,
+      ['>=', ['to-number', ['coalesce', ['get', 'pisos'], 1], 1], 11.5],
+      ['to-color', ['at', ['%', tono, CONCRETO.length], ['literal', CONCRETO.map(c)]]],
+      ['to-color', ['at', tono, ['literal', TONO_LADRILLO.map(c)]]]];
+  }
 
   // Se suma a lo que ya haya (sol.js y sombra-geom.js cuelgan sus piezas aquí también).
-  window.Bogotwin = Object.assign(window.Bogotwin || {}, { el, enlace, marca, marcaDe, meta, valor, edad, edadTexto, minutosDesde, num, horaLocal, fechaLocal, sinTildes, nombrePropio, frase, MARCAS, mezclarColor, mezclarValor, colorFachada });
+  window.Bogotwin = Object.assign(window.Bogotwin || {}, { el, enlace, marca, marcaDe, meta, valor, edad, edadTexto, minutosDesde, num, horaLocal, fechaLocal, sinTildes, nombrePropio, frase, MARCAS, mezclarColor, mezclarValor, colorFachada, exprFachada });
 })();

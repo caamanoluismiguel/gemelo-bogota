@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com; style-src 'self' https://unpkg.com; img-src 'self' data: blob: https://caamanoluismiguel.github.io; connect-src 'self' https://caamanoluismiguel.github.io; worker-src 'self' blob:; child-src blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com; style-src 'self' https://unpkg.com; img-src 'self' data: blob: https://caamanoluismiguel.github.io https://serviciosgis.catastrobogota.gov.co; connect-src 'self' https://caamanoluismiguel.github.io https://serviciosgis.catastrobogota.gov.co; worker-src 'self' blob:; child-src blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <title>Bogotwin</title>
 <meta name="description" content="Bogotwin, un gemelo digital abierto e independiente de Bogotá: el cielo de hoy, las noches frías, la ciudad por pisos y las estaciones, con la fuente y la fecha de cada dato.">
@@ -73,7 +73,8 @@
           <p class="nota">Las construcciones de un piso (bodegas, naves, casas con cubierta alta) suelen medir más de 4 m y su sombra aquí sale corta. <span class="marca" data-marca="supuesto">supuesto</span></p>
           <p class="nota">El 3D levanta los edificios con 3 m por piso, que queda dentro de esa misma franja. <span class="marca" data-marca="supuesto">supuesto</span></p>
           <p class="nota">La sombra de los cerros es el velo gris de la mañana y de la tarde. Los cerros salen del Modelo Digital de Terreno 2025 de Bogotá y, fuera del Distrito, de Copernicus. La misma elevación da el relieve que ves y la hora a la que el sol pasa los cerros, cada 100 m al pie de los cerros y cada 500 m en la sabana. <span class="marca" data-marca="inferido">inferido</span></p>
-          <p class="nota">No dibujamos la sombra de los árboles ni de las nubes. Con el 3D cada sombra se apoya en el suelo a la altura de su construcción, pero se dibuja plana: en las lomas se corre un poco.</p>
+          <p class="nota">En la vista de calle salen los árboles del censo del Jardín Botánico (SIGAU). La altura de cada uno es <span class="marca" data-marca="de_fuente">de fuente</span>; la forma de la copa la sacamos de la especie <span class="marca" data-marca="inferido">inferido</span>; el ancho de la copa lo ponemos con la altura y su mancha de sombra en el piso es una aproximación <span class="marca" data-marca="supuesto">supuesto</span>. Los de menos de 1,5 m no salen.</p>
+          <p class="nota">No dibujamos la sombra de las nubes, ni la de los árboles fuera de la vista de calle. Con el 3D cada sombra se apoya en el suelo a la altura de su construcción, pero se dibuja plana: en las lomas se corre un poco.</p>
           <p class="nota">En «Ahora» miramos el reporte de El Dorado y Guaymaral. Si los dos dicen cielo cubierto, o si llueve, la sombra se dibuja a media intensidad. Una hora que tú elijas se dibuja con cielo despejado.</p>
           <p class="nota">Sirve para comparar horas y épocas del año, no para medir.</p>
         </details>

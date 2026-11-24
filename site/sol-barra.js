@@ -27,6 +27,10 @@
   const VELO_COLOR = [0x3b, 0x3a, 0x36];          // el mismo gris de la sombra de los edificios
   const HONESTA_CON_CERROS = 'Edificios de 2,5 a 4 m por piso, sin árboles.';
   const HONESTA_SIN_CERROS = 'Edificios de 2,5 a 4 m por piso, sin cerros ni árboles.';
+  // En la vista de calle salen los árboles del censo (arboles.js), pero solo los cercanos y
+  // con copa y sombra aproximadas. Si la capa de árboles falló, vuelve el texto «sin árboles».
+  const HONESTA_CALLE_CON_CERROS = 'Edificios de 2,5 a 4 m por piso. Los árboles cercanos salen con copa y sombra aproximadas.';
+  const HONESTA_CALLE_SIN_CERROS = 'Edificios de 2,5 a 4 m por piso, sin cerros. Los árboles cercanos salen con copa y sombra aproximadas.';
   // El tono de la vista de calle (edificios-luz.js) sigue la hora; no viene de un dato.
   const HONESTA_TONO = 'El tono de la escena sigue la hora del sol, no es una medida del color de la luz.';
   const reducido = raiz.matchMedia('(prefers-reduced-motion: reduce)');
@@ -36,6 +40,10 @@
   let api = null, mapa = null, sombras = null, barra = null, reloj = null, relojInicio = null;
   let tCalculo = null, tVivo = null, tUrl = null;
   const $ = (sel) => barra.querySelector(sel);
+  // Vista de calle (con árboles). mapa.js avisa antes de poner la clase en el body: después del
+  // primer aviso vale lo que dice el aviso.
+  let calle = null;
+  const enCalle = () => calle == null ? raiz.document.body.classList.contains('vista-calle') : calle;
 
   // ── Tiempo ───────────────────────────────────────────────────────────────
   function tomarAhora() {
@@ -258,8 +266,7 @@
         'horizon-color': lerpHex('#d4956a', '#e0d0b8', t), 'fog-color': lerpHex('#8a7060', '#d8d0c8', t),
         'horizon-fog-blend': lerp(0.3, 0.25, t), 'fog-ground-blend': lerp(0.3, 0.1, t), 'atmosphere-blend': lerp(1.0, 0.8, t) };
     }
-    return { 'sky-color': '#89c2e8', 'sky-horizon-blend': 0.3, 'horizon-color': '#e8e4dd',
-      'fog-color': '#f0ece6', 'horizon-fog-blend': 0.2, 'fog-ground-blend': 0.05, 'atmosphere-blend': 0.75 };
+    return Object.assign({}, api.cieloDia);
   }
 
   function ponerCielo() {
@@ -268,7 +275,12 @@
     if (api.fijarNoche) api.fijarNoche(S.activo && tres && S.sol ? Math.min(1, Math.max(0, -S.sol.altura / 6)) : 0);
     if (!tres) return;
     const alt = S.sol ? S.sol.altura : -10;
-    mapa.setSky(cieloPorAltura(alt));
+    const cielo = cieloPorAltura(alt);
+    // Ronda 7: la bruma de MapLibre (relieve, calles, cerros) del mismo color que la de los
+    // edificios en edificios-luz.js, que sigue la hora: azul pálido de día, cálida al ocaso.
+    const L = B.luzEdificios;
+    if (L && L.brumaHex && S.sol) cielo['fog-color'] = L.brumaHex(alt, S.sol.azimut, S.ahora && S.cielo ? S.cielo.intensidad : 1);
+    mapa.setSky(cielo);
   }
 
   function estadoTexto() {
@@ -321,7 +333,11 @@
     dia.value = String(T.diaDelAnio(S.anio, S.mes, S.dia));
     dia.setAttribute('aria-valuetext', T.diaTexto(S.mes, S.dia));
     pintarRieles(noche);
-    $('#sb-honesta').textContent = (V.estado === 'fallo' ? HONESTA_SIN_CERROS : HONESTA_CON_CERROS) + (api.es3d() ? ' ' + HONESTA_TONO : '');
+    const capaArb = B.arbolesCapa && B.arbolesCapa();
+    const conArboles = api.es3d() && enCalle() && !(capaArb && capaArb.estado.error);
+    const sinCerros = V.estado === 'fallo';
+    const honesta = conArboles ? (sinCerros ? HONESTA_CALLE_SIN_CERROS : HONESTA_CALLE_CON_CERROS) : (sinCerros ? HONESTA_SIN_CERROS : HONESTA_CON_CERROS);
+    $('#sb-honesta').textContent = honesta + (api.es3d() ? ' ' + HONESTA_TONO : '');
     $('#sb-controles').hidden = lejos;
     $('#sb-lejos').hidden = !lejos;
     const textoLejos = veloEnVista() ? LEJOS_CON_VELO : LEJOS_SIN_VELO;
@@ -541,6 +557,8 @@
     velo();
     pintar();
   });
+  // El texto honesto cambia al entrar o salir de la vista de calle (árboles sí o no).
+  addEventListener('bogotwin:vista-calle', (e) => { calle = !!(e.detail && e.detail.on); if (S.activo) pintar(); });
   raiz.matchMedia('(max-width: 600px)').addEventListener('change', () => { if (S.activo) mostrarBarra(); });
 
   // Paso 12: fila de la ventana de una construcción. null si las sombras están apagadas.

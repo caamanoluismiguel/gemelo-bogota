@@ -70,23 +70,24 @@
   }
 
   // Lee una capa de la tesela. Devuelve { extension, objetos: [{ propiedades, anillos }] }
-  // o null si la capa no está. Solo polígonos (tipo 3); los anillos de un multipolígono
-  // quedan juntos: para la sombra da lo mismo, cada borde se trata por su lado.
-  function leerCapa(bytes, nombre) {
+  // o null si la capa no está. Por defecto solo polígonos (tipo 3); los anillos de un
+  // multipolígono quedan juntos: para la sombra da lo mismo, cada borde se trata por su lado.
+  // Con tipo 1 lee puntos: cada punto llega como un anillo de un solo vértice (los árboles).
+  function leerCapa(bytes, nombre, tipo) {
     const u8 = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
     const r = new Lector(u8);
     while (r.p < u8.length) {
       const t = r.varint();
       if (t >> 3 !== 3 || (t & 7) !== 2) { r.saltar(t & 7); continue; }
       const [a, z] = r.bloque();
-      const capa = leerUnaCapa(r, a, z, nombre);
+      const capa = leerUnaCapa(r, a, z, nombre, tipo || 3);
       r.p = z;
       if (capa) return capa;
     }
     return null;
   }
 
-  function leerUnaCapa(r, a, z, buscado) {
+  function leerUnaCapa(r, a, z, buscado, tipoBuscado) {
     let nombre = null, extension = 4096;
     const claves = [], valores = [], rasgos = [];
     r.p = a;
@@ -111,7 +112,7 @@
         else if (campo === 4) geom = r.bloque();
         else r.saltar(tipo);
       }
-      if (tipoGeom !== 3 || !geom) continue;
+      if (tipoGeom !== tipoBuscado || !geom) continue;
       const propiedades = {};
       for (let i = 0; i + 1 < etiquetas.length; i += 2) propiedades[claves[etiquetas[i]]] = valores[etiquetas[i + 1]];
       const fin = r.p;

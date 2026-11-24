@@ -30,6 +30,12 @@ LICENCIAS = {
         "fuentes": ["construcciones.gpkg.zip", "sector-catastral.gpkg.zip"],
         "scripts": ["scripts/catastro.sh", "scripts/catastro.sql"],
     },
+    "arboles-bogota.pmtiles": {
+        "licencia": "CC BY 4.0",
+        "atribucion": "Jardín Botánico de Bogotá José Celestino Mutis (JBB), censo SIGAU, Datos Abiertos Bogotá",
+        "fuentes": ["arboladourbano.zip"],
+        "scripts": ["scripts/arboles.sh", "scripts/arboles.sql"],
+    },
 }
 HERRAMIENTAS = {
     "tippecanoe (incluye tile-join)": ["tippecanoe", "--version"],

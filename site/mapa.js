@@ -35,7 +35,8 @@
     const exp = ['match', ['min', MAX_PISOS, ['max', 1, ['round', ['to-number', ['coalesce', ['get', campo], 1], 1]]]]];
     for (let p = 1; p <= MAX_PISOS; p++) exp.push(p, B.mezclarColor(B.colorFachada(p), NOCHE_MATERIAL, 0.62 * noche));
     exp.push(B.colorFachada(1));
-    return exp;
+    // Ronda 7: con «tono» en la tesela, un color por edificio (comun.js); sin él, por pisos.
+    return campo === 'pisos' ? B.exprFachada(exp, (c) => B.mezclarColor(c, NOCHE_MATERIAL, 0.62 * noche)) : exp;
   };
   const VERDE_2D = ['match', ['get', 'clase'], 'reserva', '#dde9d3', 'paramo', '#e3e8cf', 'bosque', '#bcd6b0', '#cfe3c4'];
   const VERDE_3D = ['match', ['get', 'clase'], 'reserva', '#9fc287', 'paramo', '#b3bf86', 'bosque', '#76a763', '#93c27c'];
@@ -228,9 +229,68 @@
     }
     for (const id of ['relieve', 'relieve-fuera']) if (mapa.getLayer(id)) mapa.setLayoutProperty(id, 'visibility', on ? 'visible' : 'none');
   }
+  // Foto aérea del suelo (ronda 7): Ortoimagen urbana 2025 de la SDP, publicada por IDECA (CC BY 4.0).
+  // Solo en 3D: en 2D el mapa es para leer datos (la coropleta de pisos, las capas) y la foto
+  // les quitaría contraste; en 3D es la vista «cómo se ve». Se pide desde z16 (minzoom de la
+  // fuente: nunca más lejos) y aparece de a poco entre z16 y z17. bounds: fuera de la zona
+  // urbana el servicio devuelve una imagen blanca, así que no se pide. Sin prefetch. Si una
+  // tesela falla o tarda, debajo sigue el mapa de siempre (ver el aviso de errores más abajo).
+  const ORTO = 'Ortoimagen urbana 2025 © <a href="https://www.sdp.gov.co/">SDP</a>, publicada por <a href="https://www.ideca.gov.co/">IDECA</a> (UAECD), <a href="https://creativecommons.org/licenses/by/4.0/deed.es">CC BY 4.0</a>';
+  const ORTO_URL = 'https://serviciosgis.catastrobogota.gov.co/image/rest/services/imagenesfunciones/orthourbana2025funcion/ImageServer/exportImage?bbox={bbox-epsg-3857}&bboxSR=3857&imageSR=3857&size=256,256&format=jpg&f=image';
+  const ORTO_FUENTE = { type: 'raster', tiles: [ORTO_URL], tileSize: 256, minzoom: 16, maxzoom: 20,
+    bounds: [-74.2250, 4.4862, -74.0189, 4.8380], attribution: ORTO };
+  // Más apagada y menos saturada que la foto cruda, para que quede bajo las fachadas de
+  // ladrillo y tome la luz de la hora (el tinte y la bruma la tocan como al resto). De noche
+  // baja con NOCHE.orto.
+  const ORTO_PINTURA = { 'raster-opacity': ['interpolate', ['linear'], ['zoom'], 16, 0, 17, 1],
+    'raster-brightness-max': 0.9, 'raster-contrast': -0.08, 'raster-saturation': -0.22, 'raster-fade-duration': 250 };
+  // Ronda 7b: los Cerros Orientales con la Ortoimagen Cerros 2025 (25 cm, 14 feb 2025, CC BY 4.0).
+  // Desde la vista de calle los cerros quedan a 2,5 a 4 km y se dibujan con teselas z13 a z15,
+  // así que esta fuente se pide desde z13. bounds: la extensión del servicio. Dentro de esa caja
+  // la foto es una franja; fuera de ella el servicio pinta blanco (su NoData es 255), por eso
+  // va con noData=255 y format=jpgpng: JPEG donde todo es foto, PNG con transparencia en el
+  // borde, y debajo sigue el mapa. Donde hay foto tapa el verde y el sombreado del relieve; en
+  // 2D no se agrega.
+  const ORTO_CERROS = 'Ortoimagen Cerros Orientales 2025 © <a href="https://www.sdp.gov.co/">SDP</a>, publicada por <a href="https://www.ideca.gov.co/">IDECA</a> (UAECD), <a href="https://creativecommons.org/licenses/by/4.0/deed.es">CC BY 4.0</a>';
+  const ORTO_CERROS_URL = 'https://serviciosgis.catastrobogota.gov.co/image/rest/services/imagenesfunciones/orthocerros2025funcion/ImageServer/exportImage?bbox={bbox-epsg-3857}&bboxSR=3857&imageSR=3857&size=256,256&format=jpgpng&noData=255&f=image';
+  const ORTO_CERROS_FUENTE = { type: 'raster', tiles: [ORTO_CERROS_URL], tileSize: 256, minzoom: 13, maxzoom: 20,
+    bounds: [-74.0918, 4.4600, -73.9899, 4.8262], attribution: ORTO_CERROS };
+  // Más allá de unos 8 km MapLibre pide teselas z11 o menos y el servicio solo dibuja con
+  // píxeles de 40 m o menos (más grueso devuelve vacío). Una segunda fuente fija en z11 con
+  // imágenes de 512 px (38 m por píxel) cubre los cerros del norte: son pocas teselas en toda
+  // la caja (unas 200 KB en la vista de arranque) y las cercanas quedan encima.
+  const ORTO_CERROS_LEJOS = Object.assign({}, ORTO_CERROS_FUENTE, { minzoom: 11, maxzoom: 11,
+    tiles: [ORTO_CERROS_URL.replace('size=256,256', 'size=512,512')] });
+  // Los cerros siempre se ven de lejos: un poco más claros, menos contraste y menos saturados
+  // que la foto del suelo, como los vela el aire (la niebla de MapLibre sobre el terreno es débil
+  // a 2.600 m de altura y no alcanza sola).
+  const ORTO_CERROS_PINTURA = Object.assign({}, ORTO_PINTURA, { 'raster-opacity': 1, 'raster-brightness-min': 0.1,
+    'raster-contrast': -0.22, 'raster-saturation': -0.35 });
+  function ponerOrto(on) {
+    if (on && !mapa.getSource('orto')) {
+      mapa.addSource('orto-cerros-lejos', ORTO_CERROS_LEJOS);
+      mapa.addSource('orto-cerros', ORTO_CERROS_FUENTE);
+      mapa.addSource('orto', ORTO_FUENTE);
+      // Sobre el mapa base (fondo, verde, agua, calles) y bajo todo lo demás; la de los cerros
+      // bajo la urbana.
+      const capas = mapa.getStyle().layers.map((l) => l.id);
+      const encima = capas[capas.indexOf('vias') + 1];
+      mapa.addLayer({ id: 'orto-cerros-lejos', type: 'raster', source: 'orto-cerros-lejos', metadata: { grupo: 'orto' }, paint: Object.assign({}, ORTO_CERROS_PINTURA) }, encima);
+      mapa.addLayer({ id: 'orto-cerros', type: 'raster', source: 'orto-cerros', minzoom: 13, metadata: { grupo: 'orto' }, paint: Object.assign({}, ORTO_CERROS_PINTURA) }, encima);
+      mapa.addLayer({ id: 'orto', type: 'raster', source: 'orto', minzoom: 16, metadata: { grupo: 'orto' }, paint: Object.assign({}, ORTO_PINTURA) }, encima);
+    }
+    for (const id of ['orto-cerros-lejos', 'orto-cerros', 'orto']) if (mapa.getLayer(id)) mapa.setLayoutProperty(id, 'visibility', on ? 'visible' : 'none');
+  }
+
+  // Una tesela de la foto que falla no es un error del visor: queda el mapa de abajo. MapLibre
+  // solo escribe los errores en la consola si nadie escucha, así que aquí se reescriben los demás.
+  const esOrto = (e) => !!(e && /^orto/.test(e.sourceId || ''));
+  function sinOrto(e) { if (!esOrto(e)) console.error((e && e.error) || e); }
+
   // Cielo estático por defecto (día pleno). sol-barra.js lo reemplaza cuando hay sombras activas.
-  const CIELO_DIA = { 'sky-color': '#89c2e8', 'sky-horizon-blend': 0.3, 'horizon-color': '#e8e4dd',
-    'fog-color': '#f0ece6', 'horizon-fog-blend': 0.2, 'fog-ground-blend': 0.05, 'atmosphere-blend': 0.75 };
+  // Ronda 7: bruma azul pálida, la misma de edificios-luz.js a pleno día (brumaHex).
+  const CIELO_DIA = { 'sky-color': '#89c2e8', 'sky-horizon-blend': 0.3, 'horizon-color': '#dbe3ea',
+    'fog-color': '#c7d6e5', 'horizon-fog-blend': 0.2, 'fog-ground-blend': 0.05, 'atmosphere-blend': 0.75 };
 
   // Noche (solo con 3D y sombras, la pide sol-barra.js): el mapa base y los edificios bajan
   // a colores oscuros planos. Con 2D o de día, los colores de siempre.
@@ -245,6 +305,9 @@
     rotulos: { 'text-color': '#dfe2e8', 'text-halo-color': '#1b212c' },
     'estaciones-rotulo': { 'text-color': '#f0b4b2', 'text-halo-color': '#1b212c' },
     'relieve-fuera': { 'fill-color': '#1b212c' },
+    orto: { 'raster-brightness-max': 0.32, 'raster-saturation': -0.6, 'raster-contrast': -0.2 },
+    'orto-cerros': { 'raster-brightness-max': 0.3, 'raster-brightness-min': 0, 'raster-saturation': -0.6, 'raster-contrast': -0.2 },
+    'orto-cerros-lejos': { 'raster-brightness-max': 0.3, 'raster-brightness-min': 0, 'raster-saturation': -0.6, 'raster-contrast': -0.2 },
     relieve: { 'hillshade-shadow-color': '#0c1017', 'hillshade-highlight-color': '#3a4252', 'hillshade-accent-color': '#161b24' }
   };
   // La noche llega de a poco (panel de textura, punto 3): t va de 0 (día) a 1 (noche) y los
@@ -281,6 +344,7 @@
     if (si === vistaCalle) return;
     vistaCalle = si;
     alVistaCalle(si);
+    window.dispatchEvent(new CustomEvent('bogotwin:vista-calle', { detail: { on: si } }));
     document.body.classList.toggle('vista-calle', si);
     if (si && !panel.classList.contains('plegado')) {
       const conFoco = panel.querySelector('#cuerpo').contains(document.activeElement);
@@ -321,6 +385,7 @@
     const on = caja3d.checked;
     const alArrancar = ev === 'arranque';
     ponerTerreno(on);
+    ponerOrto(on);
     // Mostrar u ocultar el selector de lente.
     lente3d.hidden = !on;
     if (on && !mapa.getLayer('construcciones-3d')) {
@@ -399,6 +464,7 @@
     // lleguen tarde, ya en 2D, se callan.
     let primerCuadro = false, caido = false;
     const alFallar3d = (e) => {
+      if (esOrto(e)) return;
       if (!e || !/^terreno/.test(e.sourceId || '')) { console.error((e && e.error) || e); return; }
       if (caido || primerCuadro) return;
       caido = true;
@@ -408,8 +474,8 @@
       if (porDefecto) { if (B.quitarSombras) B.quitarSombras(); mapa.jumpTo(VISTA_2D); }
     };
     mapa.on('error', alFallar3d);
-    mapa.once('idle', () => { primerCuadro = true; if (!caido) mapa.off('error', alFallar3d); });
-  }
+    mapa.once('idle', () => { primerCuadro = true; if (!caido) { mapa.off('error', alFallar3d); mapa.on('error', sinOrto); } });
+  } else mapa.on('error', sinOrto);
   B.mapaApi = { mapa, movil, plegar, fijarAlto, pmCat, panel, teselaUrl: (f) => new URL(f, base).href, es3d: () => caja3d.checked, fijarNoche, panelAbierto: () => !panel.classList.contains('plegado'), cieloDia: CIELO_DIA };
   // Luz propia de los edificios en la vista de calle (edificios-luz.js): cara al sol cálida,
   // cara a la sombra fría y el pie de las fachadas un poco más oscuro. Se baja solo al entrar a
@@ -431,6 +497,30 @@
     };
     B.luzEdificios3d = () => luz;
     if (vistaCalle) alVistaCalle(true);
+  }
+
+  // Árboles de la calle (arboles.js, censo SIGAU del JBB): solo en la vista de calle y con
+  // WebGL2. Se bajan al entrar; si el archivo no está o algo falla, el mapa sigue sin ellos.
+  if (conWebGL2) {
+    let arboles = null, bajandoArb = null;
+    const bajarJs = (f) => new Promise((ok, mal) => {
+      const s = document.createElement('script');
+      s.src = f; s.onload = ok; s.onerror = () => mal(new Error(f));
+      document.head.append(s);
+    });
+    const bajarArboles = () => bajandoArb || (bajandoArb = (B.mvt ? Promise.resolve() : bajarJs('mvt.js'))
+      .then(() => bajarJs('arboles.js')).catch((e) => { bajandoArb = null; throw e; }));
+    const alArboles = (si) => {
+      if (!si) { if (arboles) arboles.apagar(mapa); return; }
+      bajarArboles().then(() => {
+        if (!vistaCalle) return;
+        if (!arboles) arboles = B.arboles.crear({ url: B.mapaApi.teselaUrl('arboles-bogota.pmtiles'), alFallar: (m) => console.warn('Árboles apagados:', m) });
+        arboles.prender(mapa);
+      }).catch(() => {});
+    };
+    window.addEventListener('bogotwin:vista-calle', (e) => alArboles(e.detail.on));
+    B.arbolesCapa = () => arboles;
+    if (vistaCalle) alArboles(true);
   }
 
   if (cajaSombras) {

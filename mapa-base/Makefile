@@ -2,9 +2,9 @@
 # Uso desde mapa-base/:  make todo   |  make bajar  |  make limites  |  make osm  |  make catastro
 # Herramientas: brew install tippecanoe pmtiles osmium-tool duckdb
 .NOTPARALLEL:
-.PHONY: todo bajar limites osm catastro buscador medir manifiesto servir
+.PHONY: todo bajar limites osm catastro arboles buscador medir manifiesto servir
 
-todo: bajar limites osm catastro buscador medir manifiesto
+todo: bajar limites osm catastro arboles buscador medir manifiesto
 
 bajar:
 	sh scripts/bajar.sh
@@ -18,6 +18,9 @@ osm: limites
 
 catastro:
 	nice -n 10 sh scripts/catastro.sh
+
+arboles:
+	nice -n 10 sh scripts/arboles.sh
 
 medir:
 	sh scripts/medir.sh

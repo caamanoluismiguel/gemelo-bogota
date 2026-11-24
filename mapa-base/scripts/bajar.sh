@@ -32,4 +32,6 @@ bajar sector-catastral.gpkg.zip "$B/6f5031cf-07d0-42c3-ba5c-4436eba0a2d9/resourc
 if [ "${SIN_CATASTRO:-0}" != "1" ]; then
   bajar construcciones.gpkg.zip "$B/397ccbd8-e2c5-4700-b90e-b68d101ab0c5/resource/2e619105-f07a-45c9-944b-ecc8ee206ef1/download/const.gpkg.10.26.zip"
 fi
+# Censo del arbolado urbano del Jardín Botánico (SIGAU, CC BY 4.0, ficha censo-arbolado-urbano). 62 MB.
+bajar arboladourbano.zip "$B/18721a34-0b1c-4399-bf2c-5f03fe5ef21a/resource/5a965d93-c623-40df-87e0-747cb51a1f5d/download/arboladourbano.zip"
 echo "listo. Registro en $REG"

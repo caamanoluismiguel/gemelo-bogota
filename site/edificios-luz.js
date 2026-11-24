@@ -28,8 +28,15 @@
   const CUBIERTO_SOMBRA = [0.66, 0.66, 0.68];
   const CIELO = [0.5, 0.51, 0.54];          // sin sol directo (crepúsculo): solo la luz del cielo
   const NOCHE = [0.95, 0.96, 1.0];          // de noche el gris de noche de mapa.js, casi tal cual
-  const BRUMA_DIA = [0.86, 0.88, 0.9];
-  const BRUMA_NOCHE = [0.15, 0.18, 0.24];
+  // Bruma de la distancia (ronda 7): azul pálido de día, más cálida con el sol bajo, oscura
+  // de noche. La misma va al «fog-color» de MapLibre (sol-barra.js y mapa.js), así que los
+  // edificios lejanos y los cerros se funden con el mismo aire.
+  const BRUMA_DIA = [0.78, 0.84, 0.9];
+  const BRUMA_CUBIERTO = [0.8, 0.82, 0.85];
+  const BRUMA_ALBA = [0.86, 0.79, 0.72];
+  const BRUMA_OCASO = [0.88, 0.73, 0.61];
+  const BRUMA_NOCHE = [0.12, 0.15, 0.21];
+  const BRUMA_MAX = 0.8;                    // ni los cerros más lejanos se borran del todo
   // Tinte de la hora sobre toda la escena (multiplica; 1 = nada).
   const TINTE_MANANA = [1.0, 0.95, 0.86];   // ámbar
   const TINTE_TARDE = [1.0, 0.92, 0.87];    // naranja rosado
@@ -45,8 +52,30 @@
   // en línea recta. Es la misma cuenta que usa sol-barra.js para los colores del mapa.
   const deNoche = (altura) => Math.min(1, Math.max(0, -altura / 6));
 
+  // Color de la bruma a esa hora. azimut en grados (menos de 180: mañana).
+  function brumaHora(altura, azimut, intensidad) {
+    const k = suave(0.45, 1, intensidad == null ? 1 : intensidad);
+    const dia = mezcla(BRUMA_CUBIERTO, BRUMA_DIA, k);
+    const bajo = mezcla(dia, (azimut == null || azimut >= 180) ? BRUMA_OCASO : BRUMA_ALBA, 0.35 + 0.65 * k);
+    return mezcla(mezcla(bajo, dia, suave(2, 18, altura)), BRUMA_NOCHE, deNoche(altura));
+  }
+  const aHex = (c) => '#' + c.map((v) => Math.round(Math.min(1, Math.max(0, v)) * 255).toString(16).padStart(2, '0')).join('');
+  const brumaHex = (altura, azimut, intensidad) => aHex(brumaHora(altura, azimut, intensidad));
+
+  // Parte de las ventanas con luz de noche (0 a 1, antes de la variación por edificio y piso).
+  // De día 0. Al caer la tarde se prenden en el crepúsculo (sol de −2° a −6°), quedan cerca de
+  // un tercio en la noche temprana y bajan hacia la madrugada; antes del alba suben un poco.
+  // Cada ventana tiene un umbral fijo: al cambiar la hora se prenden o apagan de a una, sin
+  // parpadeo, y a la misma hora siempre son las mismas.
+  function encendidas(altura, azimut) {
+    if (!(altura < -2)) return 0;
+    const entra = suave(-2, -6, altura);
+    if (azimut == null || azimut >= 180) return entra * (0.32 - 0.18 * suave(-30, -60, altura));
+    return entra * (0.12 + 0.12 * suave(-40, -8, altura));
+  }
+
   // altura: grados del sol sobre el horizonte. intensidad: 1 con sol directo, 0,5 cubierto.
-  function paleta(altura, intensidad) {
+  function paleta(altura, intensidad, azimut) {
     const n = deNoche(altura);
     const sol = suave(-1, 4, altura);        // hay sol directo sobre las fachadas
     const k = suave(0.45, 1, intensidad == null ? 1 : intensidad);
@@ -57,8 +86,14 @@
       calido: mezcla(sinSol, calido, sol),
       frio: mezcla(sinSol, frio, sol),
       techo: 1 + 0.12 * n,                  // de noche el techo recibe el cielo
-      ao: 0.52 + 0.16 * n,                  // pie de la fachada (1 = nada)
-      bruma: mezcla(BRUMA_DIA, BRUMA_NOCHE, n).concat(0.42),
+      // Pie de la fachada (1 = nada). ao: oscurecimiento ancho y suave de los primeros 9 m
+      // (abajo llega menos cielo). contacto: lo que se suma en el primer metro y medio, donde el
+      // muro toca el piso (ronda 8): sin eso el edificio parece pegado encima de la foto. Los
+      // dos son supuestos de aspecto, no una medida; la franja se apaga de lejos.
+      ao: 0.58 + 0.14 * n,
+      contacto: 0.2 - 0.1 * n,
+      bruma: brumaHora(altura, azimut, intensidad).concat(BRUMA_MAX),
+      encendidas: encendidas(altura, azimut),
       noche: n
     };
   }
@@ -94,6 +129,10 @@ out vec3 v_n;
 out float v_h;
 out float v_lejos;
 out float v_techo;
+out float v_u;              // metros a lo largo del muro (para las ventanas)
+flat out float v_alto;      // alto del edificio en metros
+flat out float v_semilla;   // número fijo por edificio para variar ventanas y luces
+const float ESCALON = 1.5;  // medio piso (PISO_M = 3 en mapa.js)
 // Lo mismo que el preludio de MapLibre: color empacado y alto del terreno en el centroide.
 vec2 desempacar(float v) { int i = int(v); int a = i / 256; return vec2(float(a), float(i - a * 256)); }
 float ele(vec2 p) { vec4 c = (texture(u_terrain, p) * 255.0) * u_terrain_unpack; return c.r + c.g + c.b - u_terrain_unpack.a; }
@@ -109,7 +148,13 @@ void main() {
   vec3 normal = a_normal_ed.xyz;
   float arriba = mod(normal.x, 2.0);
   bool terreno = u_con_terreno > 0.5;
-  float suelo = terreno ? elevacion(a_centroid) : 0.0;
+  // El suelo de cada edificio es el relieve en su centroide, redondeado a medio piso. Sin
+  // redondear, dos vecinos del mismo número de pisos quedaban a 0,1 a 0,6 m de diferencia (el
+  // relieve medido en dos centroides a 10 m) y el muro de 30 cm entre los dos techos salía como
+  // una raya clara. Medio piso está por debajo de lo que sabemos: el alto va de 3 en 3 m y el
+  // relieve de 30 m tiene error de metros. Los escalones que quedan miden 1,5 m o más, como una
+  // calle en pendiente de verdad. Los muros bajan 10 m bajo el suelo, así que nada flota.
+  float suelo = terreno ? ESCALON * floor(elevacion(a_centroid) / ESCALON + 0.5) : 0.0;
   // Como MapLibre: con terreno la base baja 10 m para que no quede flotando en una ladera.
   float h = arriba > 0.0 ? max(0.0, a_height) : (terreno ? -10.0 : 0.0);
   gl_Position = u_matriz * vec4(a_pos, suelo + h, 1.0);
@@ -118,23 +163,36 @@ void main() {
   v_h = h;
   v_techo = (normal.x == 1.0 && normal.y == 0.0 && normal.z == 16384.0) ? 1.0 : 0.0;
   v_lejos = length(a_pos - u_camara) / u_unidades_m;
+  // MapLibre guarda en a_normal_ed.w la distancia recorrida por el borde del polígono, en
+  // unidades de tesela: sirve de coordenada horizontal continua al doblar la esquina.
+  v_u = a_normal_ed.w / u_unidades_m;
+  v_alto = max(0.0, a_height);
+  v_semilla = floor(fract(dot(v_base, vec3(12.9898, 78.233, 37.719)) + a_height * 0.0137) * 997.0);
 }`;
 
   const FRAGMENTO = `#version 300 es
-precision mediump float;
+precision highp float;
 in vec3 v_base;
 in vec3 v_n;
 in float v_h;
 in float v_lejos;
 in float v_techo;
+in float v_u;
+flat in float v_alto;
+flat in float v_semilla;
+uniform float u_encendidas;
 uniform vec3 u_luz;      // dirección de la luz de MapLibre (la pone sol-barra.js con el sol)
 uniform vec3 u_calido;
 uniform vec3 u_frio;
 uniform float u_techo;
 uniform float u_ao;
+uniform float u_contacto;
 uniform vec4 u_bruma;
-uniform vec2 u_lejos_m;
+uniform vec2 u_lejos_m;  // dónde empieza la bruma y su escala, en metros
 out vec4 color;
+float azar(vec3 p) { p = fract(p * 0.1031); p += dot(p, p.zyx + 31.32); return fract((p.x + p.y) * p.z); }
+// 1 dentro de [a, b] con borde suavizado de un píxel (aa en metros).
+float caja(float x, float a, float b, float aa) { return smoothstep(a - aa, a + aa, x) * (1.0 - smoothstep(b - aa, b + aa, x)); }
 void main() {
   vec3 L = normalize(u_luz);
   float cara, inc;
@@ -151,9 +209,52 @@ void main() {
   // La cubierta va un poco más oscura y menos saturada que los muros.
   float gris = dot(v_base, vec3(0.299, 0.587, 0.114));
   vec3 base = v_techo > 0.5 ? mix(vec3(gris), v_base, 0.55) * 0.86 : mix(vec3(gris), v_base, 0.92);
-  vec3 c = base * mix(u_frio, u_calido * (0.88 + 0.14 * inc), cara);
-  c *= v_techo > 0.5 ? u_techo : mix(u_ao, 1.0, sqrt(clamp(v_h / 9.0, 0.0, 1.0)));
-  c = mix(c, u_bruma.rgb, u_bruma.a * smoothstep(u_lejos_m.x, u_lejos_m.y, v_lejos));
+  vec3 luz = mix(u_frio, u_calido * (0.88 + 0.14 * inc), cara);
+  vec3 c = base * luz;
+  if (v_techo < 0.5 && v_h > 0.0) {
+    // Pisos cada 3 m (el mismo supuesto del alto) y ventanas. Torres (12 pisos o más): más
+    // vidrio y cuadrícula pareja. Casas y edificios de ladrillo: ventanas chicas y desiguales.
+    float px = max(fwidth(v_u), fwidth(v_h));          // metros que cubre un píxel
+    float detalle = 1.0 - smoothstep(0.18, 0.5, px);   // de lejos o de canto, muro liso
+    float torre = step(35.5, v_alto);
+    float piso = floor(v_h / 3.0), y = v_h - piso * 3.0;
+    float paso = mix(3.2, 1.6, torre);
+    float col = floor(v_u / paso), x = v_u - col * paso;
+    float r1 = azar(vec3(col, piso, v_semilla)), r2 = azar(vec3(col + 0.5, piso, v_semilla + 3.0));
+    float ancho = mix(0.85 + 0.6 * r1, 1.42, torre);
+    float y0 = mix(0.9 + 0.2 * r2, 0.35, torre), y1 = mix(2.05 + 0.25 * r1, 2.75, torre);
+    float hay = max(torre, step(0.14, r2)) * step(piso * 3.0 + y1 + 0.1, v_alto);
+    float x0 = 0.5 * (paso - ancho), aa = max(px, 0.02);
+    float vent = hay * caja(x, x0, x0 + ancho, aa) * caja(y, y0, y1, aa);
+    float marco = hay * caja(x, x0 - 0.08, x0 + ancho + 0.08, aa) * caja(y, y0 - 0.08, y1 + 0.08, aa) - vent;
+    // Vidrio: más oscuro que el muro, con algo del cielo; en las torres refleja más.
+    float luzMedia = dot(luz, vec3(0.333));
+    vec3 vidrio = mix(base * 0.4, u_bruma.rgb * 0.62, mix(0.22, 0.55, torre)) * mix(luz, vec3(luzMedia), 0.5);
+    // Luces de noche: un umbral fijo por ventana; la parte encendida varía por edificio y piso.
+    float cuota = u_encendidas * (0.7 + 0.6 * fract(v_semilla * 0.618)) * (0.8 + 0.4 * azar(vec3(piso, v_semilla, 7.0)));
+    float prendida = step(azar(vec3(col, piso, v_semilla + 17.0)), cuota);
+    vec3 calida = vec3(1.0, 0.8, 0.56) * (0.6 + 0.25 * r1);
+    vec3 cerca = c * (1.0 + 0.1 * marco);
+    cerca = mix(cerca, mix(vidrio, calida, prendida), vent);
+    cerca *= 1.0 - 0.16 * (1.0 - smoothstep(0.0, 0.1 + aa, min(y, 3.0 - y))) * (1.0 - smoothstep(0.35, 0.75, px));
+    // De lejos: el promedio de la fachada (muro, vidrio y luces), sin dibujar la cuadrícula.
+    float f = mix(0.14, 0.6, torre);
+    vec3 lejos = mix(c, vidrio, f) + f * u_encendidas * vec3(1.0, 0.8, 0.56) * 0.7;
+    c = mix(lejos, cerca, detalle);
+  }
+  if (v_techo > 0.5) c *= u_techo;
+  else {
+    // Pie de la fachada: el ancho sube con la raíz del alto (rápido al principio) y el de
+    // contacto es una franja corta y suave pegada al piso. La franja se va cuando un píxel
+    // cubre más de medio metro (como las ventanas): de lejos mediría un píxel y sería una raya.
+    float hs = max(v_h, 0.0);
+    float pie = mix(u_ao, 1.0, sqrt(clamp(hs / 9.0, 0.0, 1.0)));
+    float franja = 1.0 - smoothstep(0.25, 0.6, fwidth(v_h));
+    pie *= 1.0 - u_contacto * franja * (1.0 - smoothstep(0.0, 1.5, hs));
+    c *= pie;
+  }
+  // Bruma que crece con la distancia: la cuadra de enfrente limpia, los cerros a 8 km velados.
+  c = mix(c, u_bruma.rgb, u_bruma.a * (1.0 - exp(-max(v_lejos - u_lejos_m.x, 0.0) / u_lejos_m.y)));
   color = vec4(min(c, vec3(1.0)), 1.0);
 }`;
 
@@ -179,9 +280,9 @@ void main() { color = vec4(u_tinte, 1.0); }`;
   }
 
   // opciones: { capaML ('construcciones-3d'), fuente ('catastro'), id ('luz-edificios'),
-  //   lejos ([1200, 7000] m donde empieza y termina la bruma), alFallar(motivo) }
+  //   lejos ([250, 5000] m: dónde empieza la bruma y su escala), alFallar(motivo) }
   function crear(opciones) {
-    const op = Object.assign({ capaML: 'construcciones-3d', fuente: 'catastro', id: 'luz-edificios', lejos: [1200, 7000] }, opciones);
+    const op = Object.assign({ capaML: 'construcciones-3d', fuente: 'catastro', id: 'luz-edificios', lejos: [250, 5000] }, opciones);
     let mapa = null, gl = null, prog = null, vao = null, loc = {}, caida = false;
     const est = { activa: false, sinWebGL2: false, error: null, teselas: 0, segmentos: 0, ms: 0 };
     const m32 = new Float32Array(16);
@@ -258,7 +359,7 @@ void main() { color = vec4(u_tinte, 1.0); }`;
           gl.linkProgram(prog);
           if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) throw new Error('programa: ' + gl.getProgramInfoLog(prog));
           for (const u of ['u_matriz', 'u_con_terreno', 'u_terrain', 'u_terrain_dim', 'u_terrain_matrix', 'u_terrain_unpack', 'u_terrain_exaggeration',
-            'u_camara', 'u_unidades_m', 'u_luz', 'u_calido', 'u_frio', 'u_techo', 'u_ao', 'u_bruma', 'u_lejos_m']) loc[u] = gl.getUniformLocation(prog, u);
+            'u_camara', 'u_unidades_m', 'u_luz', 'u_calido', 'u_frio', 'u_techo', 'u_ao', 'u_contacto', 'u_bruma', 'u_lejos_m', 'u_encendidas']) loc[u] = gl.getUniformLocation(prog, u);
           vao = gl.createVertexArray();
           est.activa = true;
           mapa.setPaintProperty(op.capaML, 'fill-extrusion-opacity', 0);
@@ -290,7 +391,7 @@ void main() { color = vec4(u_tinte, 1.0); }`;
       if (mapa.getLayoutProperty(op.capaML, 'visibility') === 'none') return;
       const ter = mapa.terrain || null;
       const sol = solActual();
-      const p = paleta(sol.altura, sol.intensidad);
+      const p = paleta(sol.altura, sol.intensidad, sol.azimut);
       const cam = caminoCamara();
 
       gl.useProgram(prog);
@@ -299,8 +400,10 @@ void main() { color = vec4(u_tinte, 1.0); }`;
       gl.uniform3fv(loc.u_frio, p.frio);
       gl.uniform1f(loc.u_techo, p.techo);
       gl.uniform1f(loc.u_ao, p.ao);
+      gl.uniform1f(loc.u_contacto, p.contacto);
       gl.uniform4fv(loc.u_bruma, p.bruma);
       gl.uniform2f(loc.u_lejos_m, op.lejos[0], op.lejos[1]);
+      gl.uniform1f(loc.u_encendidas, p.encendidas);
       gl.uniform1f(loc.u_con_terreno, ter ? 1 : 0);
       gl.uniform1i(loc.u_terrain, 3);
       // Lo mismo que MapLibre para las extrusiones: se descartan las caras de atrás.
@@ -450,7 +553,7 @@ void main() { color = vec4(u_tinte, 1.0); }`;
     };
   }
 
-  const luzEdificios = { crear, paleta, tinte, deNoche };
+  const luzEdificios = { crear, paleta, tinte, deNoche, brumaHora, brumaHex, encendidas };
   if (typeof module === 'object' && module.exports) module.exports = luzEdificios;
   if (raiz && typeof raiz === 'object' && typeof raiz.document !== 'undefined') {
     raiz.Bogotwin = raiz.Bogotwin || {};

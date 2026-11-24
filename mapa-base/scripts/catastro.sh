@@ -20,12 +20,12 @@ $TC -o "$K/sectores_pisos.pmtiles" -l pisos_sector -Z10 -z15 --detect-shared-bor
 # para z14 y z15 va la versión unida de más abajo). El visor
 # sobreamplía z16. Sin --drop: si una tesela no cabe en 150 KB, tippecanoe falla y se revisa.
 # -T: desde FlatGeobuf tippecanoe escribe los enteros como texto; se fuerzan a entero.
-$TC -o "$K/construcciones.pmtiles" -l construcciones -Z16 -z16 --read-parallel -T pisos:int -T sotanos:int \
+$TC -o "$K/construcciones.pmtiles" -l construcciones -Z16 -z16 --read-parallel -T pisos:int -T sotanos:int -T tono:int \
   --no-tiny-polygon-reduction --simplification=2 "$K/construcciones.fgb"
 # Construcciones lejanas: z14 y z15 con las huellas unidas por manzana y pisos, a poca
 # resolución (-d8, -D7: unos 5 m en z15). Con la cámara inclinada el fondo llega en estas
 # teselas; sin ellas el fondo queda vacío. Medido el 24 nov 2026: +4,6 MB al archivo,
-# tesela z15 más pesada 31 KB.
+# tesela z15 más pesada 31 KB. Sin tono: de lejos el visor colorea por pisos.
 $TC -o "$K/construcciones_lejos.pmtiles" -l construcciones -Z14 -z15 --read-parallel -y pisos -T pisos:int \
   --simplification=4 -d8 -D7 "$K/construcciones_lejos.fgb"
 $N tile-join --force --no-tile-size-limit -o salida/catastro-pisos-bogota.pmtiles \

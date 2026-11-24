@@ -22,6 +22,7 @@ DuckDB instala su extensión `spatial` la primera vez (lee y escribe GPKG, FGB y
 | Unidades de Planeamiento Local (UPL, POT 2021) | SDP | https://datosabiertos.bogota.gov.co/dataset/808582fc-ffc8-4649-8428-7e1fd8d3820c/resource/e0345fb3-edd4-4844-b55c-ab6b787eb40b/download/unidadplaneamientolocal.gpkg | https://datosabiertos.bogota.gov.co/dataset/808582fc-ffc8-4649-8428-7e1fd8d3820c | CC BY 4.0 | 20 feb 2025 |
 | Barrios legalizados | SDP | https://datosabiertos.bogota.gov.co/dataset/36a80ef3-02c1-4a48-b3c7-c285e1de4323/resource/9937fa1f-91bb-441e-b299-bea1178e49c8/download/barriolegalizado.gpkg | https://datosabiertos.bogota.gov.co/dataset/36a80ef3-02c1-4a48-b3c7-c285e1de4323 | CC BY 4.0 | 3 jul 2026 |
 | Sector catastral (el «barrio común» de Catastro) | Unidad Administrativa Especial de Catastro Distrital (UAECD) | https://datosabiertos.bogota.gov.co/dataset/6f5031cf-07d0-42c3-ba5c-4436eba0a2d9/resource/aebb0d9c-a475-407c-abb6-ac2fd978f31c/download/sector.gpkg.10.26.zip | https://datosabiertos.bogota.gov.co/dataset/6f5031cf-07d0-42c3-ba5c-4436eba0a2d9 | CC BY 4.0 | 5 nov 2026 |
+| Arbolado urbano (censo SIGAU) | Jardín Botánico de Bogotá José Celestino Mutis (JBB) | https://datosabiertos.bogota.gov.co/dataset/18721a34-0b1c-4399-bf2c-5f03fe5ef21a/resource/5a965d93-c623-40df-87e0-747cb51a1f5d/download/arboladourbano.zip | https://datosabiertos.bogota.gov.co/dataset/censo-arbolado-urbano | CC BY 4.0 (verificada el 24 nov 2026) | 27 oct 2026 |
 | Construcciones con número de pisos | UAECD | https://datosabiertos.bogota.gov.co/dataset/397ccbd8-e2c5-4700-b90e-b68d101ab0c5/resource/2e619105-f07a-45c9-944b-ecc8ee206ef1/download/const.gpkg.10.26.zip | https://datosabiertos.bogota.gov.co/dataset/397ccbd8-e2c5-4700-b90e-b68d101ab0c5 | CC BY 4.0 | 4 nov 2026 |
 
 Notas de proyección:
@@ -36,6 +37,7 @@ Notas de proyección:
 | `salida/osm-bogota.pmtiles` | ODbL 1.0 | `vias`, `agua`, `verde`, `edificios` | 7 a 15 (edificios solo en 15) |
 | `salida/limites-bogota.pmtiles` | CC BY 4.0 | `localidades`, `upl`, `sectores`, `barrios_legalizados`, `rotulos` | 6 a 14 |
 | `salida/catastro-pisos-bogota.pmtiles` | CC BY 4.0 | `pisos_sector` (promedio por sector), `construcciones` | 10 a 15 y 16 |
+| `salida/arboles-bogota.pmtiles` | CC BY 4.0 | `arboles` (puntos con `h` y `f`) | solo 16 (el visor lo usa desde el zoom 15) |
 
 ### Alturas y pisos (lo que es dato y lo que no)
 
@@ -43,6 +45,7 @@ Notas de proyección:
 - **Construcciones de Catastro.** `pisos` = `CONNPISOS` y `sotanos` = `CONNSOTANO`, tal cual, sin convertir a metros. Medido: 2.422.631 construcciones, 99,3 % con pisos mayor que 0, mediana 2, máximo 67.
 - **`CONALTURA` no se usa.** Es un código, no metros. Medido: solo toma los valores 0 (1.858.000 casos), 1 (491.607), y unos pocos -1, -0,5 y -2.
 - **`pisos_sector`** es el promedio de pisos ponderado por área construida (`SHAPE_AREA`) de las construcciones de cada sector catastral, con `pisos_max` y `n`. Es un dato derivado, no medido en campo. 61 construcciones caen fuera de todo sector y no cuentan.
+- **Árboles del censo SIGAU.** `h` = altura total (`Altura_Tot`) en decímetros, de fuente. `f` = forma de copa inferida del nombre de la especie (0 redonda, 1 palma, 2 conífera, 3 eucalipto). El censo no publica el diámetro de copa: el visor lo supone con la altura y la forma. Entran 1.121.290 de 1.472.670 registros: quedan fuera los de menos de 1,5 m o más de 60 m. Medido: 948.256 redondas, 36.728 palmas, 86.378 coníferas y 49.928 eucaliptos.
 - Las alturas de OSM y los pisos de Catastro nunca se mezclan en una misma capa ni en un mismo archivo.
 
 ## Fuentes que NO entran y por qué
@@ -69,6 +72,7 @@ Regla de trabajo: **un archivo, una licencia**. Así cada pieza conserva su atri
 - © colaboradores de OpenStreetMap, ODbL
 - SDP y UAECD, Datos Abiertos Bogotá, CC BY 4.0
 - UAECD (Catastro Bogotá), Datos Abiertos Bogotá, CC BY 4.0
+- Árboles: JBB, censo SIGAU, Datos Abiertos Bogotá, CC BY 4.0
 
 La vista ya las muestra en el control de atribución (plegado en el teléfono, se abre con la «i»).
 

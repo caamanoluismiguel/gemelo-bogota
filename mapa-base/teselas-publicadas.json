@@ -1,6 +1,6 @@
 {
   "_nota": "Ancla de confianza: el flujo de Pages baja cada tesela del release y la rechaza si su sha256 no coincide con este archivo.",
-  "release": "teselas-2026-11-24",
+  "release": "teselas-2026-11-25",
   "repo": "caamanoluismiguel/gemelo-bogota",
   "archivos": {
     "osm-bogota.pmtiles": {
@@ -14,8 +14,8 @@
       "licencia": "CC BY 4.0"
     },
     "catastro-pisos-bogota.pmtiles": {
-      "bytes": 52073171,
-      "sha256": "f8d96a44cc17c4fefa1294970ae2d65ca580d8d442a16174c436e62725edb46d",
+      "bytes": 54773293,
+      "sha256": "0e639c4e1254653fa759d1bc03c1f30913caf15eda9870290268a029aba75239",
       "licencia": "CC BY 4.0"
     },
     "terreno-bogota.pmtiles": {
@@ -27,6 +27,11 @@
       "bytes": 219515,
       "sha256": "a52da64008eeb848922c06ad05b9838cc58364c08fb6ca50e279ac97ced090a9",
       "licencia": "CC BY 4.0 (MDT 2025 SDP/UAECD) + Copernicus GLO-30"
+    },
+    "arboles-bogota.pmtiles": {
+      "bytes": 8664795,
+      "sha256": "d4c61f9e410dcbec1a87cad7901c385d81992f2eb94b7e2f40a09a4e1387580d",
+      "licencia": "CC BY 4.0"
     }
   }
 }
