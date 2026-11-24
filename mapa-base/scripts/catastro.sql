@@ -13,6 +13,17 @@ COPY (
   FROM ST_Read('salida/trabajo/catastro/CONST.gpkg')
 ) TO 'salida/trabajo/catastro/construcciones.fgb' WITH (FORMAT GDAL, DRIVER 'FlatGeobuf', SRS 'EPSG:4326');
 
+-- Construcciones lejanas (z14 y z15, solo para el fondo de la vista inclinada): las de una
+-- misma manzana y el mismo número de pisos se unen en una sola huella y se simplifican a
+-- ~1 m. Los pisos siguen siendo los de Catastro, sin promedios. Manzana = 9 primeros
+-- dígitos del código de lote; sin lote, cada construcción va sola.
+COPY (
+  SELECT CONNPISOS::INTEGER AS pisos,
+         ST_SimplifyPreserveTopology(ST_Union_Agg(ST_MakeValid(geom)), 0.00001) AS geom
+  FROM ST_Read('salida/trabajo/catastro/CONST.gpkg')
+  GROUP BY coalesce(left(LOTECODIGO, 9), CONCODIGO), CONNPISOS
+) TO 'salida/trabajo/catastro/construcciones_lejos.fgb' WITH (FORMAT GDAL, DRIVER 'FlatGeobuf', SRS 'EPSG:4326');
+
 -- Resumen por sector catastral para la vista de ciudad (z11 a z13): pisos promedio
 -- ponderado por área construida en planta y conteo. Sale de los mismos datos CC BY.
 CREATE TEMP TABLE c AS

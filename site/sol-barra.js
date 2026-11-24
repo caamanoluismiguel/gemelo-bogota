@@ -27,6 +27,8 @@
   const VELO_COLOR = [0x3b, 0x3a, 0x36];          // el mismo gris de la sombra de los edificios
   const HONESTA_CON_CERROS = 'Edificios de 2,5 a 4 m por piso, sin árboles.';
   const HONESTA_SIN_CERROS = 'Edificios de 2,5 a 4 m por piso, sin cerros ni árboles.';
+  // El tono de la vista de calle (edificios-luz.js) sigue la hora; no viene de un dato.
+  const HONESTA_TONO = 'El tono de la escena sigue la hora del sol, no es una medida del color de la luz.';
   const reducido = raiz.matchMedia('(prefers-reduced-motion: reduce)');
 
   const S = { activo: false, ahora: true, anio: 2026, mes: 1, dia: 1, min: 720, sol: null, solDibujado: null,
@@ -262,7 +264,8 @@
 
   function ponerCielo() {
     const tres = api.es3d();
-    if (api.fijarNoche) api.fijarNoche(S.activo && tres && S.sol && S.sol.altura <= 0);
+    // Noche de a poco durante el crepúsculo civil: sol de 0° (día) a −6° (noche).
+    if (api.fijarNoche) api.fijarNoche(S.activo && tres && S.sol ? Math.min(1, Math.max(0, -S.sol.altura / 6)) : 0);
     if (!tres) return;
     const alt = S.sol ? S.sol.altura : -10;
     mapa.setSky(cieloPorAltura(alt));
@@ -318,7 +321,7 @@
     dia.value = String(T.diaDelAnio(S.anio, S.mes, S.dia));
     dia.setAttribute('aria-valuetext', T.diaTexto(S.mes, S.dia));
     pintarRieles(noche);
-    $('#sb-honesta').textContent = V.estado === 'fallo' ? HONESTA_SIN_CERROS : HONESTA_CON_CERROS;
+    $('#sb-honesta').textContent = (V.estado === 'fallo' ? HONESTA_SIN_CERROS : HONESTA_CON_CERROS) + (api.es3d() ? ' ' + HONESTA_TONO : '');
     $('#sb-controles').hidden = lejos;
     $('#sb-lejos').hidden = !lejos;
     const textoLejos = veloEnVista() ? LEJOS_CON_VELO : LEJOS_SIN_VELO;

@@ -30,8 +30,8 @@
   // De noche (solo con 3D y sombras) el material baja a grises azulados oscuros.
   const NEUTRO_DIA = ['#d3d7dd', '#d0d4da', '#cdd1d8', '#cacfd6', '#c8ccd3', '#c5cad1', '#c2c7cf'];
   const NEUTRO_NOCHE = ['#565b66', '#535863', '#50555f', '#4d525c', '#4a4f59', '#474c56', '#444953'];
-  let deNoche = false;
-  const neutro = (campo) => { const c = deNoche ? NEUTRO_NOCHE : NEUTRO_DIA;
+  let noche = 0;   // 0 de día, 1 de noche; en medio durante el crepúsculo civil (sol de 0 a −6°)
+  const neutro = (campo) => { const c = noche <= 0 ? NEUTRO_DIA : noche >= 1 ? NEUTRO_NOCHE : NEUTRO_DIA.map((d, i) => B.mezclarColor(d, NEUTRO_NOCHE[i], noche));
     return ['step', ['to-number', ['get', campo], 0], c[0], 2, c[1], 3, c[2], 4, c[3], 6, c[4], 10, c[5], 20, c[6]]; };
   const leyenda = document.getElementById('leyenda');
   for (const c of PISOS_COLOR) { const s = document.createElement('span'); s.style.background = c; leyenda.append(s); }
@@ -229,17 +229,20 @@
     'relieve-fuera': { 'fill-color': '#1b212c' },
     relieve: { 'hillshade-shadow-color': '#0c1017', 'hillshade-highlight-color': '#3a4252', 'hillshade-accent-color': '#161b24' }
   };
+  // La noche llega de a poco (panel de textura, punto 3): t va de 0 (día) a 1 (noche) y los
+  // colores se mezclan en línea recta. Se redondea a pasos de 1/20 para no repintar el estilo
+  // en cada minuto de la barra. También acepta true o false.
   const DIA = {};
-  function fijarNoche(si) {
-    si = !!si;
-    if (si === deNoche) return;
-    deNoche = si;
+  function fijarNoche(t) {
+    t = Math.round(Math.min(1, Math.max(0, Number(t) || 0)) * 20) / 20;
+    if (t === noche) return;
+    noche = t;
     for (const id of Object.keys(NOCHE)) {
       if (!mapa.getLayer(id)) continue;
       for (const k of Object.keys(NOCHE[id])) {
         const clave = id + '|' + k;
         if (!(clave in DIA)) DIA[clave] = mapa.getPaintProperty(id, k);
-        mapa.setPaintProperty(id, k, si ? NOCHE[id][k] : DIA[clave]);
+        mapa.setPaintProperty(id, k, t === 0 ? DIA[clave] : t === 1 ? NOCHE[id][k] : B.mezclarValor(DIA[clave], NOCHE[id][k], t));
       }
     }
     aplicarLente();
@@ -254,10 +257,12 @@
   // pliega a su barra de título y la barra del sol queda en su forma corta; los dos se abren
   // con un toque. Si el foco estaba dentro del panel, pasa al botón que lo vuelve a abrir.
   let vistaCalle = false;
+  let alVistaCalle = () => {};   // luz propia de los edificios (más abajo, solo con WebGL2)
   function ponerVistaCalle() {
     const si = caja3d.checked && lenteActual() === 'como-se-ve';
     if (si === vistaCalle) return;
     vistaCalle = si;
+    alVistaCalle(si);
     document.body.classList.toggle('vista-calle', si);
     if (si && !panel.classList.contains('plegado')) {
       const conFoco = panel.querySelector('#cuerpo').contains(document.activeElement);
@@ -295,10 +300,10 @@
     if (on && !mapa.getLayer('construcciones-3d')) {
       const antes = mapa.getLayer('rotulos') ? 'rotulos' : undefined;
       // Sin degradado vertical: cada fachada de un solo tono, la del sol y la de la sombra.
-      mapa.addLayer({ id: 'sectores-3d', type: 'fill-extrusion', source: 'catastro', 'source-layer': 'pisos_sector', maxzoom: 16,
+      mapa.addLayer({ id: 'sectores-3d', type: 'fill-extrusion', source: 'catastro', 'source-layer': 'pisos_sector', maxzoom: 14,
         paint: { 'fill-extrusion-color': colorPor3d('pisos_prom'), 'fill-extrusion-height': alto('pisos_prom'), 'fill-extrusion-opacity': 0.95,
           'fill-extrusion-vertical-gradient': false } }, antes);
-      mapa.addLayer({ id: 'construcciones-3d', type: 'fill-extrusion', source: 'catastro', 'source-layer': 'construcciones', minzoom: 16,
+      mapa.addLayer({ id: 'construcciones-3d', type: 'fill-extrusion', source: 'catastro', 'source-layer': 'construcciones', minzoom: 14,
         paint: { 'fill-extrusion-color': colorPor3d('pisos'), 'fill-extrusion-height': alto('pisos'), 'fill-extrusion-opacity': 0.95,
           'fill-extrusion-vertical-gradient': false } }, antes);
     }
@@ -350,6 +355,28 @@
   const glMapa = mapa.painter && mapa.painter.context && mapa.painter.context.gl;
   const conWebGL2 = typeof WebGL2RenderingContext !== 'undefined' && glMapa instanceof WebGL2RenderingContext;
   B.mapaApi = { mapa, movil, plegar, fijarAlto, pmCat, panel, teselaUrl: (f) => new URL(f, base).href, es3d: () => caja3d.checked, fijarNoche, panelAbierto: () => !panel.classList.contains('plegado'), cieloDia: CIELO_DIA };
+  // Luz propia de los edificios en la vista de calle (edificios-luz.js): cara al sol cálida,
+  // cara a la sombra fría y el pie de las fachadas un poco más oscuro. Se baja solo al entrar a
+  // la vista de calle y solo con WebGL2; si no carga o falla, queda la luz de MapLibre.
+  if (conWebGL2) {
+    let luz = null, bajando = null;
+    const bajarLuz = () => bajando || (bajando = new Promise((ok, mal) => {
+      const s = document.createElement('script');
+      s.src = 'edificios-luz.js'; s.onload = ok; s.onerror = () => { bajando = null; mal(new Error('edificios-luz.js')); };
+      document.head.append(s);
+    }));
+    alVistaCalle = (si) => {
+      if (!si) { if (luz) luz.apagar(mapa); return; }
+      bajarLuz().then(() => {
+        if (!vistaCalle || !mapa.getLayer('construcciones-3d')) return;
+        if (!luz) luz = B.luzEdificios.crear({ alFallar: (m) => console.warn('Luz propia de los edificios apagada:', m) });
+        if (!luz.estado.error) luz.prender(mapa);
+      }).catch(() => {});
+    };
+    B.luzEdificios3d = () => luz;
+    if (vistaCalle) alVistaCalle(true);
+  }
+
   if (cajaSombras) {
     if (!conWebGL2) {
       for (const n of document.querySelectorAll('.solo-sombras')) n.hidden = true;
@@ -419,7 +446,10 @@
         const i = fila.indexOf(': ');
         extra = B.el('div', { clase: 'fila-sombra' }, B.el('b', { texto: fila.slice(0, i + 2) }), fila.slice(i + 2) + ' ', B.marca('inferido'));
       }
-      ventana(ll, [['Pisos', p.pisos], ['Sótanos', p.sotanos], ['Altura en metros', 'no la publica Catastro'] ].concat(f.layer.id.endsWith('-3d') ? [['Alto dibujado', `${3 * Math.max(1, Number(p.pisos) || 1)} m (3 m por piso, supuesto)`]] : []),
+      // Lejos (teselas 14 y 15) la huella es la unión de las construcciones de la manzana con
+      // los mismos pisos y no trae sótanos: se dice, en vez de un «sin dato» que confunde.
+      const lejos = p.sotanos === undefined;
+      ventana(ll, [['Pisos', p.pisos], lejos ? ['Huella', 'unida por manzana (vista lejana); acércate para ver cada construcción'] : ['Sótanos', p.sotanos], ['Altura en metros', 'no la publica Catastro'] ].concat(f.layer.id.endsWith('-3d') ? [['Alto dibujado', `${3 * Math.max(1, Number(p.pisos) || 1)} m (3 m por piso, supuesto)`]] : []),
         { tipo: 'de_fuente', fuente: 'UAECD, Catastro Bogotá', licencia: { nombre: 'CC BY 4.0', url: 'https://creativecommons.org/licenses/by/4.0/deed.es' } }, extra);
     } else if (id === 'pisos-sector') {
       ventana(ll, [['Sector', p.nombre], ['Pisos promedio', p.pisos_prom], ['Pisos máximo', p.pisos_max], ['Construcciones', p.construcciones]],

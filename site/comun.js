@@ -106,6 +106,24 @@
   // «p. m.» ya trae su punto: evita «p. m..» al final de una frase.
   const frase = (s) => s.replace(/\.\./g, '.');
 
+  // Mezcla en línea recta de dos colores #rrggbb (t de 0 a 1). Para la noche que llega de a poco.
+  const HEX = /^#[0-9a-f]{6}$/i;
+  function mezclarColor(a, b, t) {
+    const pa = parseInt(a.slice(1), 16), pb = parseInt(b.slice(1), 16);
+    const c = (s) => Math.round(((pa >> s) & 255) * (1 - t) + ((pb >> s) & 255) * t);
+    return '#' + ((c(16) << 16) | (c(8) << 8) | c(0)).toString(16).padStart(6, '0');
+  }
+  // Lo mismo para un valor de estilo: colores sueltos o dentro de una expresión con la misma
+  // forma de día y de noche (un «match» de vías, por ejemplo). Si no se pueden mezclar, cambia
+  // a la mitad del camino.
+  function mezclarValor(a, b, t) {
+    if (typeof a === 'string' && typeof b === 'string' && HEX.test(a) && HEX.test(b)) return mezclarColor(a, b, t);
+    if (Array.isArray(a) && Array.isArray(b) && a.length === b.length) return a.map((v, i) => mezclarValor(v, b[i], t));
+    if (a === b) return a;
+    if (typeof a === 'number' && typeof b === 'number') return a + (b - a) * t;
+    return t < 0.5 ? a : b;
+  }
+
   // Se suma a lo que ya haya (sol.js y sombra-geom.js cuelgan sus piezas aquí también).
-  window.Bogotwin = Object.assign(window.Bogotwin || {}, { el, enlace, marca, marcaDe, meta, valor, edad, edadTexto, minutosDesde, num, horaLocal, fechaLocal, sinTildes, nombrePropio, frase, MARCAS });
+  window.Bogotwin = Object.assign(window.Bogotwin || {}, { el, enlace, marca, marcaDe, meta, valor, edad, edadTexto, minutosDesde, num, horaLocal, fechaLocal, sinTildes, nombrePropio, frase, MARCAS, mezclarColor, mezclarValor });
 })();
