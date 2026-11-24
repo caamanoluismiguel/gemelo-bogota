@@ -90,4 +90,4 @@ jobs:
     steps:
       - name: Publicar en Pages
         id: despliegue
-        uses: actions/deploy-pages@368f8252e2d8e5d9e8b7ad0bc5ad2c43dd2da7b7 # v5.0.1
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
