@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com; style-src 'self' https://unpkg.com; img-src 'self' data: blob: https://caamanoluismiguel.github.io; connect-src 'self' https://caamanoluismiguel.github.io; worker-src 'self' blob:; child-src blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="robots" content="noindex">
+<title>Prueba de sombras</title>
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.1/dist/maplibre-gl.css"
+  integrity="sha384-uTttxo/aOKbdE5RlD/SPzSDoDmNvGlUYPjONi2MN/b7c9HPSvW07OIuyP7uL6jxK" crossorigin="anonymous">
+<link rel="stylesheet" href="prueba-sombras.css">
+<script defer src="https://unpkg.com/maplibre-gl@5.24.1/dist/maplibre-gl.js"
+  integrity="sha384-nXMl9YiLoSG5KBPTFgvxVuIqQQcqIvo0bFrvoEaGJC6r7IibIzF1S36Zbf/sKBtL" crossorigin="anonymous"></script>
+<script defer src="https://unpkg.com/pmtiles@4.5.0/dist/pmtiles.js"
+  integrity="sha384-pbKNZbDshUsLnZMIVsn/t+j3xEY9PGfuX5Z22l5rcy/obXz3EwaMx1F5d9sRsJMn" crossorigin="anonymous"></script>
+<script defer src="comun.js"></script>
+<script defer src="sol.js"></script>
+<script defer src="sombra-geom.js"></script>
+<script defer src="mvt.js"></script>
+<script defer src="sombras-capa.js"></script>
+<script defer src="prueba-sombras.js"></script>
+</head>
+<body>
+<div id="mapa" role="region" aria-label="Mapa de prueba de sombras"></div>
+<div id="control">
+  <p class="titulo">Prueba de sombras <span id="fecha"></span></p>
+  <label for="hora">Hora <output id="hora-txt">12:00</output></label>
+  <input id="hora" type="range" min="360" max="1080" step="1" value="720">
+  <p class="cifras"><span id="fps">— cuadros/s</span> · <span id="estado">cargando…</span></p>
+  <button id="medir" type="button">Medir 10 s</button>
+  <p class="nota" id="resultado" aria-live="polite"></p>
+</div>
+</body>
+</html>

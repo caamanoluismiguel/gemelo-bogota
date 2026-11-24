@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com; style-src 'self' https://unpkg.com; img-src 'self' data: blob: https://caamanoluismiguel.github.io; connect-src 'self' https://caamanoluismiguel.github.io; worker-src 'self' blob:; child-src blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<title>Bogotwin</title>
+<meta name="description" content="Bogotwin, un gemelo digital abierto e independiente de Bogotá: el cielo de hoy, las noches frías, la ciudad por pisos y las estaciones, con la fuente y la fecha de cada dato.">
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.1/dist/maplibre-gl.css"
+  integrity="sha384-uTttxo/aOKbdE5RlD/SPzSDoDmNvGlUYPjONi2MN/b7c9HPSvW07OIuyP7uL6jxK" crossorigin="anonymous">
+<link rel="stylesheet" href="estilo.css">
+<script defer src="https://unpkg.com/maplibre-gl@5.24.1/dist/maplibre-gl.js"
+  integrity="sha384-nXMl9YiLoSG5KBPTFgvxVuIqQQcqIvo0bFrvoEaGJC6r7IibIzF1S36Zbf/sKBtL" crossorigin="anonymous"></script>
+<script defer src="https://unpkg.com/pmtiles@4.5.0/dist/pmtiles.js"
+  integrity="sha384-pbKNZbDshUsLnZMIVsn/t+j3xEY9PGfuX5Z22l5rcy/obXz3EwaMx1F5d9sRsJMn" crossorigin="anonymous"></script>
+<script defer src="comun.js"></script>
+<script defer src="mapa.js"></script>
+<script defer src="cielo.js"></script>
+</head>
+<body>
+<div id="mapa" role="region" aria-label="Mapa de Bogotá"></div>
+
+<aside id="panel" aria-label="Datos de Bogotá">
+  <header class="cabeza">
+    <div>
+      <h1>Bogotwin</h1>
+      <p class="sub">Un gemelo digital abierto e independiente de Bogotá</p>
+    </div>
+    <button id="plegar" type="button" aria-expanded="true" aria-controls="cuerpo">Ocultar</button>
+  </header>
+
+  <div id="cuerpo">
+    <div class="buscador">
+      <label for="buscar">Busca un barrio, una UPL o una localidad</label>
+      <input id="buscar" type="search" autocomplete="off" spellcheck="false" placeholder="Por ejemplo, Cedritos">
+      <ul id="resultados" aria-live="polite"></ul>
+    </div>
+
+    <section class="tarjeta" id="cielo" aria-labelledby="t-cielo">
+      <h2 id="t-cielo">El cielo de Bogotá ahora</h2>
+      <p class="estado" id="cielo-estado">Cargando los datos del cielo…</p>
+      <div id="cielo-cuerpo"></div>
+    </section>
+
+    <section class="tarjeta" id="noches" aria-labelledby="t-noches">
+      <h2 id="t-noches">Noches frías</h2>
+      <div id="noches-cuerpo"><p class="estado">Cargando el registro de anoche…</p></div>
+    </section>
+
+    <section class="tarjeta" aria-labelledby="t-capas">
+      <h2 id="t-capas">Qué ves en el mapa</h2>
+      <fieldset class="capas">
+        <legend class="oculto">Capas</legend>
+        <label><input type="checkbox" data-grupo="pisos" checked> Pisos de cada construcción</label>
+        <div class="leyenda" id="leyenda" aria-hidden="true"></div>
+        <div class="escala" aria-hidden="true"><span>0 a 1</span><span>2</span><span>3</span><span>4 y 5</span><span>6 a 9</span><span>10 a 19</span><span>20+</span></div>
+        <p class="nota">Número de pisos según Catastro, no altura en metros. De lejos ves el promedio de cada sector; acércate para ver cada construcción. <span class="marca" data-marca="de_fuente">de fuente</span></p>
+        <label><input type="checkbox" id="ver-3d"> Levantar la ciudad en 3D</label>
+        <p class="nota">Los cerros con su altura real <span class="marca" data-marca="de_fuente">de fuente</span> y los edificios a 3 m por piso, un dibujo y no una medida: Catastro publica los pisos, no la altura. <span class="marca" data-marca="supuesto">supuesto</span></p>
+        <label class="solo-sombras"><input type="checkbox" id="ver-sombras"> Sombras de los edificios</label>
+        <p class="nota solo-sombras" id="sombras-nota">Las sombras se dibujan de cerca, calle por calle. Son un dibujo, no una medida. <span class="marca" data-marca="inferido">inferido</span> <span class="marca" data-marca="supuesto">supuesto</span></p>
+        <p class="nota aviso-hoja" id="sombras-hoja" hidden>El control del sol está sobre el mapa. Toca «Ocultar» para verlo.</p>
+        <details class="mas solo-sombras" id="sombras-como">
+          <summary>Cómo se calcula la sombra</summary>
+          <p class="nota">Ponemos el sol donde está en la fecha y la hora que elijas, siempre en hora de Bogotá. Cada construcción tira su sombra al lado contrario del sol.</p>
+          <p class="nota">Catastro publica los pisos, no la altura. Por eso la sombra va en dos tonos: la parte oscura cuenta 2,5 m por piso y la clara llega hasta 4 m por piso. La sombra de verdad cae en algún punto de esa franja. <span class="marca" data-marca="supuesto">supuesto</span></p>
+          <p class="nota">El 3D levanta los edificios con 3 m por piso, que queda dentro de esa misma franja. <span class="marca" data-marca="supuesto">supuesto</span></p>
+          <p class="nota">La sombra de los cerros es el velo gris de la mañana y de la tarde. Los cerros salen del Modelo Digital de Terreno 2025 de Bogotá y, fuera del Distrito, de Copernicus. La misma elevación da el relieve que ves y la hora a la que el sol pasa los cerros, cada 100 m al pie de los cerros y cada 500 m en la sabana. <span class="marca" data-marca="inferido">inferido</span></p>
+          <p class="nota">No dibujamos la sombra de los árboles ni de las nubes. Con el 3D cada sombra se apoya en el suelo a la altura de su construcción, pero se dibuja plana: en las lomas se corre un poco.</p>
+          <p class="nota">En «Ahora» miramos el reporte de El Dorado y Guaymaral. Si los dos dicen cielo cubierto, o si llueve, la sombra se dibuja a media intensidad. Una hora que tú elijas se dibuja con cielo despejado.</p>
+          <p class="nota">Sirve para comparar horas y épocas del año, no para medir.</p>
+        </details>
+        <label><input type="checkbox" data-grupo="troncal" checked> Estaciones de TransMilenio</label>
+        <label><input type="checkbox" data-grupo="metro" checked> Metro línea 1 (en obra)</label>
+        <label><input type="checkbox" data-grupo="paraderos"> Paraderos del SITP <span class="nota-inline">(se descargan al marcar, 140 KB)</span></label>
+        <label><input type="checkbox" data-grupo="lluvia"> Lluvia de hoy en los pluviómetros del SAB</label>
+        <label><input type="checkbox" data-grupo="localidades" checked> Localidades y UPL</label>
+        <label><input type="checkbox" data-grupo="sectores"> Sectores catastrales</label>
+        <label><input type="checkbox" data-grupo="base" checked> Calles, agua y verde</label>
+      </fieldset>
+    </section>
+
+    <section class="tarjeta marcas-ayuda" aria-labelledby="t-marcas">
+      <h2 id="t-marcas">Cómo leer cada dato</h2>
+      <ul>
+        <li><span class="marca" data-marca="medido">medido</span> lo registró un instrumento.</li>
+        <li><span class="marca" data-marca="de_fuente">de fuente</span> viene tal cual de un registro oficial.</li>
+        <li><span class="marca" data-marca="inferido">inferido</span> lo calculamos aquí con datos de otros.</li>
+        <li><span class="marca" data-marca="estimado">estimado</span> sale de un modelo, no de una medida. Los pronósticos van con esta marca.</li>
+        <li><span class="marca" data-marca="supuesto">supuesto</span> es un número que pusimos nosotros para poder dibujar; no está medido.</li>
+      </ul>
+      <p class="nota">Cada valor dice hace cuánto se tomó. Si un dato está viejo, lo verás marcado.</p>
+    </section>
+
+    <footer class="pie">
+      <p><a href="fuentes.html">Fuentes, licencias y lo que este visor no tiene</a></p>
+      <p class="nota">Proyecto independiente. No es de la Alcaldía de Bogotá ni de sus entidades, ni el programa «Gemelo Digital de Bogotá» de la Secretaría Distrital de Planeación. Los nombres de las entidades aparecen solo para dar crédito a sus datos.</p>
+      <p class="nota">Código abierto (AGPL‑3.0) en <a href="https://github.com/caamanoluismiguel/gemelo-bogota">GitHub</a>.</p>
+    </footer>
+  </div>
+</aside>
+</body>
+</html>

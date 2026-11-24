@@ -9,7 +9,7 @@ Uso:
 
 Reglas que cumple el archivo (panel/respuestas-gemelo.md, sección 12.1):
   * Cada bloque lleva fuente, URL, hora del dato, hora de consulta, licencia y
-    etiqueta (medido, estimado o simulado). Aquí no hay nada simulado.
+    etiqueta (medido o estimado, de la lista común del sitio).
   * Si una fuente falla, el bloque dice «falla», guarda el último valor bueno
     que había en el JSON anterior y su edad. Nunca se inventa un valor.
   * El gemelo no emite alertas propias. Ningún campo dice «alerta», «riesgo»
@@ -19,12 +19,13 @@ Reglas que cumple el archivo (panel/respuestas-gemelo.md, sección 12.1):
     (SAB del IDIGER) con fuentes SA (IDEAM). El único cálculo propio sobre
     datos NC es el resumen por localidad del SAB, que solo usa datos del SAB.
 
-Etiquetas:
+Etiquetas (la misma lista del sitio: medido, de fuente, inferido, estimado,
+supuesto; esta tarjeta usa solo las dos primeras de aquí abajo):
   medido    lo registró un instrumento (pluviómetro, estación de aeropuerto,
             sismógrafo, detección de calor por satélite, imagen de satélite).
   estimado  sale de un modelo o de una relación teórica a partir de medidas
-            (UV de CAMS, lluvia del radar por Marshall‑Palmer).
-  simulado  escenario sin relación con el ahora. No se usa en esta tarjeta.
+            (UV de CAMS, lluvia del radar por Marshall‑Palmer). Los
+            pronósticos también son estimado.
 """
 
 from __future__ import annotations
@@ -584,8 +585,7 @@ def main() -> int:
         ],
         "etiquetas": {
             "medido": "Lo registró un instrumento.",
-            "estimado": "Sale de un modelo o de una relación teórica a partir de medidas.",
-            "simulado": "Escenario sin relación con el ahora. No se usa en esta tarjeta.",
+            "estimado": "Sale de un modelo o de una relación teórica a partir de medidas. Los pronósticos también son estimado.",
         },
         "licencia_del_archivo": "Recopilación sin fundir: cada bloque lleva la licencia de su fuente. El código que lo arma es AGPL‑3.0.",
         "resumen_estado": {k: v.get("estado") for k, v in fuentes.items()},

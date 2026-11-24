@@ -1,0 +1,255 @@
+{
+ "version": 2,
+ "fecha": "2026-11-23",
+ "descripcion": "Los 16 puntos de panel/sombras-bioclimatico.md §4 con la hora de llegada del sol que calculó B (GLO-30 crudo, rayo por punto, ignora lo que está a menos de 400 m). Versión 2: cada punto es el centroide del polígono (o el nodo) de un objeto concreto de OpenStreetMap, sacado del extracto local salida/trabajo/osm/bogota.osm.pbf con osmium, no un geocodificador. B no guardó sus coordenadas: su tabla vale para el lugar, no para un punto exacto.",
+ "fuente_coordenadas": "OpenStreetMap (ODbL), extracto local bogota.osm.pbf del 2026-11-23; centroide de área del anillo exterior en lon y lat",
+ "metodo": "osmium tags-filter (leisure=park, place=square, amenity=place_of_worship, shop=mall) + osmium export; centroide calculado a mano (ver panel/terreno-arreglos.md §3)",
+ "uso": "solo la prueba del paso 5; no se publican en el visor",
+ "fechas": {
+  "21 dic": 355,
+  "20 mar": 79,
+  "21 jun": 172
+ },
+ "puntos": [
+  {
+   "lugar": "Plaza de Bolívar",
+   "lon": -74.076037,
+   "lat": 4.598106,
+   "osm": "relation/13663349",
+   "que_es": "place=square",
+   "por_que": "centroide de la plaza",
+   "lon_v1": -74.0760021,
+   "lat_v1": 4.5981694,
+   "b": {
+    "21 dic": "7:03",
+    "20 mar": "6:41",
+    "21 jun": "6:46"
+   }
+  },
+  {
+   "lugar": "Chorro de Quevedo",
+   "lon": -74.069692,
+   "lat": 4.597227,
+   "osm": "way/449279151",
+   "que_es": "place=square",
+   "por_que": "centroide de la plazoleta",
+   "lon_v1": -74.0697082,
+   "lat_v1": 4.597234,
+   "b": {
+    "21 dic": "7:18",
+    "20 mar": "7:00",
+    "21 jun": "6:57"
+   }
+  },
+  {
+   "lugar": "Parque Santander",
+   "lon": -74.072567,
+   "lat": 4.602005,
+   "osm": "way/364703320",
+   "que_es": "leisure=park",
+   "por_que": "centroide del parque (Cra 7 con Av. Jiménez)",
+   "lon_v1": -74.0725651,
+   "lat_v1": 4.6020052,
+   "b": {
+    "21 dic": "7:05",
+    "20 mar": "6:45",
+    "21 jun": "6:46"
+   }
+  },
+  {
+   "lugar": "Parque Nacional",
+   "lon": -74.06182,
+   "lat": 4.62358,
+   "osm": "way/404741327",
+   "que_es": "leisure=park, Parque Nacional Enrique Olaya Herrera",
+   "por_que": "centroide del parque; la versión 1 usaba el centroide del barrio",
+   "lon_v1": -74.0629696,
+   "lat_v1": 4.6221748,
+   "b": {
+    "21 dic": "7:28",
+    "20 mar": "7:12",
+    "21 jun": "7:23"
+   }
+  },
+  {
+   "lugar": "Parque de los Hippies (Chapinero)",
+   "lon": -74.061942,
+   "lat": 4.645413,
+   "osm": "way/24306049",
+   "que_es": "leisure=park, Parque de los Hippies o Sucre",
+   "por_que": "centroide del parque (Cra 7 con Cl 60)",
+   "lon_v1": -74.0619544,
+   "lat_v1": 4.6454285,
+   "b": {
+    "21 dic": "7:06",
+    "20 mar": "6:51",
+    "21 jun": "6:31"
+   }
+  },
+  {
+   "lugar": "Parque de la 93",
+   "lon": -74.048288,
+   "lat": 4.676768,
+   "osm": "way/24577301",
+   "que_es": "leisure=park",
+   "por_que": "centroide del parque",
+   "lon_v1": -74.0482874,
+   "lat_v1": 4.676768,
+   "b": {
+    "21 dic": "7:02",
+    "20 mar": "6:39",
+    "21 jun": "6:17"
+   }
+  },
+  {
+   "lugar": "Plaza de Usaquén",
+   "lon": -74.030954,
+   "lat": 4.695164,
+   "osm": "way/24715375",
+   "que_es": "leisure=park, plaza fundacional",
+   "por_que": "centroide de la plaza",
+   "lon_v1": -74.0309557,
+   "lat_v1": 4.6951638,
+   "b": {
+    "21 dic": "6:57",
+    "20 mar": "7:02",
+    "21 jun": "7:03"
+   }
+  },
+  {
+   "lugar": "Unicentro (Usaquén)",
+   "lon": -74.041288,
+   "lat": 4.702153,
+   "osm": "relation/5147441",
+   "que_es": "shop=mall",
+   "por_que": "centroide del centro comercial; B no dice qué punto usó",
+   "lon_v1": -74.0412813,
+   "lat_v1": 4.7021592,
+   "b": {
+    "21 dic": "6:33",
+    "20 mar": "6:41",
+    "21 jun": "6:20"
+   }
+  },
+  {
+   "lugar": "Parque Simón Bolívar",
+   "lon": -74.094079,
+   "lat": 4.658565,
+   "osm": "way/23592328",
+   "que_es": "leisure=park, Parque Metropolitano Simón Bolívar",
+   "por_que": "centroide del parque",
+   "lon_v1": -74.094133,
+   "lat_v1": 4.6587491,
+   "b": {
+    "21 dic": "6:24",
+    "20 mar": "6:24",
+    "21 jun": "6:00"
+   }
+  },
+  {
+   "lugar": "Parque Timiza (Kennedy)",
+   "lon": -74.154234,
+   "lat": 4.609144,
+   "osm": "relation/17747552",
+   "que_es": "leisure=park, Parque Metropolitano Timiza",
+   "por_que": "centroide del parque; la versión 1 caía 280 m al noroeste",
+   "lon_v1": -74.1565348,
+   "lat_v1": 4.610461,
+   "b": {
+    "21 dic": "6:17",
+    "20 mar": "6:14",
+    "21 jun": "5:59"
+   }
+  },
+  {
+   "lugar": "Bosa",
+   "lon": -74.184706,
+   "lat": 4.609906,
+   "osm": "way/57872223",
+   "que_es": "leisure=park, Plaza Central de Bosa",
+   "por_que": "plaza fundacional de Bosa; la versión 1 era el centroide de la localidad",
+   "lon_v1": -74.1942955,
+   "lat_v1": 4.6180154,
+   "b": {
+    "21 dic": "6:15",
+    "20 mar": "6:13",
+    "21 jun": "5:56"
+   }
+  },
+  {
+   "lugar": "20 de Julio (San Cristóbal)",
+   "lon": -74.095548,
+   "lat": 4.568224,
+   "osm": "way/1416431798",
+   "que_es": "amenity=place_of_worship, Santuario 20 de Julio - Divino Niño Jesús",
+   "por_que": "el santuario que da nombre al barrio; la versión 1 era el centroide de la UPZ",
+   "lon_v1": -74.0951442,
+   "lat_v1": 4.5667056,
+   "b": {
+    "21 dic": "6:29",
+    "20 mar": "6:38",
+    "21 jun": "6:18"
+   }
+  },
+  {
+   "lugar": "UPZ Lucero (Ciudad Bolívar)",
+   "lon": -74.141301,
+   "lat": 4.554075,
+   "osm": "way/757408221",
+   "que_es": "leisure=park, Parque Lucero",
+   "por_que": "el parque que lleva el nombre de la UPZ; la versión 1 era el centroide de la UPZ, a 1 km",
+   "lon_v1": -74.1497326,
+   "lat_v1": 4.550982,
+   "b": {
+    "21 dic": "6:25",
+    "20 mar": "6:18",
+    "21 jun": "6:05"
+   }
+  },
+  {
+   "lugar": "Usme Pueblo",
+   "lon": -74.121736,
+   "lat": 4.473816,
+   "osm": "way/560367659",
+   "que_es": "leisure=park, Parque Usme Pueblo",
+   "por_que": "centroide del parque (el mismo de la versión 1)",
+   "lon_v1": -74.1216919,
+   "lat_v1": 4.4738904,
+   "b": {
+    "21 dic": "6:35",
+    "20 mar": "6:32",
+    "21 jun": "6:15"
+   }
+  },
+  {
+   "lugar": "Plaza de Suba",
+   "lon": -74.0838,
+   "lat": 4.741007,
+   "osm": "way/1023370971",
+   "que_es": "place=square",
+   "por_que": "centroide de la plaza fundacional",
+   "lon_v1": -74.0837653,
+   "lat_v1": 4.7410675,
+   "b": {
+    "21 dic": "6:48",
+    "20 mar": "6:50",
+    "21 jun": "6:26"
+   }
+  },
+  {
+   "lugar": "Colina Campestre (Suba)",
+   "lon": -74.061506,
+   "lat": 4.734018,
+   "osm": "way/29251692",
+   "que_es": "leisure=park, Parque Colina Campestre",
+   "por_que": "el mayor de los tres parques con ese nombre en OSM",
+   "lon_v1": -74.061332,
+   "lat_v1": 4.7337562,
+   "b": {
+    "21 dic": "6:20",
+    "20 mar": "6:19",
+    "21 jun": "6:00"
+   }
+  }
+ ]
+}

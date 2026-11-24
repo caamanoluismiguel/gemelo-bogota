@@ -1,0 +1,16 @@
+html, body { margin: 0; height: 100%; background: #f4f2ee; color: #2b2a27; font: 15px/1.35 system-ui, -apple-system, "Segoe UI", sans-serif; }
+#mapa { position: absolute; inset: 0; }
+#control {
+  position: absolute; left: 12px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom)); max-width: 420px;
+  background: #fffdf9; border: 1px solid #d9d4ca; border-radius: 10px; padding: 10px 14px; box-shadow: 0 2px 10px rgba(0, 0, 0, .12);
+}
+#control p { margin: 0 0 6px; }
+.titulo { font-weight: 600; }
+#fecha { font-weight: 400; color: #6b665e; }
+#control label { display: flex; justify-content: space-between; }
+#hora { width: 100%; height: 36px; margin: 2px 0 6px; }
+.cifras { font-variant-numeric: tabular-nums; }
+#fps { font-weight: 700; }
+#medir { font: inherit; padding: 8px 14px; border-radius: 8px; border: 1px solid #b9b2a5; background: #f4f2ee; color: inherit; }
+#medir:focus-visible, #hora:focus-visible { outline: 2px solid #1d5fa8; outline-offset: 2px; }
+.nota { color: #4f4a43; font-size: 13px; }

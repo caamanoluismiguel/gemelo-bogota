@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'none'; style-src 'self'; img-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<title>Fuentes y licencias · Bogotwin</title>
+<meta name="description" content="De dónde sale cada dato de Bogotwin, con qué licencia y qué cosas este visor todavía no tiene.">
+<link rel="stylesheet" href="estilo.css">
+</head>
+<body>
+<main class="pagina">
+  <p><a href="./">Volver al mapa</a></p>
+  <h1>Fuentes, licencias y lo que este visor no tiene</h1>
+
+  <div class="aviso">
+    <p><strong>Bogotwin es un proyecto independiente.</strong> No es de la Alcaldía de Bogotá ni de sus entidades, y no es el programa «Gemelo Digital de Bogotá» de la Secretaría Distrital de Planeación. No tiene contrato ni pago de ninguna entidad. El nombre de cada entidad aparece solo para darle crédito a sus datos.</p>
+    <p>Para alertas de lluvia, inundación, deslizamiento o sismo, sigue siempre a las fuentes oficiales: el IDIGER, el IDEAM y el Servicio Geológico Colombiano.</p>
+  </div>
+
+  <h2>Cómo leer cada dato</h2>
+  <p>Cada valor lleva una marca y su edad, calculada en tu navegador con la hora del dato.</p>
+  <ul>
+    <li><span class="marca" data-marca="medido">medido</span> lo registró un instrumento: un termómetro, un pluviómetro, un satélite.</li>
+    <li><span class="marca" data-marca="de_fuente">de fuente</span> viene tal cual de un registro oficial, como el número de pisos de Catastro o la ubicación de una estación.</li>
+    <li><span class="marca" data-marca="inferido">inferido</span> lo calculamos aquí con datos de otros, por ejemplo el promedio de pisos de un sector.</li>
+    <li><span class="marca" data-marca="estimado">estimado</span> sale de un modelo, no de una medida, como el índice UV. Los pronósticos también llevan esta marca: el UV de mañana y lo que esperan los modelos para las próximas noches.</li>
+    <li><span class="marca" data-marca="supuesto">supuesto</span> es un número que pusimos nosotros para poder dibujar; no está medido. Por ejemplo, los 3 m por piso del 3D.</li>
+  </ul>
+
+  <h2>De dónde sale cada capa</h2>
+  <div class="tabla">
+  <table>
+    <thead><tr><th>Qué ves</th><th>Fuente</th><th>Licencia</th><th>Fecha</th></tr></thead>
+    <tbody>
+      <tr><td>Calles, agua, zonas verdes y edificios de OSM</td><td><a href="https://www.openstreetmap.org/copyright">© colaboradores de OpenStreetMap</a>, extracto de Geofabrik</td><td>ODbL 1.0. Las teselas derivadas también quedan bajo ODbL.</td><td>23 nov 2026</td></tr>
+      <tr><td>Localidades y UPL</td><td>Secretaría Distrital de Planeación, <a href="https://datosabiertos.bogota.gov.co/">Datos Abiertos Bogotá</a></td><td>CC BY 4.0</td><td>23 nov 2026</td></tr>
+      <tr><td>Sectores catastrales y pisos de cada construcción</td><td>UAECD (Catastro Bogotá), <a href="https://datosabiertos.bogota.gov.co/dataset/construccion">Datos Abiertos Bogotá</a>, corte de octubre de 2026</td><td>CC BY 4.0</td><td>23 nov 2026</td></tr>
+      <tr><td>3D: alto de los edificios</td><td>Pisos de Catastro por 3 m <span class="marca" data-marca="supuesto">supuesto</span></td><td>Pisos: CC BY 4.0</td><td>23 nov 2026</td></tr>
+      <tr><td>Sombras de los edificios</td><td>Posición del sol calculada aquí y pisos de Catastro por 2,5 a 4 m <span class="marca" data-marca="inferido">inferido</span></td><td>Pisos: CC BY 4.0</td><td>Al momento que elijas</td></tr>
+      <tr><td>Relieve del 3D dentro de Bogotá</td><td>Modelo Digital de Terreno de Bogotá 2025 (MDT 2025), Secretaría Distrital de Planeación y UAECD, publicado por IDECA en <a href="https://datosabiertos.bogota.gov.co/dataset/modelo-digital-de-terreno-de-la-ciudad-de-bogota-ano-2025">Datos Abiertos Bogotá</a></td><td>CC BY 4.0</td><td>23 nov 2026</td></tr>
+      <tr><td>Relieve del 3D alrededor de Bogotá</td><td>Copernicus DEM GLO-30, bajado del <a href="https://registry.opendata.aws/copernicus-dem">registro abierto de AWS</a></td><td>Licencia de Copernicus DEM GLO-30, libre y abierta. Aviso de la licencia, tal cual: «produced using Copernicus WorldDEM-30 © DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved».</td><td>23 nov 2026</td></tr>
+      <tr><td>Barrios legalizados (buscador)</td><td>Secretaría Distrital de Planeación, Datos Abiertos Bogotá</td><td>CC BY 4.0</td><td>23 nov 2026</td></tr>
+      <tr><td>Estaciones troncales de TransMilenio</td><td>TransMilenio S.A., <a href="https://datosabiertos.bogota.gov.co/dataset/estaciones-troncales-de-transmilenio1">Datos Abiertos Bogotá</a></td><td>CC BY 4.0</td><td>23 nov 2026</td></tr>
+      <tr><td>Metro línea 1, estaciones y trazado</td><td>Empresa Metro de Bogotá, publicado por IDECA</td><td>CC BY 4.0</td><td>23 nov 2026</td></tr>
+      <tr><td>Paraderos del SITP</td><td>TransMilenio S.A., <a href="https://datosabiertos.bogota.gov.co/dataset/especificacion-gtfs-general-transport-feed-specification-sitp">GTFS estático</a></td><td>CC BY‑SA 4.0. Va en un archivo aparte; lo que derives de él queda bajo CC BY‑SA.</td><td>Archivo del 13 oct 2026</td></tr>
+      <tr><td>Temperatura y viento en los aeropuertos</td><td>METAR de la Aerocivil, servidos por el <a href="https://aviationweather.gov/">Aviation Weather Center</a> (NOAA/NWS)</td><td>Dominio público</td><td>Cada 20 min</td></tr>
+      <tr><td>Lluvia en pluviómetros</td><td>IDIGER, <a href="https://datosabiertos.bogota.gov.co/dataset/sab-sistema-de-alerta-de-bogota-lluvia-minutal-idiger-bogota-d-c">Sistema de Alerta de Bogotá</a>. Datos crudos sin validar por completo.</td><td>CC BY‑NC 4.0. Solo uso no comercial. No lo combinamos con datos bajo CC BY‑SA.</td><td>Cada 20 min</td></tr>
+      <tr><td>Radar de Tablazo</td><td>IDEAM</td><td>CC BY‑SA 4.0</td><td>Cuando responde</td></tr>
+      <tr><td>Imagen de nubes</td><td>NOAA GOES‑19, vía <a href="https://www.earthdata.nasa.gov/engage/open-data-services-software-policies/data-use-guidance">NASA GIBS</a></td><td>Dominio público</td><td>Cada 20 min</td></tr>
+      <tr><td>Índice UV</td><td>Copernicus Atmosphere Monitoring Service (CAMS), servido por <a href="https://open-meteo.com/">Open‑Meteo</a></td><td>CC BY 4.0. La API gratis de Open‑Meteo es para uso no comercial.</td><td>Cada 20 min</td></tr>
+      <tr><td>Pronóstico de noches frías</td><td>Siete modelos globales servidos por <a href="https://open-meteo.com/">Open‑Meteo</a></td><td>CC BY 4.0</td><td>Cada día a las 6:30</td></tr>
+      <tr><td>Focos de calor</td><td><a href="https://firms.modaps.eosdis.nasa.gov/">NASA FIRMS</a>, VIIRS</td><td>Datos abiertos de la NASA</td><td>Cada 20 min</td></tr>
+      <tr><td>Sismos</td><td><a href="https://earthquake.usgs.gov/">USGS</a>, catálogo ComCat</td><td>Dominio público de EE. UU.</td><td>Cada 20 min</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <h3>Relieve: atribución y exención</h3>
+  <p>Relieve: Modelo Digital de Terreno de Bogotá 2025 (MDT 2025), Secretaría Distrital de Planeación y Unidad Administrativa Especial de Catastro Distrital (UAECD), publicado por IDECA en <a href="https://datosabiertos.bogota.gov.co/dataset/modelo-digital-de-terreno-de-la-ciudad-de-bogota-ano-2025">Datos Abiertos Bogotá</a> bajo <a href="https://creativecommons.org/licenses/by/4.0/deed.es">CC BY 4.0</a>. Lo elaboró SIGLA S.A.S. por los contratos 1047/2024 (SDP, zona urbana y Cerros Orientales) y 369-2025 (UAECD, zona rural). Lo promediamos a una rejilla de unos 30 m y lo unimos con Copernicus en el borde.</p>
+  <p>Alrededor de Bogotá: produced using Copernicus WorldDEM-30 © DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved. The organisations in charge of the Copernicus programme by law or by delegation do not incur any liability for any use of the Copernicus WorldDEM-30. El programa Copernicus no respalda este visor.</p>
+  <p>El relieve mezcla las dos fuentes: dentro del Distrito vale el MDT 2025 con su CC BY 4.0; afuera, y en una franja de costura de 1.000 m hacia adentro del borde, vale la licencia de Copernicus. Quien reutilice el relieve recibe las mismas condiciones. Con ese mismo relieve calculamos la sombra de los cerros (la hora a la que el sol los pasa en cada punto), así que vale la misma atribución.</p>
+  <p>Cada mapa en teselas tiene una sola licencia: nunca unimos OpenStreetMap con capas CC BY en un mismo archivo. El código que arma todo está en <a href="https://github.com/caamanoluismiguel/gemelo-bogota">GitHub</a> bajo AGPL‑3.0, con el archivo de procedencia de cada tesela (de dónde se bajó, cuándo y su huella sha256).</p>
+
+  <h2>Lo que este visor no tiene</h2>
+  <ul>
+    <li><strong>Alturas en metros.</strong> Catastro publica el número de pisos, no la altura, y no la presentamos como un dato. El 3D sí necesita un alto para levantar los edificios: usa 3 m por piso y lo marca como supuesto. Las sombras usan una franja de 2,5 a 4 m por piso porque no sabemos el alto real.</li>
+    <li><strong>Sombra de los árboles y de las nubes.</strong> Dibujamos la de los edificios y la de los cerros. La de los edificios se corre un poco en las lomas, porque cada una se dibuja plana a la altura de su construcción. La de los cerros va en una rejilla de 100 m al pie de los cerros y de 500 m en la sabana: dentro de una cuadra no cambia.</li>
+    <li><strong>Temperatura por calle o por barrio.</strong> Solo hay dos termómetros abiertos con dato cada hora: los de los aeropuertos El Dorado y Guaymaral.</li>
+    <li><strong>Alertas.</strong> Esto es un registro y una vitrina, no un sistema de alerta. Las alertas son del IDIGER y del IDEAM.</li>
+    <li><strong>Buses en vivo ni tráfico.</strong> No encontramos posiciones de buses en tiempo real publicadas como datos abiertos. Los paraderos son del archivo del 13 de octubre de 2026.</li>
+    <li><strong>Calidad del aire.</strong> Todavía no está. Antes queremos tener clara la licencia de cada red.</li>
+    <li><strong>Árboles.</strong> Vienen en una próxima fase.</li>
+    <li><strong>UV medido.</strong> No hay un sensor abierto de UV en Bogotá; el valor que ves es de un modelo.</li>
+    <li><strong>Radar siempre.</strong> Cuando el radar de Tablazo no responde, lo decimos y no mostramos un valor viejo.</li>
+    <li><strong>Cuánto aciertan los pronósticos de noches frías.</strong> Lo publicaremos después de 28 noches comparadas con lo medido.</li>
+  </ul>
+
+  <h2>Privacidad</h2>
+  <p>Esta página no usa cookies, no tiene analítica y no guarda lo que buscas. Las librerías del mapa se cargan desde unpkg.com y los datos vivos desde GitHub Pages.</p>
+
+  <p><a href="./">Volver al mapa</a></p>
+</main>
+</body>
+</html>

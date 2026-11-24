@@ -1,0 +1,118 @@
+{
+ "fuentes": {
+  "mdt2025": {
+   "nombre": "Modelo Digital de Terreno de Bogotá D.C. 2025",
+   "productor": "Secretaría Distrital de Planeación (urbano y cerros) y UAECD (rural); elaborado por SIGLA S.A.S.",
+   "publica": "IDECA, Infraestructura de Datos Espaciales para el Distrito Capital",
+   "ficha": "https://datosabiertos.bogota.gov.co/dataset/modelo-digital-de-terreno-de-la-ciudad-de-bogota-ano-2025",
+   "servicio": "https://serviciosgis.catastrobogota.gov.co/image/rest/services/Imagenes/modelodigitalterreno2025funcion/ImageServer",
+   "licencia": "CC BY 4.0 (ficha CKAN, modificada 2026-07-02)",
+   "acceso": "servicio abierto, sin token (la ruta /arcgis/rest/ sí pide token; /image/rest/ no)"
+  },
+  "glo30": {
+   "nombre": "Copernicus DEM GLO-30 (COP-DEM-GLO-30-F)",
+   "servicio": "https://copernicus-dem-30m.s3.amazonaws.com (registro https://registry.opendata.aws/copernicus-dem)",
+   "licencia": "Licence for Copernicus DEM instance COP-DEM-GLO-30-F Global 30m Full, Free & Open",
+   "licencia_url": "https://dataspace.copernicus.eu/sites/default/files/media/files/2025-06/copernicus_contributing_mission_data_access_v2_cop_dem_licenses.pdf"
+  },
+  "catastro_pisos": {
+   "uso": "solo control de la prueba A (pisos por celda y huellas de huellas.sql; no entra en ningún producto)",
+   "archivo": "salida/trabajo/catastro/construcciones.fgb (lo deja scripts/catastro.sql)"
+  }
+ },
+ "descargas": [
+  {
+   "archivo": "glo30/Copernicus_DSM_COG_10_N04_00_W075_00_DEM.tif",
+   "url": "https://copernicus-dem-30m.s3.amazonaws.com/Copernicus_DSM_COG_10_N04_00_W075_00_DEM/Copernicus_DSM_COG_10_N04_00_W075_00_DEM.tif",
+   "consultado_utc": "2026-11-23T23:39:17Z",
+   "bytes": "42787983",
+   "sha256": "01434300ecd2be4a226fb863b9a88df15e01e42c07ba02bf8aed2125049d1da8"
+  },
+  {
+   "archivo": "glo30/Copernicus_DSM_COG_10_N04_00_W074_00_DEM.tif",
+   "url": "https://copernicus-dem-30m.s3.amazonaws.com/Copernicus_DSM_COG_10_N04_00_W074_00_DEM/Copernicus_DSM_COG_10_N04_00_W074_00_DEM.tif",
+   "consultado_utc": "2026-11-23T23:39:28Z",
+   "bytes": "43029370",
+   "sha256": "22a459964b0a233acf6263c409d97d7a468ae339b241905db655d37e54e34cca"
+  },
+  {
+   "archivo": "mdt2025/servicio.json",
+   "url": "https://serviciosgis.catastrobogota.gov.co/image/rest/services/Imagenes/modelodigitalterreno2025funcion/ImageServer?f=json",
+   "consultado_utc": "2026-11-23T23:39:28Z",
+   "bytes": "13252",
+   "sha256": "686608969f606be0c090746073ad5023b949f1aaf64250bd0ad461b4d467e7ae"
+  },
+  {
+   "archivo": "mdt2025/catalogo.json",
+   "url": "https://serviciosgis.catastrobogota.gov.co/image/rest/services/Imagenes/modelodigitalterreno2025funcion/ImageServer/query?where=1%3D1&outFields=OBJECTID%2CName%2CMinPS%2CMaxPS%2CCategory&returnGeometry=true&outSR=4326&f=json",
+   "consultado_utc": "2026-11-23T23:41:15Z",
+   "bytes": "2245237",
+   "sha256": "1d3849ded5f5296d7575e054d4fd7e3384252a1d5b017c9f73fb7404a88977fa"
+  },
+  {
+   "archivo": "mdt2025/mdt_c702_f576-1583.tif",
+   "url": "https://serviciosgis.catastrobogota.gov.co/image/rest/services/Imagenes/modelodigitalterreno2025funcion/ImageServer/exportImage?bbox=-74.4551388889%2C4.5601388889%2C-73.9848611111%2C4.8401388889&bboxSR=4326&imageSR=4326&size=5079%2C3024&format=tiff&pixelType=F32&noData=-9999&noDataInterpretation=esriNoDataMatchAny&interpolation=RSP_BilinearInterpolation&compression=LZW&f=image",
+   "consultado_utc": "2026-11-23T23:41:23Z",
+   "bytes": "15538079",
+   "sha256": "6374f63b6862960dd7a2c90b6786d1e7d091360f40ee7aecbc096985670a3675"
+  },
+  {
+   "archivo": "mdt2025/mdt_c702_f1584-2591.tif",
+   "url": "https://serviciosgis.catastrobogota.gov.co/image/rest/services/Imagenes/modelodigitalterreno2025funcion/ImageServer/exportImage?bbox=-74.4551388889%2C4.2801388889%2C-73.9848611111%2C4.5601388889&bboxSR=4326&imageSR=4326&size=5079%2C3024&format=tiff&pixelType=F32&noData=-9999&noDataInterpretation=esriNoDataMatchAny&interpolation=RSP_BilinearInterpolation&compression=LZW&f=image",
+   "consultado_utc": "2026-11-23T23:41:28Z",
+   "bytes": "14456744",
+   "sha256": "318098de9c212d921eb190c2984affa1a70f7439b8028c39247e91496b0921e0"
+  },
+  {
+   "archivo": "mdt2025/mdt_c702_f2592-3599.tif",
+   "url": "https://serviciosgis.catastrobogota.gov.co/image/rest/services/Imagenes/modelodigitalterreno2025funcion/ImageServer/exportImage?bbox=-74.4551388889%2C4.0001388889%2C-73.9848611111%2C4.2801388889&bboxSR=4326&imageSR=4326&size=5079%2C3024&format=tiff&pixelType=F32&noData=-9999&noDataInterpretation=esriNoDataMatchAny&interpolation=RSP_BilinearInterpolation&compression=LZW&f=image",
+   "consultado_utc": "2026-11-23T23:41:32Z",
+   "bytes": "19294854",
+   "sha256": "85ac3e66d6465df75fada12eb385108e196328ebb6235d7766d70fd028966c56"
+  }
+ ],
+ "scripts": {
+  "comun.py": "9d0163ef0ff6649108184f67c4259c1c2dc2992e4dbd5cc63bed65e70b6adc38",
+  "bajar.py": "f591a19226604877f7b12912e10e6514463d166e979e374a4a1538e747f5baaf",
+  "mosaico.py": "506520da00b439b9f05288936b21c8f8058439635aa5c384da76bfdc31d8add9",
+  "pisos_por_celda.sql": "ed0e5e5c4148bebf67b132ba89962a9408eebca51edadbd28fcf6376ea532a8a",
+  "teselas.py": "82a4e4ce4f90810c5e3cdc9c2f6abc3c7d16892a427b7562b805bd9863afb431",
+  "horizonte.py": "c7695aa559912219c53ba5c585d621ccfe3f33eb10e047fc0cb8378984d71763",
+  "huellas.sql": "101b6521fc8082398fbdd10b706202d55d5900de0102e986b2d8893de4ce75f6",
+  "prueba_a.py": "e9195c4677f84a8f6264b29b73bb80640d2a4b37ebda4336868497b55200c11a",
+  "procedencia.py": "88dbc3d2176b6694d24a398cec04e8e02ecb93e778d69720f149dcd69098096d",
+  "puntos-referencia.json": "3098f4569b7c487d44190cba16142c9fa145172744f8a56476df2fd540ac7e31",
+  "requirements.txt": "335ccc8d079f89a31f919e551abe14f84981e56914fb1a47d8d11475120eaf2f",
+  "Makefile": "38a99e7fd835bd97cfe8f8f874adc72d52897d815c0c1c13c29765592173fcf7"
+ },
+ "productos": {
+  "salida/terreno-bogota.pmtiles": {
+   "bytes": 655985,
+   "sha256": "a3f31565c13c743d23e41644a34a68d51f405a82860f15e849690e8773c5a4fc"
+  },
+  "salida/terreno/horizonte-bogota.hzn.gz": {
+   "bytes": 219515,
+   "sha256": "a52da64008eeb848922c06ad05b9838cc58364c08fb6ca50e279ac97ced090a9"
+  },
+  "salida/terreno/mosaico.npy": {
+   "bytes": 85536128,
+   "sha256": "1e3fc77e3b4a5b0c6bbf03e207a54b344069edafb82cae7816005397da4de401"
+  },
+  "salida/terreno/sombreado-sabana.png": {
+   "bytes": 452411,
+   "sha256": "cbd81c9e0fdbc8d7ecc101bcdf413cbc269622064dcd69fed91b0b30a362d13f"
+  }
+ },
+ "pruebas": {
+  "mosaico.json": "salida/terreno/mosaico.json",
+  "teselas.json": "salida/terreno/teselas.json",
+  "horizonte.json": "salida/terreno/horizonte.json",
+  "prueba_a.json": "salida/terreno/prueba_a.json"
+ },
+ "entorno": {
+  "python": "3.14.3",
+  "sistema": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "pmtiles": "pmtiles dev, commit none, built at unknown",
+  "duckdb": "v2.0.1 (Cyanoptera) 8d78114e90"
+ }
+}

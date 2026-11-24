@@ -1,0 +1,32 @@
+{
+  "_nota": "Ancla de confianza: el flujo de Pages baja cada tesela del release y la rechaza si su sha256 no coincide con este archivo.",
+  "release": "teselas-2026-11-23",
+  "repo": "caamanoluismiguel/gemelo-bogota",
+  "archivos": {
+    "osm-bogota.pmtiles": {
+      "bytes": 9078027,
+      "sha256": "854760352a509fc26922462204de4291d28b35868fe8ea30bd596321f701b59b",
+      "licencia": "ODbL 1.0"
+    },
+    "limites-bogota.pmtiles": {
+      "bytes": 1810044,
+      "sha256": "8b964062c15bf79fa37bb8a643c091994ee7af81c0d99ea69cf1a78095490524",
+      "licencia": "CC BY 4.0"
+    },
+    "catastro-pisos-bogota.pmtiles": {
+      "bytes": 47243487,
+      "sha256": "3e5a251cb202e6dca48d0323c208facbf0a6550b4ac62fe94668d731d17c8949",
+      "licencia": "CC BY 4.0"
+    },
+    "terreno-bogota.pmtiles": {
+      "bytes": 655985,
+      "sha256": "a3f31565c13c743d23e41644a34a68d51f405a82860f15e849690e8773c5a4fc",
+      "licencia": "CC BY 4.0 (MDT 2025 SDP/UAECD) + Copernicus GLO-30"
+    },
+    "horizonte-bogota.hzn.gz": {
+      "bytes": 219515,
+      "sha256": "a52da64008eeb848922c06ad05b9838cc58364c08fb6ca50e279ac97ced090a9",
+      "licencia": "CC BY 4.0 (MDT 2025 SDP/UAECD) + Copernicus GLO-30"
+    }
+  }
+}

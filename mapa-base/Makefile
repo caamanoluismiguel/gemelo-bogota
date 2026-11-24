@@ -2,9 +2,9 @@
 # Uso desde mapa-base/:  make todo   |  make bajar  |  make limites  |  make osm  |  make catastro
 # Herramientas: brew install tippecanoe pmtiles osmium-tool duckdb
 .NOTPARALLEL:
-.PHONY: todo bajar limites osm catastro medir manifiesto servir
+.PHONY: todo bajar limites osm catastro buscador medir manifiesto servir
 
-todo: bajar limites osm catastro medir manifiesto
+todo: bajar limites osm catastro buscador medir manifiesto
 
 bajar:
 	sh scripts/bajar.sh
@@ -28,3 +28,6 @@ manifiesto:
 
 servir:
 	python3 -I scripts/servir.py
+
+buscador: limites
+	sh scripts/buscador.sh

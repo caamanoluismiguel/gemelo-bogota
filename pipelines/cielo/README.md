@@ -19,8 +19,9 @@ El workflow de propuesta está en `.github/workflows/cielo.yml`. Corre cada 20 m
 ## Etiquetas
 
 * **medido**: lo registró un instrumento (pluviómetro, METAR, sismógrafo, detección de calor, imagen de satélite).
-* **estimado**: sale de un modelo o de una relación teórica (UV de CAMS, lluvia del radar por Marshall‑Palmer).
-* **simulado**: escenario. No se usa en esta tarjeta.
+* **estimado**: sale de un modelo o de una relación teórica (UV de CAMS, lluvia del radar por Marshall‑Palmer). Los pronósticos también son estimado.
+
+Es la misma lista del sitio (medido, de fuente, inferido, estimado, supuesto). Esta tarjeta solo usa medido y estimado.
 
 ## Fuentes (todas consultadas el 23 nov 2026)
 

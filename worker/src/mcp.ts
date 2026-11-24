@@ -9,7 +9,7 @@
  *   - capa_en_punto(capa, lat, lon)       → valor de una capa en un punto
  *   - escenario(id)                       → supuestos y resultados de un escenario
  *   - fuentes(id)                         → procedencia y licencia de un dato
- * Cada resultado marca si es medido, inferido o supuesto.
+ * Cada resultado lleva su marca: medido, de fuente, inferido, estimado o supuesto.
  * Mismas reglas que /preguntar: CORS restringido, límite por visitante, nada de datos
  * personales en registros. Estas mismas herramientas alimentarán el bloque <datos>
  * del asistente.

@@ -1,0 +1,93 @@
+# Publica el visor (site/) en GitHub Pages.
+# Las teselas no viven en git: se bajan del release y se comprueban contra
+# mapa-base/teselas-publicadas.json antes de publicar. Si una no coincide, no se publica nada.
+# Las noches frías se copian de data/noches-frias/ y se escriben ultima.json e indice.json.
+name: pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "site/**"
+      - "data/noches-frias/**"
+      - "mapa-base/teselas-publicadas.json"
+      - ".github/workflows/pages.yml"
+  # El commit diario de noches-frias lo hace GITHUB_TOKEN y no dispara push: por eso esto.
+  workflow_run:
+    workflows: [noches-frias]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  armar:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Traer el repo
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          ref: main
+
+      - name: Armar la carpeta publicada
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          rm -rf publicar && cp -R site publicar
+          rm -f publicar/prueba-sombras.*
+          mkdir -p publicar/teselas publicar/datos/noches-frias
+          python3 - <<'PY'
+          import hashlib, json, os, subprocess, sys, pathlib
+          ancla = json.load(open("mapa-base/teselas-publicadas.json"))
+          repo, tag = ancla["repo"], ancla["release"]
+          for nombre, esperado in ancla["archivos"].items():
+              destino = pathlib.Path("publicar/teselas") / nombre
+              subprocess.run(["gh", "release", "download", tag, "--repo", repo,
+                              "--pattern", nombre, "--output", str(destino), "--clobber"], check=True)
+              h = hashlib.sha256()
+              with open(destino, "rb") as f:
+                  for bloque in iter(lambda: f.read(1 << 20), b""):
+                      h.update(bloque)
+              if h.hexdigest() != esperado["sha256"] or destino.stat().st_size != esperado["bytes"]:
+                  sys.exit(f"{nombre}: la huella no coincide con teselas-publicadas.json; no se publica.")
+              print(f"{nombre}: ok")
+          # Noches frías: copia lo registrado y arma índice y último día.
+          origen = pathlib.Path("data/noches-frias")
+          dias = sorted(p for p in origen.glob("????-??-??.json")) if origen.exists() else []
+          for p in dias:
+              json.load(open(p))  # falla si un archivo está roto
+              (pathlib.Path("publicar/datos/noches-frias") / p.name).write_bytes(p.read_bytes())
+          if dias:
+              (pathlib.Path("publicar/datos/noches-frias") / "ultima.json").write_bytes(dias[-1].read_bytes())
+          json.dump({"dias": [p.stem for p in dias]},
+                    open("publicar/datos/noches-frias/indice.json", "w"))
+          print(f"noches frías: {len(dias)} días")
+          PY
+          touch publicar/.nojekyll
+
+      - name: Subir el sitio
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: publicar
+
+  publicar:
+    needs: armar
+    runs-on: ubuntu-24.04
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.despliegue.outputs.page_url }}
+    steps:
+      - name: Publicar en Pages
+        id: despliegue
+        uses: actions/deploy-pages@368f8252e2d8e5d9e8b7ad0bc5ad2c43dd2da7b7 # v5.0.1

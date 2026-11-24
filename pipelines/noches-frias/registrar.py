@@ -246,7 +246,7 @@ def leer_pronostico(fecha: date, consulta: datetime) -> list[dict]:
             resultado.append({
                 "estacion": icao,
                 "nombre": est["nombre"],
-                "etiqueta": "pronostico",
+                "etiqueta": "estimado",  # los pronósticos son estimado; archivos viejos dicen "pronostico" y el sitio los traduce
                 "noche_que_termina": noche.isoformat(),
                 "ventana_local": {"inicio": iso(inicio), "fin": iso(fin)},
                 "anticipacion_dias": anticipacion,
