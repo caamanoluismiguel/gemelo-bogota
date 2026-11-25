@@ -108,7 +108,7 @@
     const antes = debajoDe(['sectores', 'upl', 'localidades', 'rotulos']);
     mapa.addLayer({ id: 'esc-franjas', type: 'fill', source: 'esc-franjas', metadata: { grupo: 'escenario' },
       paint: { 'fill-color': ['step', ['get', 'dia'], COLOR_DIA[0], M.UMBRALES.oms.valor + 1e-9, COLOR_DIA[1], M.UMBRALES.norma.valor + 1e-9, COLOR_DIA[2]],
-        'fill-opacity': 0.7, 'fill-antialias': false } }, antes);
+        'fill-opacity': 0.45, 'fill-antialias': false } }, antes);
     mapa.addLayer({ id: 'esc-franjas-borde', type: 'line', source: 'esc-franjas', metadata: { grupo: 'escenario' },
       paint: { 'line-color': '#6b3f91', 'line-width': 1.4, 'line-dasharray': [3, 2] } }, antes);
     const arriba = debajoDe(['rotulos', 'estaciones-rotulo']);
