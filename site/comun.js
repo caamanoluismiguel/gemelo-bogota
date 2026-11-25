@@ -100,7 +100,8 @@
   function valorFicha(v) {
     if (v === null || v === undefined || v === '') return 'sin dato';
     if (typeof v === 'number') return Number.isFinite(v) && !Number.isInteger(v) ? num(v) : String(v);
-    return /^-?\d+\.\d+$/.test(String(v)) ? num(Number(v)) : String(v);
+    // Un texto como «3.4» también; «1.624» no, que puede ser un mil con punto.
+    return /^-?\d+\.\d{1,2}$/.test(String(v)) ? num(Number(v)) : String(v);
   }
   const horaLocal = (iso) => new Date(iso).toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit', timeZone: 'America/Bogota' });
   const fechaLocal = (iso) => new Date(iso).toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'short', timeZone: 'America/Bogota' });

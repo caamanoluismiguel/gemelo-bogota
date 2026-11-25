@@ -21,6 +21,7 @@ const mapa = leer('site/mapa.js');
 revisar('valorFicha(3.4) = «3,4»', B.valorFicha(3.4) === '3,4', B.valorFicha(3.4));
 revisar('valorFicha("3.4") = «3,4» (número que llega como texto)', B.valorFicha('3.4') === '3,4', B.valorFicha('3.4'));
 revisar('valorFicha(12) = «12» (un entero o un código no cambia)', B.valorFicha(12) === '12' && B.valorFicha('045A01') === '045A01');
+revisar('valorFicha(1624) = «1624» y «1.624» no se vuelve 1,6', B.valorFicha(1624) === '1624' && B.valorFicha('1.624') === '1.624', B.valorFicha('1.624'));
 revisar('valorFicha(null) y valorFicha("") = «sin dato»', B.valorFicha(null) === 'sin dato' && B.valorFicha('') === 'sin dato' && B.valorFicha(undefined) === 'sin dato');
 revisar('ventana() de mapa.js escribe cada fila con valorFicha', /function ventana[\s\S]{0,300}B\.valorFicha\(v\)/.test(mapa));
 const llamadas = [...mapa.matchAll(/\n\s*ventana\(ll,[\s\S]*?\);\n/g)].map((m) => m[0]);

@@ -687,7 +687,7 @@
       ventana(ll, [['Pisos', p.pisos], lejos ? ['Huella', 'unida por manzana (vista lejana); acércate para ver cada construcción'] : ['Sótanos', p.sotanos], ['Altura en metros', 'no la publica Catastro'] ].concat(f.layer.id.endsWith('-3d') ? [['Alto dibujado', `${3 * Math.max(1, Number(p.pisos) || 1)} m (3 m por piso, supuesto)`]] : []),
         { tipo: 'de_fuente', fuente: 'UAECD, Catastro Bogotá', licencia: { nombre: 'CC BY 4.0', url: 'https://creativecommons.org/licenses/by/4.0/deed.es' } }, extra);
     } else if (id === 'pisos-sector') {
-      ventana(ll, [['Sector', p.nombre], ['Pisos promedio', p.pisos_prom], ['Pisos máximo', p.pisos_max], ['Construcciones', B.num(Number(p.construcciones))]],
+      ventana(ll, [['Sector', p.nombre], ['Pisos promedio', p.pisos_prom], ['Pisos máximo', p.pisos_max], ['Construcciones', p.construcciones]],
         { tipo: 'inferido', fuente: 'promedio ponderado por área, calculado aquí con datos de UAECD, Catastro Bogotá', licencia: { nombre: 'CC BY 4.0', url: 'https://creativecommons.org/licenses/by/4.0/deed.es' } });
     } else if (id === 'troncal') {
       ventana(ll, [['Estación de TransMilenio', p.nombre]], { tipo: 'de_fuente', fuente: 'TransMilenio S.A.', licencia: { nombre: 'CC BY 4.0', url: 'https://creativecommons.org/licenses/by/4.0/deed.es' } });
