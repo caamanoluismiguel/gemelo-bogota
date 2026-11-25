@@ -18,6 +18,11 @@
       "sha256": "0e639c4e1254653fa759d1bc03c1f30913caf15eda9870290268a029aba75239",
       "licencia": "CC BY 4.0"
     },
+    "catastro-lejos-bogota.pmtiles": {
+      "bytes": 749994,
+      "sha256": "8d2ace6e7092a8024b0fe68f95f2f5079d17e8304dc13adbbe79f82695f8f1e6",
+      "licencia": "CC BY 4.0"
+    },
     "terreno-bogota.pmtiles": {
       "bytes": 655985,
       "sha256": "a3f31565c13c743d23e41644a34a68d51f405a82860f15e849690e8773c5a4fc",
@@ -33,9 +38,44 @@
       "sha256": "d4c61f9e410dcbec1a87cad7901c385d81992f2eb94b7e2f40a09a4e1387580d",
       "licencia": "CC BY 4.0"
     },
-    "orto-urbana-bogota.pmtiles": {
-      "bytes": 420242796,
-      "sha256": "9a21296cf298c8a694d6e436cd0ff60827e36f60ddbbd792d930a36ee359b788",
+    "orto-urbana-bogota-1.pmtiles": {
+      "bytes": 54597813,
+      "sha256": "df644aa8f9d75d67364b5a3d5f8cceb4e2847c3baaa861161594f602ff233a48",
+      "licencia": "CC BY 4.0"
+    },
+    "orto-urbana-bogota-2.pmtiles": {
+      "bytes": 50759687,
+      "sha256": "f867dd12981c6db7711b1656add04f25486b9dd6631fc275c6692f4646635ad5",
+      "licencia": "CC BY 4.0"
+    },
+    "orto-urbana-bogota-3.pmtiles": {
+      "bytes": 52456731,
+      "sha256": "6c5909ee2a402bea3251295520887b7590d5959089ea7d6cca10201fe5fe0627",
+      "licencia": "CC BY 4.0"
+    },
+    "orto-urbana-bogota-4.pmtiles": {
+      "bytes": 50377996,
+      "sha256": "a36922acd7478ddfd41415209d2ea18cf29feaa9503b26f2fa0c0c536df8123e",
+      "licencia": "CC BY 4.0"
+    },
+    "orto-urbana-bogota-5.pmtiles": {
+      "bytes": 50810959,
+      "sha256": "bc5e975a7063ddfb219b99ad72736dd186fd768bb6b37e56783f4e3dd8201cc5",
+      "licencia": "CC BY 4.0"
+    },
+    "orto-urbana-bogota-6.pmtiles": {
+      "bytes": 51966136,
+      "sha256": "4b1c276be1454aab2998280ff29e2ce720b89b32d0cdce14b53bf17ec765ad32",
+      "licencia": "CC BY 4.0"
+    },
+    "orto-urbana-bogota-7.pmtiles": {
+      "bytes": 57927499,
+      "sha256": "49475d192e7330e63df5a29f98083d00b336f141134f3daa03b81ad6bbed58dd",
+      "licencia": "CC BY 4.0"
+    },
+    "orto-urbana-bogota-8.pmtiles": {
+      "bytes": 51349952,
+      "sha256": "8d3c0474b32e3583896819c57a987aedd701df77189e323fc4fd1655773743d9",
       "licencia": "CC BY 4.0"
     },
     "orto-urbana-cerca-bogota.pmtiles": {

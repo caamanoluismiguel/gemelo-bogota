@@ -33,3 +33,13 @@ $N tile-join --force --no-tile-size-limit -o salida/catastro-pisos-bogota.pmtile
   -N "Huella de cada construcción con número de pisos y sótanos (no es altura en metros)" \
   -A 'UAECD (Catastro Bogotá), Datos Abiertos Bogotá, CC BY 4.0' \
   "$K/sectores_pisos.pmtiles" "$K/construcciones_lejos.pmtiles" "$K/construcciones.pmtiles"
+# La ciudad entera en 3D (z12 y z13): las mismas huellas unidas, más gruesas, en un archivo
+# aparte para no volver a subir el grande. Medido el 24 nov 2026: 0,75 MB para todo el
+# Distrito, tesela más pesada 50 KB. Antes de z14 solo había bloques por sector. -D8 y no -D7:
+# con -D7 la z12 perdía teselas enteras y se veía a cuadros.
+$TC -o salida/catastro-lejos-bogota.pmtiles -l construcciones -Z12 -z13 --read-parallel -y pisos -T pisos:int \
+  --simplification=4 -d8 -D8 \
+  -n "Construcciones de Catastro con pisos, vista de ciudad" \
+  -N "Huellas unidas por manzana y número de pisos, z12 y z13 (no es altura en metros)" \
+  -A 'UAECD (Catastro Bogotá), Datos Abiertos Bogotá, CC BY 4.0' \
+  "$K/construcciones_lejos.fgb"

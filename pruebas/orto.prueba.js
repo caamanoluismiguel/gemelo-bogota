@@ -23,17 +23,21 @@ const FUENTES = {
   SATELITE_FUENTE: ['satelite-entorno-bogota.pmtiles', 9, 13, 'SATELITE'],
   ORTO_LEJOS_FUENTE: ['orto-lejos-bogota.pmtiles', 10, 15, 'ORTO_LEJOS'],
   ORTO_CERROS_FUENTE: ['orto-cerros-bogota.pmtiles', 16, 16],
-  ORTO_FUENTE: ['orto-urbana-bogota.pmtiles', 16, 18],
+  // La urbana va en ocho franjas: la fuente pide «-N» y el protocolo pone la franja (pmtiles-red.js).
+  ORTO_FUENTE: ['orto-urbana-bogota-N.pmtiles', 16, 18],
   ORTO_CERCA_FUENTE: ['orto-urbana-cerca-bogota.pmtiles', 19, 19]
 };
 const ancla = JSON.parse(fs.readFileSync(path.join(raiz, 'mapa-base', 'teselas-publicadas.json'), 'utf8')).archivos;
 for (const [k, [archivo, zmin, zmax, credito]] of Object.entries(FUENTES)) {
   const f = (bloque.match(new RegExp(`const ${k} = \\{([\\s\\S]*?)\\};`)) || [])[1] || '';
   revisar(`${k}: raster de ${archivo}, z${zmin} a z${zmax}, teselas de 256 y bounds`,
-    /type: 'raster'/.test(f) && f.includes(`url: url('${archivo}')`) && /tileSize: 256\b/.test(f) &&
+    /type: 'raster'/.test(f) && (f.includes(`url: url('${archivo}')`) || f.includes(`tiles: [url('${archivo}') + '/{z}/{x}/{y}.webp']`)) && /tileSize: 256\b/.test(f) &&
     new RegExp(`minzoom: ${zmin}\\b`).test(f) && new RegExp(`maxzoom: ${zmax}\\b`).test(f) && /bounds: \[-7\d\.\d{4}, \d\.\d{4}, -7\d\.\d{4}, \d\.\d{4}\]/.test(f) && new RegExp(`attribution: ${credito || 'ORTO'}`).test(f));
-  const e = ancla[archivo];
-  revisar(`${archivo}: está en el ancla del release con su huella y CC BY 4.0`, !!e && /^[0-9a-f]{64}$/.test(e.sha256) && e.bytes > 0 && e.licencia === 'CC BY 4.0');
+  const archivos = archivo.includes('-N.') ? [1, 2, 3, 4, 5, 6, 7, 8].map((n) => archivo.replace('-N.', `-${n}.`)) : [archivo];
+  for (const a of archivos) {
+    const e = ancla[a];
+    revisar(`${a}: está en el ancla del release con su huella y CC BY 4.0`, !!e && /^[0-9a-f]{64}$/.test(e.sha256) && e.bytes > 0 && e.licencia === 'CC BY 4.0');
+  }
 }
 
 // Capas: de abajo hacia arriba el satélite del entorno, la foto de lejos, cerros, urbana y su z19.

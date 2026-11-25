@@ -10,8 +10,8 @@
   const url = (f) => 'pmtiles://' + new URL(f, base).href;
   const protocolo = new pmtiles.Protocol({ metadata: true });
   // El archivo de Catastro se registra aparte para que las sombras puedan pedir teselas de margen.
-  const pmCat = new pmtiles.PMTiles(new URL('catastro-pisos-bogota.pmtiles', base).href);
-  protocolo.add(pmCat);
+  // Todos los archivos se abren con reintentos ante 5xx y fallas de red (pmtiles-red.js).
+  const pmCat = B.red.abrir(pmtiles, protocolo, new URL('catastro-pisos-bogota.pmtiles', base).href);
   // Las teselas z16 de Catastro que baja el mapa se copian para las sombras (si están prendidas)
   // antes de que MapLibre las pase a su hilo de trabajo, donde el búfer queda inservible.
   const RE_CAT = /catastro-pisos-bogota\.pmtiles\/(\d+)\/(\d+)\/(\d+)$/;
@@ -21,6 +21,12 @@
   const PIXEL_VACIO = Uint8Array.from(atob('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII='), (c) => c.charCodeAt(0));
   const RE_FOTO = /\.(webp|png|jpe?g)$/;
   maplibregl.addProtocol('pmtiles', async (params, abort) => {
+    // La urbana va en franjas: la tesela se pide a su archivo; fuera de la foto, transparente.
+    const dir = B.red.rutaUrbana(params.url);
+    if (!dir) return { data: PIXEL_VACIO.slice().buffer };
+    const archivo = B.red.archivoDe(dir);
+    if (archivo) B.red.abrir(pmtiles, protocolo, archivo);
+    if (dir !== params.url) params = Object.assign({}, params, { url: dir });
     const r = await protocolo.tile(params, abort);
     if (RE_FOTO.test(params.url) && (!r || !r.data || !r.data.byteLength)) return { data: PIXEL_VACIO.slice().buffer };
     const m = B.recibirCatastro && RE_CAT.exec(params.url);
@@ -251,7 +257,9 @@
   const SDP = '<a href="https://www.sdp.gov.co/">SDP</a>';
   const CREDITO_ORTO = (nombre, titular) => nombre + ' © ' + (titular || SDP) + ', publicada por <a href="https://www.ideca.gov.co/">IDECA</a> (UAECD), <a href="https://creativecommons.org/licenses/by/4.0/deed.es">CC BY 4.0</a>.' + MODIFICADA;
   const ORTO = CREDITO_ORTO('Ortoimagen urbana 2025');
-  const ORTO_FUENTE = { type: 'raster', url: url('orto-urbana-bogota.pmtiles'), tileSize: 256, minzoom: 16, maxzoom: 18,
+  // Va en ocho archivos de menos de 60 MB (franjas de norte a sur): la N de la dirección la
+  // cambia el protocolo por la franja de cada tesela (pmtiles-red.js, orto_partir.py).
+  const ORTO_FUENTE = { type: 'raster', tiles: [url('orto-urbana-bogota-N.pmtiles') + '/{z}/{x}/{y}.webp'], tileSize: 256, minzoom: 16, maxzoom: 18,
     bounds: [-74.2292, 4.4833, -74.0148, 4.8393], attribution: ORTO };
   const ORTO_CERCA_FUENTE = { type: 'raster', url: url('orto-urbana-cerca-bogota.pmtiles'), tileSize: 256, minzoom: 19, maxzoom: 19,
     bounds: [-74.0857, 4.6263, -74.0341, 4.6805], attribution: ORTO };
@@ -375,6 +383,7 @@
   // Lente del 3D: «como-se-ve» (neutro) o «pisos» (coropleta naranja).
   const lente3d = document.getElementById('lente-3d');
   function lenteActual() { const r = lente3d.querySelector('input[name="lente"]:checked'); return r ? r.value : 'como-se-ve'; }
+  const CONSTRUCCIONES_3D = ['construcciones-3d', 'construcciones-lejos-3d'];
   function colorPor3d(campo) { return lenteActual() === 'pisos' ? pasos(campo) : neutro(campo); }
 
   // Vista de calle (3D con «Cómo se ve»): la ciudad ocupa la pantalla. Al entrar, el panel se
@@ -430,7 +439,7 @@
     if (caja3d.checked) {
       const esPisos = lenteActual() === 'pisos';
       if (mapa.getLayer('sectores-3d')) mapa.setPaintProperty('sectores-3d', 'fill-extrusion-color', esPisos ? pasos('pisos_prom') : neutro('pisos_prom'));
-      if (mapa.getLayer('construcciones-3d')) mapa.setPaintProperty('construcciones-3d', 'fill-extrusion-color', esPisos ? pasos('pisos') : neutro('pisos'));
+      for (const id of CONSTRUCCIONES_3D) if (mapa.getLayer(id)) mapa.setPaintProperty(id, 'fill-extrusion-color', esPisos ? pasos('pisos') : neutro('pisos'));
     }
     ponerLeyenda();
   }
@@ -443,6 +452,15 @@
     q.set('3d', on ? '1' : '0');
     history.replaceState(history.state, '', location.pathname + '?' + q.toString() + location.hash);
   }
+  // La ciudad entera (z12 y z13) también en 3D: las huellas unidas por manzana y pisos, en un
+  // archivo aparte de 0,75 MB para toda Bogotá (catastro.sh). Antes, de z12 a z14 solo había
+  // bloques por sector catastral, que tapaban la foto y se leían planos.
+  function ponerCiudadLejos(antes) {
+    if (!mapa.getSource('catastro-lejos')) mapa.addSource('catastro-lejos', { type: 'vector', url: url('catastro-lejos-bogota.pmtiles'), attribution: CAT });
+    mapa.addLayer({ id: 'construcciones-lejos-3d', type: 'fill-extrusion', source: 'catastro-lejos', 'source-layer': 'construcciones', minzoom: 12, maxzoom: 14,
+      paint: { 'fill-extrusion-color': colorPor3d('pisos'), 'fill-extrusion-height': alto('pisos'), 'fill-extrusion-opacity': 0.95,
+        'fill-extrusion-vertical-gradient': false } }, antes);
+  }
   function poner3d(ev) {
     const on = caja3d.checked;
     const alArrancar = ev === 'arranque';
@@ -454,14 +472,15 @@
     if (on && !mapa.getLayer('construcciones-3d')) {
       const antes = mapa.getLayer('rotulos') ? 'rotulos' : undefined;
       // Sin degradado vertical: cada fachada de un solo tono, la del sol y la de la sombra.
-      mapa.addLayer({ id: 'sectores-3d', type: 'fill-extrusion', source: 'catastro', 'source-layer': 'pisos_sector', maxzoom: 14,
+      mapa.addLayer({ id: 'sectores-3d', type: 'fill-extrusion', source: 'catastro', 'source-layer': 'pisos_sector', maxzoom: 12,
         paint: { 'fill-extrusion-color': colorPor3d('pisos_prom'), 'fill-extrusion-height': alto('pisos_prom'), 'fill-extrusion-opacity': 0.95,
           'fill-extrusion-vertical-gradient': false } }, antes);
       mapa.addLayer({ id: 'construcciones-3d', type: 'fill-extrusion', source: 'catastro', 'source-layer': 'construcciones', minzoom: 14,
         paint: { 'fill-extrusion-color': colorPor3d('pisos'), 'fill-extrusion-height': alto('pisos'), 'fill-extrusion-opacity': 0.95,
           'fill-extrusion-vertical-gradient': false } }, antes);
+      ponerCiudadLejos(antes);
     }
-    for (const id of ['sectores-3d', 'construcciones-3d']) if (mapa.getLayer(id)) mapa.setLayoutProperty(id, 'visibility', on ? 'visible' : 'none');
+    for (const id of ['sectores-3d', ...CONSTRUCCIONES_3D]) if (mapa.getLayer(id)) mapa.setLayoutProperty(id, 'visibility', on ? 'visible' : 'none');
     for (const id of ['pisos-sector', 'construcciones']) mapa.setLayoutProperty(id, 'visibility', on ? 'none' : (document.querySelector('[data-grupo="pisos"]').checked ? 'visible' : 'none'));
     // Cielo y atmósfera: con 3D el cielo estático de día; sol-barra.js lo anima si hay sombras.
     if (on) { mapa.setSky(CIELO_DIA); } else { mapa.setSky({}); }
@@ -791,7 +810,7 @@
   }
 
   // Ventana con los datos de lo que se toca.
-  const consultables = ['lluvia', 'metro-estaciones', 'troncal', 'paraderos', 'construcciones', 'pisos-sector', 'construcciones-3d', 'sectores-3d'];
+  const consultables = ['lluvia', 'metro-estaciones', 'troncal', 'paraderos', 'construcciones', 'pisos-sector', 'construcciones-3d', 'construcciones-lejos-3d', 'sectores-3d'];
   function ventana(lngLat, filas, metaArgs, extra) {
     const caja = B.el('div');
     for (const [k, v] of filas) caja.append(B.el('div', null, B.el('b', { texto: k + ': ' }), B.valorFicha(v)));
@@ -810,7 +829,7 @@
     // Sin nada más bajo el dedo, la franja de PM2,5 si la capa está prendida.
     if (!f) { if (B.aireAnual) B.aireAnual.tocarFranja(e); return; }
     const p = f.properties;
-    const id = ({ 'construcciones-3d': 'construcciones', 'sectores-3d': 'pisos-sector' })[f.layer.id] || f.layer.id;
+    const id = ({ 'construcciones-3d': 'construcciones', 'construcciones-lejos-3d': 'construcciones', 'sectores-3d': 'pisos-sector' })[f.layer.id] || f.layer.id;
     const ll = f.geometry.type === 'Point' ? f.geometry.coordinates : e.lngLat;
     if (id === 'construcciones') {
       // Paso 12: con las sombras prendidas, cuánto mide la sombra a la hora elegida.

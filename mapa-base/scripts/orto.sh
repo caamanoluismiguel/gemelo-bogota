@@ -4,7 +4,9 @@
 # y se empacan en PMTiles que van al release junto con las demás teselas.
 #
 #   sh scripts/orto.sh bajar   baja lo que falte a salida/orto-crudo/ (se puede cortar y repetir)
-#   sh scripts/orto.sh armar   arma los cinco PMTiles en salida/
+#   sh scripts/orto.sh armar   arma los cinco PMTiles en salida/ y parte la urbana en ocho
+#                              franjas de menos de 60 MB (scripts/orto_partir.py); se
+#                              publican las franjas, no el archivo entero
 #
 # Qué se baja (zoom de teselas de 256 px salvo donde se dice):
 #   urbana  orthourbana2025funcion  z16 a z18 en toda la extensión, z19 en 3 km alrededor
@@ -32,6 +34,8 @@ armar() {
   # teselas z19 que no existen.
   $A orthourbana2025funcion orto-urbana-bogota \
     "Ortoimagen urbana 2025 de Bogotá" 256 16-18
+  # Pages no sirve bien el archivo urbano entero (420 MB, 503): se publica en franjas.
+  $N python3 -I scripts/orto_partir.py salida/orto-urbana-bogota.pmtiles salida
   $A orthourbana2025funcion orto-urbana-cerca-bogota \
     "Ortoimagen urbana 2025 de Bogotá, centro a z19" 256 19-19
   $A orthocerros2025funcion orto-cerros-bogota \

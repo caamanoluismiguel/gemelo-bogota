@@ -30,6 +30,12 @@ LICENCIAS = {
         "fuentes": ["construcciones.gpkg.zip", "sector-catastral.gpkg.zip"],
         "scripts": ["scripts/catastro.sh", "scripts/catastro.sql"],
     },
+    "catastro-lejos-bogota.pmtiles": {
+        "licencia": "CC BY 4.0",
+        "atribucion": "UAECD (Catastro Bogotá), Datos Abiertos Bogotá. Modificada: huellas unidas por manzana y simplificadas.",
+        "fuentes": ["construcciones.gpkg.zip"],
+        "scripts": ["scripts/catastro.sh", "scripts/catastro.sql"],
+    },
     "arboles-bogota.pmtiles": {
         "licencia": "CC BY 4.0",
         "atribucion": "Jardín Botánico de Bogotá José Celestino Mutis (JBB), censo SIGAU, Datos Abiertos Bogotá",
@@ -42,6 +48,14 @@ LICENCIAS = {
         "fuentes": [],
         "scripts": ["scripts/orto.sh", "scripts/orto_bajar.py", "scripts/orto_armar.py"],
     },
+    # La urbana se publica partida en ocho franjas de filas, cada una bajo 60 MB (Pages da
+    # 503 con el archivo entero). El archivo entero queda como paso intermedio.
+    **{f"orto-urbana-bogota-{n}.pmtiles": {
+        "licencia": "CC BY 4.0",
+        "atribucion": "Ortoimagen urbana 2025, SDP, publicada por IDECA (UAECD). Modificada: reproyectada, recortada en teselas, comprimida y partida en franjas.",
+        "fuentes": ["orto-urbana-bogota.pmtiles"],
+        "scripts": ["scripts/orto.sh", "scripts/orto_bajar.py", "scripts/orto_armar.py", "scripts/orto_partir.py"],
+    } for n in range(1, 9)},
     "orto-urbana-cerca-bogota.pmtiles": {
         "licencia": "CC BY 4.0",
         "atribucion": "Ortoimagen urbana 2025, SDP, publicada por IDECA (UAECD). Modificada: reproyectada, recortada en teselas y comprimida.",
