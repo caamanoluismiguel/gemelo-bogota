@@ -34,14 +34,17 @@
     const yl = (p) => abL - (abL - arL) * p / 100;
     const resumen = `Temperatura entre ${num(Math.min(...temps))} y ${num(Math.max(...temps))} °C en las próximas 48 horas.`;
     const s = sv('svg', { viewBox: `0 0 ${W} ${H}`, class: 'pron-grafica', role: 'img', 'aria-label': resumen });
-    // Rejilla: días a medianoche y horas cada 6.
+    // Rejilla: días a medianoche y horas cada 6. Los rótulos que se montarían se quitan.
+    const marcas = [];
     for (const h of horas) {
       const hb = horaBog(h.t);
       if (hb % 6) continue;
       const xx = x(h.t);
       s.append(sv('line', { x1: xx, x2: xx, y1: arT - 4, y2: abL, class: hb === 0 ? 'g-dia' : 'g-hora' }));
-      const rot = hb === 0 ? diaCorto(h.t) : hb === 12 ? '12 m' : hb === 6 ? '6 a. m.' : '6 p. m.';
-      s.append(sv('text', { x: xx, y: H - 6, class: 'g-rot' + (hb === 0 ? ' g-rot-dia' : ''), 'text-anchor': xx > W - 18 ? 'end' : 'middle' }, rot));
+      marcas.push({ x: xx, dia: hb === 0, texto: hb === 0 ? diaCorto(h.t) : hb === 12 ? '12 m' : hb === 6 ? '6 a. m.' : '6 p. m.' });
+    }
+    for (const r of V.rotulosEje(marcas, 2, W - 1)) {
+      s.append(sv('text', { x: r.x, y: H - 6, class: 'g-rot' + (r.dia ? ' g-rot-dia' : ''), 'text-anchor': r.ancla }, r.texto));
     }
     // Escala de temperatura.
     for (const c of [lo + 1, Math.round((lo + hi) / 2), hi - 1]) {
@@ -112,12 +115,13 @@
     const horas = V.horasPronostico(j);
     pCuerpo.replaceChildren();
     if (horas.length < 2) throw new Error('sin horas');
-    const h24 = horas.slice(0, 25).filter((h) => Number.isFinite(h.temp));
-    const tmin = Math.min(...h24.map((h) => h.temp)), tmax = Math.max(...h24.map((h) => h.temp));
-    const lluvia = horas.slice(0, 25).filter((h) => Number.isFinite(h.prob)).reduce((a, h) => (!a || h.prob > a.prob ? h : a), null);
-    pCuerpo.append(el('div', { clase: 'dato' },
-      valor(`${num(tmin)} a ${num(tmax)} °C`, 'estimado'),
-      el('span', { clase: 'que', texto: 'Temperatura que espera el modelo en las próximas 24 horas' })));
+    // Solo las horas desde ahora: la gráfica sí arranca en la hora en curso.
+    const { tmin, tmax, lluvia } = V.resumen24(horas, Date.now());
+    if (tmin != null) {
+      pCuerpo.append(el('div', { clase: 'dato' },
+        valor(`${num(tmin)} a ${num(tmax)} °C`, 'estimado'),
+        el('span', { clase: 'que', texto: 'Temperatura que espera el modelo en las próximas 24 horas' })));
+    }
     if (lluvia) {
       pCuerpo.append(el('div', { clase: 'dato' },
         valor(`${lluvia.prob} %`, 'estimado', true),

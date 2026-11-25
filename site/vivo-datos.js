@@ -92,6 +92,39 @@
       .map((h) => ({ t: Date.parse(h.t), temp: h.temp_c, prob: h.prob_lluvia_pct, mm: h.lluvia_mm }));
   }
 
+  // Resumen de las próximas 24 horas: solo las horas desde ahora, para que la hora de lluvia
+  // más alta nunca sea una que ya pasó. Las horas llegan como las deja horasPronostico.
+  function resumen24(horas, ahora) {
+    const t0 = ahora ?? Date.now();
+    const prox = (horas || []).filter((h) => h.t >= t0 && h.t <= t0 + 24 * 3600000);
+    const temps = prox.map((h) => h.temp).filter(Number.isFinite);
+    const lluvia = prox.filter((h) => Number.isFinite(h.prob)).reduce((a, h) => (!a || h.prob > a.prob ? h : a), null);
+    return { horas: prox.length, tmin: temps.length ? Math.min(...temps) : null, tmax: temps.length ? Math.max(...temps) : null, lluvia };
+  }
+
+  // Rótulos del eje de la gráfica: ancho estimado de cada rótulo (fuente de 9 px) y se quitan
+  // los que se montarían sobre otro. Los días mandan sobre las horas. Junto a los bordes, el
+  // rótulo se ancla a su lado para no salirse; si al hacerlo choca con el vecino, se quita.
+  function anchoRotulo(texto, negrita) {
+    let w = 0;
+    for (const c of String(texto)) w += /[ .,:;il1]/.test(c) ? 3 : /[mw]/.test(c) ? 7.8 : 5.4;
+    return w * (negrita ? 1.08 : 1);
+  }
+  function rotulosEje(marcas, desde, hasta, sep) {
+    const hueco = sep ?? 3;
+    const cajas = marcas.map((m, i) => {
+      const w = anchoRotulo(m.texto, m.dia);
+      let ancla = 'middle', iz = m.x - w / 2;
+      if (m.x + w / 2 > hasta) { ancla = 'end'; iz = m.x - w; }
+      else if (iz < desde) { ancla = 'start'; iz = m.x; }
+      return { ...m, i, ancla, iz, de: iz + w };
+    });
+    const puestas = [];
+    const choca = (c) => puestas.some((p) => c.iz < p.de + hueco && p.iz < c.de + hueco);
+    for (const c of [...cajas.filter((c) => c.dia), ...cajas.filter((c) => !c.dia)]) if (!choca(c)) puestas.push(c);
+    return puestas.sort((a, b) => a.i - b.i);
+  }
+
   // Marcador de acierto: null quiere decir «todavía no hay con qué calificar», nunca 0.
   function marcador(j) {
     if (!j || j.esquema !== 'bogotwin/acierto/1' || !j.resumen) throw new Error('esquema');
@@ -120,7 +153,7 @@
       .slice(0, max || 5).map((d) => ({ fecha: d.fecha_bogota, media: d.media, maxima: d.maxima, horas: d.horas, pasaOms: d.media > OMS_24H }));
   }
 
-  const api = { BASE, url, limiteMin, sinDatoReciente, leerEstado, enSabana, categoria, decodificarBicis, serieDe, leerNdjson, horasPronostico, marcador, diasAire, OMS_24H, MIN_SIN_REPORTE };
+  const api = { BASE, url, limiteMin, sinDatoReciente, leerEstado, enSabana, categoria, decodificarBicis, serieDe, leerNdjson, horasPronostico, resumen24, anchoRotulo, rotulosEje, marcador, diasAire, OMS_24H, MIN_SIN_REPORTE };
   const raiz = typeof window !== 'undefined' ? window : globalThis;
   raiz.Bogotwin = Object.assign(raiz.Bogotwin || {}, { vivo: api });
 })();
