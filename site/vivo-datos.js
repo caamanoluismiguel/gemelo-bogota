@@ -1,5 +1,5 @@
 'use strict';
-// Lectura de los datos del repo vivo (bicis, canales, pronóstico, acierto y aire). Solo funciones
+// Lectura de los datos del repo vivo (bicis, canales, pronóstico, acierto, aire y su bruma). Solo funciones
 // puras: se cargan después del primer cuadro y se prueban en Node (pruebas/vivo.prueba.js).
 (function () {
   const BASE = 'https://caamanoluismiguel.github.io/gemelo-bogota-vivo/';
@@ -212,7 +212,49 @@
   }
 
 
-  const api = { BASE, url, limiteMin, sinDatoReciente, leerEstado, enSabana, categoria, decodificarBicis, serieDe, leerNdjson, horasPronostico, resumen24, anchoRotulo, rotulosEje, marcador, diasAire, OMS_24H, MIN_SIN_REPORTE,
+  // Aire por hora para la bruma del cielo 3D (sol-barra.js). ms es el momento que muestra la
+  // barra del sol; vale la hora que lo contiene (Bogotá va en UTC−5, las horas caen iguales).
+  // estado: 'ok' con pm25, 'fuera' (el pronóstico no tiene esa hora o la trae vacía), 'viejo'
+  // (el archivo pasó del doble de su cadencia, la regla del repo vivo) o 'sin_dato'.
+  function aireEnHora(j, ms, ahora) {
+    if (!j || j.esquema !== 'bogotwin/aire/1' || !Array.isArray(j.horas) || !Number.isFinite(ms)) return { estado: 'sin_dato' };
+    if (sinDatoReciente(j.generado, j.cadencia_min, ahora)) return { estado: 'viejo' };
+    const campos = Array.isArray(j.horas_campos) ? j.horas_campos : ['t', 'pm25'];
+    const it = campos.indexOf('t'), ip = campos.indexOf('pm25');
+    if (it < 0 || ip < 0) return { estado: 'sin_dato' };
+    const hora = Math.floor(ms / 3600000) * 3600000;
+    for (const h of j.horas) {
+      if (!Array.isArray(h) || Date.parse(h[it]) !== hora) continue;
+      const v = h[ip];
+      return v != null && Number.isFinite(Number(v)) && Number(v) >= 0 ? { estado: 'ok', pm25: Number(v), t: hora } : { estado: 'fuera' };
+    }
+    return { estado: 'fuera' };
+  }
+  // Bruma del aire con la fórmula de Koschmieder (visibilidad ≈ 3,912 / extinción). La
+  // extinción de las partículas es MEE · f(HR) · PM2,5: MEE de 4 m²/g para aerosol urbano seco
+  // y f(HR) de 1,5 por la humedad de las mañanas de Bogotá; la del aire limpio (Rayleigh a
+  // 2.600 m) es cerca de 1,2·10⁻⁵ m⁻¹. Son supuestos de libro, no una medida de Bogotá.
+  // El visor ya dibuja el aire limpio (unos 5 µg/m³ de fondo): la bruma suma solo lo de más.
+  const KOSCHMIEDER = 3.912;
+  const MEE_M2_G = 4, F_HR = 1.5, B_RAYLEIGH = 1.2e-5, PM_FONDO = 5;
+  const BRUMA_FISICA = { KOSCHMIEDER, MEE_M2_G, F_HR, B_RAYLEIGH, PM_FONDO };
+  const pmValido = (pm25) => pm25 != null && pm25 !== '' && Number.isFinite(Number(pm25)) && Number(pm25) >= 0;
+  // Extinción total (m⁻¹) y visibilidad (m) para un PM2,5.
+  function extincion(pm25) { return B_RAYLEIGH + MEE_M2_G * F_HR * 1e-6 * (pmValido(pm25) ? Number(pm25) : 0); }
+  function visibilidad(pm25) { return KOSCHMIEDER / extincion(pm25); }
+  // Extinción que la bruma suma al aire limpio que ya dibuja el visor (m⁻¹; 0 si no hay dato).
+  function brumaAire(pm25) {
+    if (!pmValido(pm25)) return 0;
+    return MEE_M2_G * F_HR * 1e-6 * Math.max(0, Number(pm25) - PM_FONDO);
+  }
+  // Qué parte de la extinción pone el aire sucio (0 a 1): la bruma sobre el aire de fondo
+  // dividida por la extinción total. Con ese peso el horizonte y la distancia se van al gris pardo.
+  function pesoBruma(pm25) {
+    const b = brumaAire(pm25);
+    return b > 0 ? b / extincion(pm25) : 0;
+  }
+
+  const api = { BASE, url, limiteMin, sinDatoReciente, leerEstado, enSabana, categoria, decodificarBicis, serieDe, leerNdjson, horasPronostico, resumen24, anchoRotulo, rotulosEje, marcador, diasAire, aireEnHora, brumaAire, pesoBruma, extincion, visibilidad, BRUMA_FISICA, OMS_24H, MIN_SIN_REPORTE,
     categoriaCanal, decodificarCanales, serieCanal, MIN_SIN_LECTURA };
   const raiz = typeof window !== 'undefined' ? window : globalThis;
   raiz.Bogotwin = Object.assign(raiz.Bogotwin || {}, { vivo: api });

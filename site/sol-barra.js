@@ -12,6 +12,8 @@
 //  * El velo de la sombra de los cerros (paso 6): la rejilla de horizonte se baja la primera vez
 //    que hace falta (con 3D, o con el sol bajo) y se pinta en un lienzo, fuente `canvas`.
 //  * La URL guarda ?sombras=1 y, fuera de «Ahora», &sol=AAAA-MM-DDTHH:MM.
+//  * Con 3D, la bruma del cielo sigue el pronóstico de PM2,5 para toda la ciudad a la hora de
+//    la barra (el JSON lo baja pronostico.js). Esta barra es la única que escribe el cielo.
 (function (raiz) {
   const B = raiz.Bogotwin;
   const SOL = B.sol, G = B.sombraGeom, T = B.solTexto, HZ = B.horizonte;
@@ -92,6 +94,7 @@
 <p class="sb-estado" id="sb-estado-ver" aria-hidden="true"></p>
 <div class="sb-noche" id="sb-noche" hidden><button type="button" data-min="540">Ver a las 9 a. m.</button><button type="button" data-min="960">Ver a las 4 p. m.</button></div>
 <p class="sb-honesta" id="sb-honesta-p"><span id="sb-honesta">${HONESTA_CON_CERROS}</span> <span class="marca" data-marca="supuesto">supuesto</span></p>
+<p class="sb-aire" id="sb-aire-p" hidden><span id="sb-aire"></span> <span class="marca" data-marca="estimado" id="sb-aire-marca">estimado</span> <button type="button" id="sb-aire-boton" class="sb-aire-boton" data-pestana="dias">Quitar la bruma</button></p>
 <p class="oculto" id="sb-estado" aria-live="polite"></p>`;
     document.body.append(barra);
     // La CSP no deja estilos en línea dentro del HTML: las posiciones se ponen por el DOM.
@@ -103,6 +106,13 @@
       todo();
     });
     $('#sb-quitar').addEventListener('click', () => { if (B.quitarSombras) B.quitarSombras(); });
+    $('#sb-aire-boton').addEventListener('click', () => {
+      A.on = !A.on;
+      guardarBruma(A.on);
+      medirAire();
+      ponerCielo();
+      pintar();
+    });
     // En la vista de calle la barra va corta (solo la hora); «Más» abre el día y las notas.
     $('#sb-mas').addEventListener('click', () => {
       const abrir = !barra.classList.contains('sb-abierta');
@@ -205,13 +215,14 @@
     S.sol = SOL.posicion(msMomento(), LAT, LON);
     // En «Ahora» solo se vuelve a dibujar si el sol se movió al menos 0,25°.
     const d = S.solDibujado;
+    const cambioAire = medirAire();
     if (!S.ahora || !d || Math.abs(d.altura - S.sol.altura) >= 0.25 || Math.abs(d.azimut - S.sol.azimut) >= 0.25 || (d.altura > 0) !== (S.sol.altura > 0)) {
       S.solDibujado = S.sol;
       sombras.fijarSol(S.sol);
       ponerLuz();
       ponerCielo();
       V.sucio = true;
-    }
+    } else if (cambioAire) ponerCielo();
     if (S.ahora) S.cielo = T.cielo(B.ultimoCielo && B.ultimoCielo.fuentes && B.ultimoCielo.fuentes.metar);
     fijarAlfa();
     sombras.fijarIntensidad(S.ahora ? S.cielo.intensidad : 1);
@@ -281,8 +292,89 @@
     // Ronda 7: la bruma de MapLibre (relieve, calles, cerros) del mismo color que la de los
     // edificios en edificios-luz.js, que sigue la hora: azul pálido de día, cálida al ocaso.
     const L = B.luzEdificios;
-    if (L && L.brumaHex && S.sol) cielo['fog-color'] = L.brumaHex(alt, S.sol.azimut, S.ahora && S.cielo ? S.cielo.intensidad : 1);
-    mapa.setSky(cielo);
+    if (L && L.brumaHex && S.sol) cielo['fog-color'] = L.brumaHex(alt, S.sol.azimut, S.ahora && S.cielo ? S.cielo.intensidad : 1, S.brumaAire);
+    mapa.setSky(conAire(cielo, S.brumaAire, alt));
+  }
+
+  // ── Bruma del aire ───────────────────────────────────────────────────────
+  // La hora de la barra elige la hora del pronóstico de PM2,5 (pronostico.js deja el JSON en
+  // B.aire y avisa con «bogotwin:aire»). Fuera de las horas del pronóstico, con el dato viejo
+  // o sin dato, no hay bruma de aire y la línea de la barra lo dice. Se puede apagar.
+  const CLAVE_BRUMA = 'bogotwin-bruma-aire';
+  const BRUMA_AIRE_HEX = ['#b3a896', '#1f2636'];   // día y noche, por si edificios-luz.js no está
+  function leerBruma() { try { return raiz.localStorage.getItem(CLAVE_BRUMA) !== '0'; } catch { return true; } }
+  function guardarBruma(on) { try { raiz.localStorage.setItem(CLAVE_BRUMA, on ? '1' : '0'); } catch { /* sin almacenamiento vale para esta visita */ } }
+  const A = { on: leerBruma(), info: { estado: 'cargando' }, k: 0 };
+
+  // Lee el pronóstico a la hora de la barra. Devuelve true si cambió lo que se ve o se dice.
+  function medirAire() {
+    const a = B.aire, VV = B.vivo;
+    let info;
+    if (!VV || !a) info = { estado: 'cargando' };
+    else if (!a.datos) info = { estado: a.error ? 'sin_dato' : 'cargando' };
+    else info = VV.aireEnHora(a.datos, S.ahora ? Date.now() : msMomento());
+    const k = A.on && info.estado === 'ok' ? VV.pesoBruma(info.pm25) : 0;
+    const cambio = k !== A.k || info.estado !== A.info.estado || info.pm25 !== A.info.pm25;
+    A.info = info; A.k = k;
+    // Lo lee edificios-luz.js para lavar los edificios lejanos con la misma bruma: el peso del
+    // color y la escala de Beer-Lambert (1 / extinción, en metros) del aire de esa hora.
+    const ver = S.activo && api.es3d() && A.on && info.estado === 'ok';
+    S.brumaAire = ver ? k : 0;
+    S.escalaAireM = ver ? 1 / VV.extincion(info.pm25) : 0;
+    return cambio;
+  }
+
+  // Suma la bruma del aire al cielo de la hora. k (0 a 1) es la parte de la extinción que pone
+  // el aire sucio (vivo-datos.js, pesoBruma). El horizonte y la niebla del relieve se van hacia
+  // un gris pardo en esa parte; el cielo de arriba queda azul. La distancia a la que se lava la
+  // ciudad la lleva edificios-luz.js con la misma cuenta. Es un dibujo, no una medida.
+  function conAire(c, k, alt) {
+    if (!(k > 0)) return reducido.matches ? sinTransicion(c) : c;
+    const L = B.luzEdificios;
+    const gris = L && L.brumaAireHex ? L.brumaAireHex(alt) : lerpHex(BRUMA_AIRE_HEX[0], BRUMA_AIRE_HEX[1], Math.min(1, Math.max(0, -alt / 6)));
+    const r = Object.assign({}, c, {
+      'horizon-color': lerpHex(c['horizon-color'], gris, k),
+      'sky-horizon-blend': lerp(c['sky-horizon-blend'], 0.9, k),
+      'horizon-fog-blend': lerp(c['horizon-fog-blend'], 0.7, k)
+    });
+    // Sin edificios-luz.js la niebla no trae la bruma del aire: se mezcla aquí.
+    if (!(L && L.brumaHex)) r['fog-color'] = lerpHex(c['fog-color'], gris, k);
+    return reducido.matches ? sinTransicion(r) : r;
+  }
+  // Con movimiento reducido el cielo cambia de golpe, sin el fundido de MapLibre.
+  function sinTransicion(c) {
+    const r = Object.assign({}, c);
+    for (const k of Object.keys(c)) if (!k.endsWith('-transition')) r[k + '-transition'] = { duration: 0, delay: 0 };
+    return r;
+  }
+
+  function textoAire() {
+    const i = A.info;
+    if (!A.on) return { texto: 'Bruma del aire apagada.', marca: false };
+    if (i.estado === 'ok') {
+      const v = B.num ? B.num(i.pm25) : String(i.pm25);
+      const km = Math.round(B.vivo.visibilidad(i.pm25) / 1000);
+      const vis = `se vería a unos ${km} km`;
+      return A.k > 0.3
+        ? { texto: `La bruma sigue el pronóstico de PM2,5 para toda la ciudad: ${v} µg/m³ a esta hora, ${vis}.`, marca: true, hay: true }
+        : { texto: `Pronóstico de PM2,5 para toda la ciudad: ${v} µg/m³ a esta hora, ${vis}. Con aire así de limpio casi no hay bruma.`, marca: true };
+    }
+    if (i.estado === 'fuera') return { texto: 'Sin bruma del aire: el pronóstico de PM2,5 no llega a esa hora.', marca: false };
+    if (i.estado === 'viejo') return { texto: 'Sin bruma del aire: el pronóstico de PM2,5 está viejo.', marca: false };
+    if (i.estado === 'sin_dato') return { texto: 'Sin bruma del aire: no pudimos traer el pronóstico de PM2,5.', marca: false };
+    return { texto: 'La bruma del aire espera el pronóstico de PM2,5.', marca: false };
+  }
+
+  function pintarAire() {
+    const p = $('#sb-aire-p');
+    p.hidden = !api.es3d();
+    if (p.hidden) return;
+    const t = textoAire();
+    $('#sb-aire').textContent = t.texto;
+    $('#sb-aire-marca').hidden = !t.marca;
+    // En la barra corta de la vista de calle la línea sale solo cuando hay bruma que explicar.
+    p.classList.toggle('sb-aire-hay', !!t.hay);
+    $('#sb-aire-boton').textContent = A.on ? 'Quitar la bruma' : 'Poner la bruma';
   }
 
   function estadoTexto() {
@@ -340,6 +432,7 @@
     const sinCerros = V.estado === 'fallo';
     const honesta = conArboles ? (sinCerros ? HONESTA_CALLE_SIN_CERROS : HONESTA_CALLE_CON_CERROS) : (sinCerros ? HONESTA_SIN_CERROS : HONESTA_CON_CERROS);
     $('#sb-honesta').textContent = honesta + (api.es3d() ? ' ' + HONESTA_TONO : '');
+    pintarAire();
     $('#sb-controles').hidden = lejos;
     $('#sb-lejos').hidden = !lejos;
     const textoLejos = veloEnVista() ? LEJOS_CON_VELO : LEJOS_SIN_VELO;
@@ -532,6 +625,7 @@
   function apagar() {
     if (!S.activo) return;
     S.activo = false;
+    S.brumaAire = 0; S.escalaAireM = 0;
     clearTimeout(relojInicio); clearInterval(reloj); clearTimeout(tCalculo); tCalculo = null; S.calculando = false;
     mapa.off('zoomend', pintar);
     mapa.off('moveend', pintar);
@@ -549,6 +643,7 @@
   }
 
   addEventListener('bogotwin:cielo', () => { if (S.activo && S.ahora) todo(); });
+  addEventListener('bogotwin:aire', () => { if (S.activo && medirAire()) { ponerCielo(); pintar(); } });
   addEventListener('bogotwin:panel', () => { if (S.activo) mostrarBarra(); });
   addEventListener('bogotwin:3d', () => {
     if (!S.activo) return;
@@ -556,6 +651,7 @@
     fijarAlfa();
     sombras.fijarIntensidad(S.ahora ? S.cielo.intensidad : 1);
     ponerLuz();
+    medirAire();
     ponerCielo();
     V.sucio = true;
     velo();
@@ -571,5 +667,5 @@
     return T.filaSombra(S.sol, pisos, G.largoSombra);
   }
 
-  B.solBarra = { prender, apagar, filaPopup, estado: S, capa: () => sombras, velo: V, bajarCerros: () => { if (!api) api = B.mapaApi; return bajarVelo(); } };
+  B.solBarra = { prender, apagar, filaPopup, estado: S, capa: () => sombras, velo: V, aire: A, bajarCerros: () => { if (!api) api = B.mapaApi; return bajarVelo(); } };
 })(window);

@@ -165,6 +165,11 @@
   mapa.addControl(new maplibregl.NavigationControl({ visualizePitch: false }), 'top-right');
   mapa.addControl(new maplibregl.ScaleControl({ unit: 'metric' }), 'bottom-right');
   window.BogotwinMapa = mapa;
+  // 'load' sale una sola vez. Si algo llega después, isStyleLoaded() puede dar falso un rato
+  // (una fuente nueva cargando) y esperar otro 'load' lo dejaba colgado para siempre.
+  let mapaCargado = false;
+  mapa.once('load', () => { mapaCargado = true; });
+  const trasCarga = (fn) => { if (mapaCargado || mapa.loaded()) fn(); else mapa.once('load', fn); };
 
   // Panel: en teléfono arranca plegado para que el mapa se vea primero.
   const panel = document.getElementById('panel');
@@ -475,7 +480,7 @@
     escribir3d(on);
     window.dispatchEvent(new CustomEvent('bogotwin:3d', { detail: { on } }));
   }
-  caja3d.addEventListener('change', () => { if (mapa.isStyleLoaded()) poner3d(); else mapa.once('load', () => poner3d()); });
+  caja3d.addEventListener('change', () => trasCarga(() => poner3d()));
   // Los créditos completos arrancan cerrados (botón ⓘ), en teléfono y en escritorio, para no
   // tapar la ciudad. OpenStreetMap queda siempre a la vista con su enlace a la licencia, como
   // pide la guía de atribución de la OSMF; el resto está a un toque en la ⓘ.
@@ -599,7 +604,7 @@
         if (!cajaSombras.checked) { if (B.solBarra) B.solBarra.apagar(); else if (noche) { fijarNoche(false); mapa.setSky(caja3d.checked ? CIELO_DIA : {}); } return; }
         cargar().then(() => {
           const ir = () => { if (cajaSombras.checked) B.solBarra.prender(); };
-          if (mapa.isStyleLoaded()) ir(); else mapa.once('load', ir);
+          trasCarga(ir);
         }).catch(() => {
           cajaSombras.checked = false;
           const n = document.getElementById('sombras-nota');
@@ -611,7 +616,7 @@
       // Para el escenario «Edificio nuevo»: prende las sombras y espera a que la barra esté lista.
       B.prenderSombras = () => {
         if (!cajaSombras.checked) { cajaSombras.checked = true; ponerSombras(); }
-        return cargar().then(() => new Promise((ok) => { if (mapa.isStyleLoaded()) ok(); else mapa.once('load', ok); }));
+        return cargar().then(() => new Promise((ok) => trasCarga(ok)));
       };
       // Escenario «Edificio nuevo» (edificio-nuevo.js): se baja solo al abrirlo o con ?edificio=.
       const botonEdificio = document.getElementById('edificio-abrir');
@@ -655,7 +660,7 @@
         properties: { nombre: e.nombre, localidad: e.localidad, mm: e.acumulado_hoy_mm, con_dato: !e.sin_dato_hoy && e.acumulado_hoy_mm != null,
           hora: e.hora_dato, ultimo: e.ultimo_minuto_mm } })) };
     const poner = () => mapa.getSource('lluvia').setData(fc);
-    if (mapa.isStyleLoaded()) poner(); else mapa.once('load', poner);
+    trasCarga(poner);
   });
 
   // Capas del repo vivo (bicicletas y nivel de canales): vivo-datos.js y el script de la capa
@@ -679,7 +684,7 @@
       });
     };
     casilla.addEventListener('change', poner);
-    if (new URLSearchParams(location.search).get(param) === '1') { casilla.checked = true; if (mapa.loaded()) poner(); else mapa.once('load', poner); }
+    if (new URLSearchParams(location.search).get(param) === '1') { casilla.checked = true; trasCarga(poner); }
   }
   capaViva({ caja: 'ver-bicis', leyenda: 'bicis-leyenda', script: 'bicis.js', clave: 'bicis', param: 'bicis',
     falla: 'No se pudo bajar la capa de bicicletas. Revisa la conexión e intenta de nuevo.' });
@@ -703,7 +708,7 @@
       });
     };
     cajaPm25.addEventListener('change', ponerPm25);
-    if (new URLSearchParams(location.search).get('pm25') === '1') { cajaPm25.checked = true; if (mapa.loaded()) ponerPm25(); else mapa.once('load', ponerPm25); }
+    if (new URLSearchParams(location.search).get('pm25') === '1') { cajaPm25.checked = true; trasCarga(ponerPm25); }
   }
 
   // Ventana con los datos de lo que se toca.

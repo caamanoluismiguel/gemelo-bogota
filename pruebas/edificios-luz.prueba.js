@@ -157,4 +157,16 @@ revisar('la semilla del sombreador es la de semilla() en JS', /v_semilla = floor
   revisar('los cuatro tintes de vidrio salen en las torres', tintes.every((n) => n > 0), tintes.join(', '));
   revisar('dos semillas seguidas no dan siempre el mismo tipo', new Set(Array.from({ length: 20 }, (_, s) => L.fachada(s, false, 9).tipo)).size === 4);
 }
+// Bruma del aire: sol-barra.js pasa el peso del aire sucio (0 a 1, pesoBruma) y la escala
+// 1 / extinción en metros (Koschmieder, vivo-datos.js).
+const sinAire = L.paleta(40, 1, 200), conAire = L.paleta(40, 1, 200, 0.85, 3550), medioAire = L.paleta(40, 1, 200, 0.4, 12000);
+revisar('sin aire la paleta es la de siempre', JSON.stringify(L.paleta(40, 1, 200, 0, 0)) === JSON.stringify(sinAire) && sinAire.lejos[0] === 1 && sinAire.lejos[1] === 1 && sinAire.escalaM === 0);
+revisar('con aire la bruma no empieza más cerca: la ciudad cercana queda limpia', conAire.lejos[0] === 1 && medioAire.lejos[0] === 1);
+revisar('con aire la escala es 1 / extinción (Beer-Lambert)', conAire.escalaM === 3550 && medioAire.escalaM === 12000);
+revisar('escala rara o negativa: la de siempre', L.paleta(40, 1, 200, 0.5, -3).escalaM === 0 && L.paleta(40, 1, 200, 0.5, Infinity).escalaM === 0);
+revisar('con aire lo muy lejano se borra casi todo', conAire.bruma[3] > sinAire.bruma[3] && conAire.bruma[3] <= 0.95);
+revisar('con aire el color de la bruma se va al gris pardo', (() => { const c = conAire.bruma, s0 = sinAire.bruma; return c[0] > c[2] && (c[0] - c[2]) > (s0[0] - s0[2]); })());
+revisar('peso fuera de rango se recorta', JSON.stringify(L.paleta(40, 1, 200, 5, 3550)) === JSON.stringify(L.paleta(40, 1, 200, 1, 3550)) && JSON.stringify(L.paleta(40, 1, 200, -1)) === JSON.stringify(sinAire));
+revisar('brumaHex y brumaAireHex dan colores', /^#[0-9a-f]{6}$/.test(L.brumaHex(40, 200, 1, 0.5)) && /^#[0-9a-f]{6}$/.test(L.brumaAireHex(-20)));
+
 cierre('Luz de los edificios');
