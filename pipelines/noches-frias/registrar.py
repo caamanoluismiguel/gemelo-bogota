@@ -25,6 +25,7 @@ Uso:
   python3 pipelines/noches-frias/registrar.py
   python3 pipelines/noches-frias/registrar.py --fecha 2026-11-20   # solo medido
   python3 pipelines/noches-frias/registrar.py --sobrescribir
+  python3 pipelines/noches-frias/registrar.py --rellenar 29  # hoy + días sin archivo, solo medido
 
 Código de salida: 0 si todo salió; 1 si alguna fuente falló (el archivo se
 escribe igual con lo que haya y el error queda anotado); 2 si no se pudo
@@ -150,12 +151,15 @@ def horas_ventana(fecha_fin: date) -> list[datetime]:
 
 def leer_medido(fecha: date, consulta: datetime) -> list[dict]:
     inicio, fin = ventana(fecha)
-    # aviationweather.gov guarda 30 días. Se pide desde el inicio de la ventana
-    # hasta ahora con un margen de 2 h, y luego se filtra por la ventana.
-    horas_atras = int((consulta - inicio).total_seconds() // 3600) + 2
-    if horas_atras > 30 * 24:
+    # aviationweather.gov guarda 30 días, pero «hours» solo devuelve las últimas 400
+    # filas (medido el 24 nov 2026: con hours=720 llegaron 13 días de una sola
+    # estación). Por eso se pide la ventana exacta con «date» (hora final) y 15 h hacia
+    # atrás, y luego se filtra por la ventana.
+    if (consulta - inicio).total_seconds() > 30 * 24 * 3600:
         raise ValueError("aviationweather.gov solo guarda 30 días de METAR")
-    params = urllib.parse.urlencode({"ids": ",".join(ESTACIONES), "format": "json", "hours": horas_atras})
+    hasta = (fin + timedelta(hours=1)).astimezone(timezone.utc)
+    params = urllib.parse.urlencode({"ids": ",".join(ESTACIONES), "format": "json",
+                                     "hours": 15, "date": hasta.strftime("%Y-%m-%dT%H:%M:%SZ")})
     url = f"{FUENTE_METAR['url']}?{params}"
     datos = pedir_json(url)
     if not isinstance(datos, list):
@@ -262,23 +266,28 @@ def leer_pronostico(fecha: date, consulta: datetime) -> list[dict]:
     return resultado
 
 
-def main() -> int:
-    parser = argparse.ArgumentParser(description="Registro diario de noches frías de Bogotá")
-    parser.add_argument("--fecha", help="Mañana en que termina la noche, AAAA-MM-DD (por defecto hoy en Bogotá)")
-    parser.add_argument("--sobrescribir", action="store_true", help="Reescribe el archivo si ya existe")
-    parser.add_argument("--salida", type=Path, default=CARPETA_DATOS, help="Carpeta de salida")
-    args = parser.parse_args()
+def fechas_a_registrar(hoy: date, consulta: datetime, carpeta: Path, rellenar: int) -> list[date]:
+    """Hoy, si su noche ya cerró, y los días anteriores (hasta «rellenar») que no tengan archivo.
 
-    consulta = ahora_utc()
-    hoy_bogota = consulta.astimezone(BOGOTA).date()
-    fecha = date.fromisoformat(args.fecha) if args.fecha else hoy_bogota
-    _, fin = ventana(fecha)
-    if fin > consulta:
-        print(f"La noche que termina el {fecha} todavía no termina (cierra a las 06:00 de Bogotá).", file=sys.stderr)
-        return 2
+    Si el trabajo llega después de la medianoche de Bogotá, la noche de «ayer» no se pierde:
+    entra por el relleno, solo con lo medido."""
+    fechas = []
+    _, fin_hoy = ventana(hoy)
+    if fin_hoy <= consulta and not (carpeta / f"{hoy.isoformat()}.json").exists():
+        fechas.append(hoy)
+    for k in range(1, rellenar + 1):
+        d = hoy - timedelta(days=k)
+        inicio, _ = ventana(d)
+        if (consulta - inicio).total_seconds() > 30 * 24 * 3600:
+            break
+        if not (carpeta / f"{d.isoformat()}.json").exists():
+            fechas.append(d)
+    return sorted(fechas)
 
-    archivo = args.salida / f"{fecha.isoformat()}.json"
-    if archivo.exists() and not args.sobrescribir:
+
+def registrar(fecha: date, consulta: datetime, hoy_bogota: date, salida: Path, sobrescribir: bool) -> int:
+    archivo = salida / f"{fecha.isoformat()}.json"
+    if archivo.exists() and not sobrescribir:
         # El primer registro es el que vale: reescribirlo cambiaría el pronóstico guardado.
         print(f"Ya existe {archivo}; no se toca. Usa --sobrescribir si de verdad hace falta.")
         return 0
@@ -292,16 +301,18 @@ def main() -> int:
 
     pronostico: list[dict] = []
     notas = []
-    if fecha == hoy_bogota:
+    relleno = fecha != hoy_bogota
+    if not relleno:
         try:
             pronostico = leer_pronostico(fecha, consulta)
         except Exception as exc:
             errores.append({"parte": "pronostico", "error": f"{type(exc).__name__}: {exc}"})
     else:
-        notas.append("Registro hecho después del día: no lleva pronóstico, porque sería un pronóstico hecho a posteriori.")
+        notas.append("Registro hecho después del día (relleno): solo lleva lo medido. El pronóstico de esa "
+                     "mañana no se guardó y no se rellena, porque sería un pronóstico hecho a posteriori.")
 
     if not medido and not pronostico:
-        print(json.dumps(errores, ensure_ascii=False, indent=2), file=sys.stderr)
+        print(f"{fecha}: " + json.dumps(errores, ensure_ascii=False, indent=2), file=sys.stderr)
         return 2
 
     inicio, fin = ventana(fecha)
@@ -309,6 +320,8 @@ def main() -> int:
         "esquema": ESQUEMA,
         "fecha": fecha.isoformat(),
         "consultado_utc": iso(consulta),
+        "relleno": relleno,
+        "pronostico_faltante": relleno or not pronostico,
         "ventana_noche": {
             "inicio_local": iso(inicio),
             "fin_local": iso(fin),
@@ -328,22 +341,55 @@ def main() -> int:
         "licencia_registro": "CC BY 4.0. Cita las fuentes de cada valor.",
     }
 
-    args.salida.mkdir(parents=True, exist_ok=True)
+    salida.mkdir(parents=True, exist_ok=True)
     tmp = archivo.with_suffix(".json.tmp")
     tmp.write_text(json.dumps(registro, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     tmp.replace(archivo)
 
     for m in medido:
-        print(f"{m['estacion']} medido: mínima {m['minima_c']} °C a las {m['hora_minima_local']} "
+        print(f"{fecha} {m['estacion']} medido: mínima {m['minima_c']} °C a las {m['hora_minima_local']} "
               f"({m['reportes_en_punto']}/{m['reportes_esperados']} reportes en punto)")
     for p in pronostico:
         r = p["rango_c"]
         print(f"{p['estacion']} noche al {p['noche_que_termina']}: "
               f"{r['bajo'] if r else '?'} a {r['alto'] if r else '?'} °C ({len(p['minima_c_por_modelo'])} modelos)")
     for e in errores:
-        print(f"Aviso en {e['parte']}: {e['error']}", file=sys.stderr)
+        print(f"Aviso en {fecha} {e['parte']}: {e['error']}", file=sys.stderr)
     print(f"Escrito {archivo.relative_to(RAIZ) if archivo.is_relative_to(RAIZ) else archivo}")
     return 1 if errores else 0
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Registro diario de noches frías de Bogotá")
+    parser.add_argument("--fecha", help="Mañana en que termina la noche, AAAA-MM-DD (por defecto hoy en Bogotá)")
+    parser.add_argument("--sobrescribir", action="store_true", help="Reescribe el archivo si ya existe")
+    parser.add_argument("--rellenar", type=int, default=0, metavar="N",
+                        help="Además de hoy, registra lo medido de los N días anteriores que no tengan archivo (máx. 29)")
+    parser.add_argument("--salida", type=Path, default=CARPETA_DATOS, help="Carpeta de salida")
+    args = parser.parse_args()
+
+    consulta = ahora_utc()
+    hoy_bogota = consulta.astimezone(BOGOTA).date()
+    if args.fecha:
+        fecha = date.fromisoformat(args.fecha)
+        _, fin = ventana(fecha)
+        if fin > consulta:
+            print(f"La noche que termina el {fecha} todavía no termina (cierra a las 06:00 de Bogotá).", file=sys.stderr)
+            return 2
+        return registrar(fecha, consulta, hoy_bogota, args.salida, args.sobrescribir)
+
+    fechas = fechas_a_registrar(hoy_bogota, consulta, args.salida, min(max(args.rellenar, 0), 29))
+    if not fechas:
+        _, fin = ventana(hoy_bogota)
+        if fin > consulta and not args.rellenar:
+            print(f"La noche que termina el {hoy_bogota} todavía no termina (cierra a las 06:00 de Bogotá).", file=sys.stderr)
+            return 2
+        print("Nada que registrar: hoy y los días anteriores ya tienen archivo.")
+        return 0
+    codigos = [registrar(f, consulta, hoy_bogota, args.salida, args.sobrescribir) for f in fechas]
+    if all(c == 2 for c in codigos):
+        return 2
+    return 1 if any(c for c in codigos) else 0
 
 
 if __name__ == "__main__":

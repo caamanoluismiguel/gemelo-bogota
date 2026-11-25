@@ -634,6 +634,26 @@
     if (mapa.isStyleLoaded()) poner(); else mapa.once('load', poner);
   });
 
+  // Bicicletas compartidas: vivo-datos.js y bicis.js bajan solo al prender la capa.
+  // Un enlace con ?bicis=1 abre con la capa prendida.
+  const cajaBicis = document.getElementById('ver-bicis');
+  if (cajaBicis) {
+    let bajandoBicis = null;
+    const bajarBicis = () => bajandoBicis || (bajandoBicis = ['vivo-datos.js', 'bicis.js'].filter((f) => !(f === 'vivo-datos.js' && B.vivo)).reduce((p, f) => p.then(() => new Promise((ok, mal) => {
+      const s = document.createElement('script'); s.src = f; s.onload = ok; s.onerror = () => mal(new Error(f)); document.head.append(s);
+    })), Promise.resolve()).catch((e) => { bajandoBicis = null; throw e; }));
+    const ponerBicis = () => {
+      if (!cajaBicis.checked) { if (B.bicis) B.bicis.apagar(mapa); return; }
+      bajarBicis().then(() => { if (cajaBicis.checked) B.bicis.prender(mapa); }).catch(() => {
+        cajaBicis.checked = false;
+        const n = document.getElementById('bicis-leyenda');
+        if (n) { n.hidden = false; n.textContent = 'No se pudo bajar la capa de bicicletas. Revisa la conexión e intenta de nuevo.'; }
+      });
+    };
+    cajaBicis.addEventListener('change', ponerBicis);
+    if (new URLSearchParams(location.search).get('bicis') === '1') { cajaBicis.checked = true; if (mapa.loaded()) ponerBicis(); else mapa.once('load', ponerBicis); }
+  }
+
   // Ventana con los datos de lo que se toca.
   const consultables = ['lluvia', 'metro-estaciones', 'troncal', 'paraderos', 'construcciones', 'pisos-sector', 'construcciones-3d', 'sectores-3d'];
   function ventana(lngLat, filas, metaArgs, extra) {
@@ -645,6 +665,7 @@
   }
   mapa.on('click', (e) => {
     if (B.edificioNuevo && B.edificioNuevo.tomaClic(e)) return;
+    if (B.bicis && B.bicis.tocar(e)) return;
     const capas = consultables.filter(id => mapa.getLayer(id) && mapa.getLayoutProperty(id, 'visibility') !== 'none');
     const caja = [[e.point.x - 6, e.point.y - 6], [e.point.x + 6, e.point.y + 6]];
     const f = mapa.queryRenderedFeatures(caja, { layers: capas })[0];

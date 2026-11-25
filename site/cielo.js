@@ -1,5 +1,5 @@
 'use strict';
-// Tarjeta del cielo (JSON vivo cada 20 min) y tarjeta de noches frías (registro diario).
+// Tarjeta del cielo (JSON que se arma cada 20 min) y tarjeta de noches frías (registro diario).
 (function () {
   const B = window.Bogotwin;
   const { el, meta, valor, num } = B;
@@ -121,6 +121,25 @@
     return d;
   }
 
+  // Hora real del dato y su edad, recalculada cada minuto. Pasado el doble de la cadencia
+  // dice «sin dato reciente»: la cosecha depende de servicios de terceros y puede atrasarse.
+  function horaYEdad(iso, limiteMin, sinTexto) {
+    const s = el('span', { clase: 'hora-dato', 'data-hora': iso || '', 'data-limite': String(limiteMin), 'data-sin': sinTexto });
+    pintarHora(s);
+    return s;
+  }
+  function pintarHora(s) {
+    const iso = s.dataset.hora;
+    const min = B.minutosDesde(iso);
+    if (min == null) { s.textContent = s.dataset.sin; s.classList.add('viejo'); return; }
+    const hora = (min >= 20 * 60 ? B.fechaLocal(iso) + ', ' : '') + B.horaLocal(iso);
+    const viejo = min > Number(s.dataset.limite);
+    s.textContent = (viejo ? `${s.dataset.sin}. Lo último es de las ${hora}` : `Datos de las ${hora}`) + `, ${B.edadTexto(min)}`;
+    s.classList.toggle('viejo', viejo);
+  }
+  setInterval(() => document.querySelectorAll('.hora-dato[data-hora]').forEach(pintarHora), 60000);
+  B.horaYEdad = horaYEdad;
+
   function pintarCielo(j) {
     const fs = j.fuentes || {};
     cuerpo.replaceChildren();
@@ -134,7 +153,7 @@
     cuerpo.append(bloqueRadar(fs.radar_tablazo));
     seccion('Satélite GOES‑19', fs.goes19, bloqueGoes);
     cuerpo.append(bloqueMas(fs));
-    estado.replaceChildren('Armado ', B.edad(j.generado, 45), '. Se actualiza cada 20 minutos. ', B.enlace(VIVO + 'ahora.json', 'Ver el JSON'));
+    estado.replaceChildren(horaYEdad(j.generado, 40, 'Sin dato reciente'), '. Lo armamos cerca de cada 20 minutos; a veces se atrasa. ', B.enlace(VIVO + 'ahora.json', 'Ver el JSON'));
     window.dispatchEvent(new CustomEvent('bogotwin:cielo', { detail: j }));
   }
 
@@ -154,6 +173,25 @@
   cargarCielo();
   setInterval(cargarCielo, 10 * 60000);
 
+  // Pronóstico y aire: su código y sus JSON bajan después del primer cuadro del mapa (o de
+  // cargar la página si no hay mapa), para que el arranque no pese más.
+  let pronPedido = false;
+  function pedirPronostico() {
+    if (pronPedido) return;
+    pronPedido = true;
+    const js = (f) => new Promise((ok, mal) => { const s = el('script', { src: f }); s.onload = ok; s.onerror = mal; document.head.append(s); });
+    (B.vivo ? Promise.resolve() : js('vivo-datos.js')).then(() => js('pronostico.js')).catch(() => {
+      for (const id of ['pron-estado', 'aire-estado']) { const n = document.getElementById(id); if (n) n.textContent = 'No se pudo bajar esta tarjeta. Revisa la conexión y recarga la página.'; }
+    });
+  }
+  const enCalma = () => window.requestIdleCallback ? requestIdleCallback(pedirPronostico, { timeout: 3000 }) : setTimeout(pedirPronostico, 1000);
+  const trasPrimerCuadro = () => {
+    const m = window.BogotwinMapa;
+    if (m && !(m.loaded() && m.areTilesLoaded())) { m.once('idle', enCalma); setTimeout(pedirPronostico, 20000); }
+    else enCalma();
+  };
+  if (document.readyState === 'complete') trasPrimerCuadro(); else addEventListener('load', trasPrimerCuadro, { once: true });
+
   // Noches frías: el sitio publica el último registro diario como datos/noches-frias/ultima.json.
   const nc = document.getElementById('noches-cuerpo');
   async function cargarNoches() {
@@ -164,11 +202,18 @@
     } catch { /* sin registro todavía */ }
     nc.replaceChildren();
     if (!j || j.esquema !== 'noches-frias/1') {
-      nc.append(el('p', { clase: 'estado', texto: 'El registro empieza la mañana del 24 de noviembre de 2026. Cada día a las 6:30 guardamos la mínima de la noche en los aeropuertos El Dorado y Guaymaral, y lo que esperan siete modelos para las noches siguientes.' }));
+      nc.append(el('p', { clase: 'estado', texto: 'El registro empieza la mañana del 24 de noviembre de 2026. Cada mañana guardamos la mínima de la noche en los aeropuertos El Dorado y Guaymaral, y lo que esperan siete modelos para las noches siguientes.' }));
       return;
     }
     const umbral = j.umbrales ? j.umbrales.noche_fria_c : 6;
     nc.append(el('h3', { texto: `La noche que terminó el ${B.fechaLocal(j.fecha + 'T12:00:00-05:00')}` }));
+    // La noche termina a las 6:00 de Bogotá; pasadas 48 h sin una noche nueva, el registro está atrasado.
+    const finNoche = new Date(j.fecha + 'T06:00:00-05:00').getTime();
+    const atrasado = Date.now() - finNoche > 48 * 3600000;
+    const linea = el('p', { clase: 'estado' });
+    if (atrasado) linea.append(el('span', { clase: 'hora-dato viejo', texto: 'Sin registro reciente' }), '. ');
+    linea.append('Registrado ', B.edad(j.consultado_utc), j.relleno ? ', después de la noche: solo lo medido, faltó el pronóstico de ese día.' : '.');
+    nc.append(linea);
     for (const m of j.medido || []) {
       if (m.minima_c == null) continue;
       const juicio = m.helada_a_2m ? 'Heló a 2 m.' : m.noche_fria ? `Noche fría: bajó de ${num(umbral)} °C.` : `No bajó de ${num(umbral)} °C.`;

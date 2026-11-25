@@ -6,11 +6,15 @@
  *   GET  /salud      estado simple, sin cifras de gasto
  *   POST /mcp        esqueleto documentado (501)
  *
+ * Disparador programado (cada 10 min): lanza la cosecha de datos vivos en GitHub
+ * Actions (src/cosecha.ts). Solo usa GITHUB_TOKEN_COSECHA, nada del asistente.
+ *
  * Orden de las barreras en /preguntar, de la más barata a la más cara:
  *   origen → interruptor → clave configurada → tipo y tamaño → esquema →
  *   Turnstile → límite por visitante → reserva en el tope mensual → modelo.
  */
 import { responderEnVivo } from "./asistente";
+import { cosechar } from "./cosecha";
 import { leerConfig, MODELO, VENTANA_LIMITE_MS } from "./config";
 import { cotaReserva, usdAMicro } from "./costo";
 import { cabecerasCors, origenPermitido, preflight } from "./cors";
@@ -100,5 +104,9 @@ export default {
       console.error(JSON.stringify({ evento: "fallo_inesperado", tipo: (e as Error)?.name ?? "desconocido" }));
       return error("error", 500);
     }
+  },
+
+  async scheduled(controller, env, ctx): Promise<void> {
+    ctx.waitUntil(cosechar(new Date(controller.scheduledTime), env.GITHUB_TOKEN_COSECHA));
   },
 } satisfies ExportedHandler<Env>;

@@ -12,10 +12,8 @@ on:
       - "data/noches-frias/**"
       - "mapa-base/teselas-publicadas.json"
       - ".github/workflows/pages.yml"
-  # El commit diario de noches-frias lo hace GITHUB_TOKEN y no dispara push: por eso esto.
-  workflow_run:
-    workflows: [noches-frias]
-    types: [completed]
+  # El commit diario de noches-frias lo hace GITHUB_TOKEN y no dispara push: noches-frias
+  # lanza este workflow con workflow_dispatch solo cuando hizo commit.
   workflow_dispatch:
 
 permissions:
