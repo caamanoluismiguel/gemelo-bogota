@@ -40,6 +40,10 @@ armar() {
     "Ortoimagen Cerros Orientales 2025, vista lejana" 512
   ORTO_TITULAR=UAECD $A orthorural2025funcion orto-rural-bogota \
     "Ortoimagen satelital rural 2025 de Bogotá (sur)" 256
+  # La foto de lejos (z10 a z15) sale de las mismas teselas WebP, sin bajar nada. El visor ya
+  # usa esta en vez de orto-cerros-lejos y orto-rural. El satélite del entorno va aparte:
+  # scripts/satelite_entorno.py (necesita rasterio).
+  $N $PY scripts/orto_lejos.py
 }
 
 case "${1:-}" in

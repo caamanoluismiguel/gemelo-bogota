@@ -226,12 +226,14 @@
         paint: { 'hillshade-exaggeration': 0.35, 'hillshade-illumination-direction': 315, 'hillshade-illumination-anchor': 'map',
           'hillshade-shadow-color': '#6f6a60', 'hillshade-highlight-color': '#ffffff', 'hillshade-accent-color': '#8c867a' } }, 'verde');
       // Fuera de la caja del relieve las teselas repiten el valor del borde y el sombreado sale
-      // en rayas. Un velo del color del fondo lo tapa; el verde y el agua quedan encima.
+      // en rayas. Un velo lo tapa; el verde y el agua quedan encima. Solo se ve en 3D y siempre
+      // muy lejos, más allá de la foto satelital: va en un tono de sabana apagado, no en el
+      // blanco del fondo, para que el horizonte no quede con una franja clara.
       mapa.addSource('relieve-fuera', { type: 'geojson', data: { type: 'Feature', properties: {}, geometry: { type: 'Polygon', coordinates: [
         [[-76, 2.5], [-72, 2.5], [-72, 6.5], [-76, 6.5], [-76, 2.5]],
         [[CAJA_REL[0], CAJA_REL[1]], [CAJA_REL[0], CAJA_REL[3]], [CAJA_REL[2], CAJA_REL[3]], [CAJA_REL[2], CAJA_REL[1]], [CAJA_REL[0], CAJA_REL[1]]]] } } });
       mapa.addLayer({ id: 'relieve-fuera', type: 'fill', source: 'relieve-fuera', metadata: { grupo: 'relieve' },
-        paint: { 'fill-color': '#f4f2ee', 'fill-antialias': false } }, 'verde');
+        paint: { 'fill-color': '#a3a594', 'fill-antialias': false } }, 'verde');
     }
     for (const id of ['relieve', 'relieve-fuera']) if (mapa.getLayer(id)) mapa.setLayoutProperty(id, 'visibility', on ? 'visible' : 'none');
   }
@@ -259,47 +261,65 @@
     'raster-brightness-max': 0.9, 'raster-contrast': -0.08, 'raster-saturation': -0.22, 'raster-fade-duration': 250 };
   // Ronda 7b: los Cerros Orientales con la Ortoimagen Cerros 2025 (25 cm, 14 feb 2025, CC BY 4.0).
   // Desde la vista de calle los cerros quedan a 2,5 a 4 km y se dibujan con teselas z13 a z15,
-  // así que el archivo va de z13 a z16 (más cerca se estira z16). La foto es una franja: fuera
+  // así que el archivo va de z13 a z16 (más cerca se estira z16). El visor solo le pide la z16:
+  // de z13 a z15 los cerros ya vienen en la foto de lejos y no se bajan dos veces. Es una franja: fuera
   // de ella la tesela es transparente y debajo sigue el mapa. Donde hay foto tapa el verde y el
   // sombreado del relieve; en 2D no se agrega.
   const ORTO_CERROS = CREDITO_ORTO('Ortoimagen Cerros Orientales 2025');
-  const ORTO_CERROS_FUENTE = { type: 'raster', url: url('orto-cerros-bogota.pmtiles'), tileSize: 256, minzoom: 13, maxzoom: 16,
+  const ORTO_CERROS_FUENTE = { type: 'raster', url: url('orto-cerros-bogota.pmtiles'), tileSize: 256, minzoom: 16, maxzoom: 16,
     bounds: [-74.1028, 4.4340, -73.9599, 4.8283], attribution: ORTO_CERROS };
-  // Más allá de unos 8 km MapLibre pide teselas z11 o menos. Un archivo aparte con las cinco
-  // teselas z11 de los cerros, en imágenes de 512 px (38 m por píxel), cubre los cerros del
-  // norte; pesa unos 30 KB y las cercanas quedan encima.
-  const ORTO_CERROS_LEJOS = { type: 'raster', url: url('orto-cerros-lejos-bogota.pmtiles'), tileSize: 256, minzoom: 11, maxzoom: 11,
-    bounds: [-74.1797, 4.3902, -73.8281, 4.9159], attribution: ORTO_CERROS };
-  // La Ortoimagen satelital rural 2025 (50 cm, © UAECD, CC BY 4.0) solo cubre la ruralidad del sur:
-  // de z11 a z14, bajo todas las demás. Al occidente y al norte no hay foto rural
-  // del Distrito, ahí sigue el mapa.
-  const ORTO_RURAL = CREDITO_ORTO('Ortoimagen satelital rural 2025', 'UAECD');
-  const ORTO_RURAL_FUENTE = { type: 'raster', url: url('orto-rural-bogota.pmtiles'), tileSize: 256, minzoom: 11, maxzoom: 14,
-    bounds: [-74.5313, 3.6888, -74.0039, 4.5655], attribution: ORTO_RURAL };
-  // Los cerros y lo rural siempre se ven de lejos: un poco más claros, menos contraste y menos
+  // Lejos de la cámara (de 1 a 20 km en la vista de calle) MapLibre pide teselas z10 a z15 y la
+  // urbana empieza en z16: ahí se veía el color de fondo, una franja blanca al pie de los cerros.
+  // Un archivo con la urbana, los cerros y la rural reducidas a z10 a z15 (mapa-base/scripts/
+  // orto_lejos.py) cubre todo el Distrito de lejos; ya trae la rural del sur y los cerros del
+  // norte que antes iban en archivos aparte.
+  const ORTO_LEJOS = 'Ortoimágenes 2025 de Bogotá © ' + SDP + ' y UAECD, publicadas por <a href="https://www.ideca.gov.co/">IDECA</a>, <a href="https://creativecommons.org/licenses/by/4.0/deed.es">CC BY 4.0</a>. Modificada: reproyectada, recortada en teselas, reducida, unida y comprimida.';
+  const ORTO_LEJOS_FUENTE = { type: 'raster', url: url('orto-lejos-bogota.pmtiles'), tileSize: 256, minzoom: 10, maxzoom: 15,
+    bounds: [-74.5313, 3.5134, -73.8281, 4.9158], attribution: ORTO_LEJOS };
+  // Fuera del Distrito (la sabana al occidente y al norte, La Calera tras los cerros) no hay
+  // foto de IDECA. Debajo de todo va el compuesto Sentinel-2 2021 de ESA WorldCover (CC BY 4.0),
+  // bajado una vez (mapa-base/scripts/satelite_entorno.py), a 20 m: de lejos alcanza.
+  const SATELITE = 'Sentinel-2 2021: <a href="https://esa-worldcover.org/">ESA WorldCover project 2021</a> / Contains modified Copernicus Sentinel data (2021) processed by ESA WorldCover consortium, <a href="https://creativecommons.org/licenses/by/4.0/deed.es">CC BY 4.0</a>. Modificada: recortada, rellenada, tono ajustado y comprimida.';
+  const SATELITE_FUENTE = { type: 'raster', url: url('satelite-entorno-bogota.pmtiles'), tileSize: 256, minzoom: 9, maxzoom: 13,
+    bounds: [-74.4500, 4.3000, -73.7500, 5.0000], attribution: SATELITE };
+  // Los cerros, lo rural y lo que está lejos: un poco más claros, menos contraste y menos
   // saturados que la foto del suelo, como los vela el aire (la niebla de MapLibre sobre el
   // terreno es débil a 2.600 m de altura y no alcanza sola).
   const ORTO_CERROS_PINTURA = Object.assign({}, ORTO_PINTURA, { 'raster-opacity': 1, 'raster-brightness-min': 0.1,
     'raster-contrast': -0.22, 'raster-saturation': -0.35 });
-  const ORTO_CAPAS = ['orto-rural', 'orto-cerros-lejos', 'orto-cerros', 'orto', 'orto-cerca'];
+  const ORTO_CAPAS = ['orto-satelite', 'orto-lejos', 'orto-cerros', 'orto', 'orto-cerca'];
   function ponerOrto(on) {
     if (on && !mapa.getSource('orto')) {
-      mapa.addSource('orto-rural', ORTO_RURAL_FUENTE);
-      mapa.addSource('orto-cerros-lejos', ORTO_CERROS_LEJOS);
       mapa.addSource('orto-cerros', ORTO_CERROS_FUENTE);
       mapa.addSource('orto', ORTO_FUENTE);
       mapa.addSource('orto-cerca', ORTO_CERCA_FUENTE);
       // Sobre el mapa base (fondo, verde, agua, calles) y bajo todo lo demás; de abajo hacia
-      // arriba: rural, cerros lejanos, cerros, la urbana y su z19 del centro.
+      // arriba: cerros, la urbana y su z19 del centro (debajo de los cerros, después, lo lejano).
       const capas = mapa.getStyle().layers.map((l) => l.id);
       const encima = capas[capas.indexOf('vias') + 1];
-      mapa.addLayer({ id: 'orto-rural', type: 'raster', source: 'orto-rural', metadata: { grupo: 'orto' }, paint: Object.assign({}, ORTO_CERROS_PINTURA) }, encima);
-      mapa.addLayer({ id: 'orto-cerros-lejos', type: 'raster', source: 'orto-cerros-lejos', metadata: { grupo: 'orto' }, paint: Object.assign({}, ORTO_CERROS_PINTURA) }, encima);
       mapa.addLayer({ id: 'orto-cerros', type: 'raster', source: 'orto-cerros', minzoom: 13, metadata: { grupo: 'orto' }, paint: Object.assign({}, ORTO_CERROS_PINTURA) }, encima);
       mapa.addLayer({ id: 'orto', type: 'raster', source: 'orto', minzoom: 16, metadata: { grupo: 'orto' }, paint: Object.assign({}, ORTO_PINTURA) }, encima);
       mapa.addLayer({ id: 'orto-cerca', type: 'raster', source: 'orto-cerca', minzoom: 19, metadata: { grupo: 'orto' }, paint: Object.assign({}, ORTO_PINTURA) }, encima);
+      // La foto de lejos y el satélite llegan cuando el mapa queda quieto la primera vez (o a
+      // los 12 s): así el arranque baja lo mismo que antes y el fondo lejano se completa después.
+      let hecho = false;
+      const luego = () => { if (!hecho) { hecho = true; ponerLejos(); } };
+      mapa.once('idle', luego);
+      setTimeout(luego, 12000);
     }
     for (const id of ORTO_CAPAS) if (mapa.getLayer(id)) mapa.setLayoutProperty(id, 'visibility', on ? 'visible' : 'none');
+  }
+  // Debajo de los cerros: el satélite del entorno y encima la foto de lejos. Toman la visibilidad
+  // de la foto (si el 3D se apagó entretanto quedan ocultas) y, si ya es de noche, su tono.
+  function ponerLejos() {
+    if (mapa.getSource('orto-lejos') || !mapa.getLayer('orto-cerros')) return;
+    mapa.addSource('orto-satelite', SATELITE_FUENTE);
+    mapa.addSource('orto-lejos', ORTO_LEJOS_FUENTE);
+    mapa.addLayer({ id: 'orto-satelite', type: 'raster', source: 'orto-satelite', metadata: { grupo: 'orto' }, paint: Object.assign({}, ORTO_CERROS_PINTURA) }, 'orto-cerros');
+    mapa.addLayer({ id: 'orto-lejos', type: 'raster', source: 'orto-lejos', metadata: { grupo: 'orto' }, paint: Object.assign({}, ORTO_CERROS_PINTURA) }, 'orto-cerros');
+    const vis = mapa.getLayoutProperty('orto-cerros', 'visibility') || 'visible';
+    for (const id of ['orto-satelite', 'orto-lejos']) mapa.setLayoutProperty(id, 'visibility', vis);
+    if (noche) { const t = noche; noche = -1; fijarNoche(t); }
   }
 
   // Una tesela de la foto que falla no es un error del visor: queda el mapa de abajo. MapLibre
@@ -328,8 +348,8 @@
     orto: { 'raster-brightness-max': 0.32, 'raster-saturation': -0.6, 'raster-contrast': -0.2 },
     'orto-cerca': { 'raster-brightness-max': 0.32, 'raster-saturation': -0.6, 'raster-contrast': -0.2 },
     'orto-cerros': { 'raster-brightness-max': 0.3, 'raster-brightness-min': 0, 'raster-saturation': -0.6, 'raster-contrast': -0.2 },
-    'orto-cerros-lejos': { 'raster-brightness-max': 0.3, 'raster-brightness-min': 0, 'raster-saturation': -0.6, 'raster-contrast': -0.2 },
-    'orto-rural': { 'raster-brightness-max': 0.3, 'raster-brightness-min': 0, 'raster-saturation': -0.6, 'raster-contrast': -0.2 },
+    'orto-lejos': { 'raster-brightness-max': 0.3, 'raster-brightness-min': 0, 'raster-saturation': -0.6, 'raster-contrast': -0.2 },
+    'orto-satelite': { 'raster-brightness-max': 0.3, 'raster-brightness-min': 0, 'raster-saturation': -0.6, 'raster-contrast': -0.2 },
     relieve: { 'hillshade-shadow-color': '#0c1017', 'hillshade-highlight-color': '#3a4252', 'hillshade-accent-color': '#161b24' }
   };
   // La noche llega de a poco (panel de textura, punto 3): t va de 0 (día) a 1 (noche) y los
