@@ -95,6 +95,13 @@
 
   const fmt1 = new Intl.NumberFormat('es-CO', { maximumFractionDigits: 1 });
   const num = (x) => fmt1.format(x);
+  // Lo que va en una fila de ficha: los decimales con coma (3,4 y no 3.4) y lo vacío dice «sin
+  // dato». Los enteros quedan tal cual, para no meterle puntos de miles a un código.
+  function valorFicha(v) {
+    if (v === null || v === undefined || v === '') return 'sin dato';
+    if (typeof v === 'number') return Number.isFinite(v) && !Number.isInteger(v) ? num(v) : String(v);
+    return /^-?\d+\.\d+$/.test(String(v)) ? num(Number(v)) : String(v);
+  }
   const horaLocal = (iso) => new Date(iso).toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit', timeZone: 'America/Bogota' });
   const fechaLocal = (iso) => new Date(iso).toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'short', timeZone: 'America/Bogota' });
 
@@ -167,5 +174,5 @@
   }
 
   // Se suma a lo que ya haya (sol.js y sombra-geom.js cuelgan sus piezas aquí también).
-  window.Bogotwin = Object.assign(window.Bogotwin || {}, { el, enlace, marca, marcaDe, meta, valor, edad, edadTexto, minutosDesde, num, horaLocal, fechaLocal, sinTildes, nombrePropio, frase, MARCAS, mezclarColor, mezclarValor, colorFachada, exprFachada, PALETA_FACHADA });
+  window.Bogotwin = Object.assign(window.Bogotwin || {}, { el, enlace, marca, marcaDe, meta, valor, edad, edadTexto, minutosDesde, num, valorFicha, horaLocal, fechaLocal, sinTildes, nombrePropio, frase, MARCAS, mezclarColor, mezclarValor, colorFachada, exprFachada, PALETA_FACHADA });
 })();
