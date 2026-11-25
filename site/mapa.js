@@ -607,25 +607,33 @@
     if (mapa.isStyleLoaded()) poner(); else mapa.once('load', poner);
   });
 
-  // Bicicletas compartidas: vivo-datos.js y bicis.js bajan solo al prender la capa.
-  // Un enlace con ?bicis=1 abre con la capa prendida.
-  const cajaBicis = document.getElementById('ver-bicis');
-  if (cajaBicis) {
-    let bajandoBicis = null;
-    const bajarBicis = () => bajandoBicis || (bajandoBicis = ['vivo-datos.js', 'bicis.js'].filter((f) => !(f === 'vivo-datos.js' && B.vivo)).reduce((p, f) => p.then(() => new Promise((ok, mal) => {
-      const s = document.createElement('script'); s.src = f; s.onload = ok; s.onerror = () => mal(new Error(f)); document.head.append(s);
-    })), Promise.resolve()).catch((e) => { bajandoBicis = null; throw e; }));
-    const ponerBicis = () => {
-      if (!cajaBicis.checked) { if (B.bicis) B.bicis.apagar(mapa); return; }
-      bajarBicis().then(() => { if (cajaBicis.checked) B.bicis.prender(mapa); }).catch(() => {
-        cajaBicis.checked = false;
-        const n = document.getElementById('bicis-leyenda');
-        if (n) { n.hidden = false; n.textContent = 'No se pudo bajar la capa de bicicletas. Revisa la conexión e intenta de nuevo.'; }
+  // Capas del repo vivo (bicicletas y nivel de canales): vivo-datos.js y el script de la capa
+  // bajan solo al prender. Un enlace con ?bicis=1 o ?canales=1 abre con la capa prendida.
+  let bajandoVivo = null;
+  const bajarScript = (f) => new Promise((ok, mal) => {
+    const s = document.createElement('script'); s.src = f; s.onload = ok; s.onerror = () => mal(new Error(f)); document.head.append(s);
+  });
+  const bajarVivo = () => B.vivo ? Promise.resolve() : (bajandoVivo || (bajandoVivo = bajarScript('vivo-datos.js').catch((e) => { bajandoVivo = null; throw e; })));
+  function capaViva({ caja, leyenda, script, clave, param, falla }) {
+    const casilla = document.getElementById(caja);
+    if (!casilla) return;
+    let bajando = null;
+    const bajar = () => bajando || (bajando = bajarVivo().then(() => B[clave] || bajarScript(script)).catch((e) => { bajando = null; throw e; }));
+    const poner = () => {
+      if (!casilla.checked) { if (B[clave]) B[clave].apagar(mapa); return; }
+      bajar().then(() => { if (casilla.checked) B[clave].prender(mapa); }).catch(() => {
+        casilla.checked = false;
+        const n = document.getElementById(leyenda);
+        if (n) { n.hidden = false; n.textContent = falla; }
       });
     };
-    cajaBicis.addEventListener('change', ponerBicis);
-    if (new URLSearchParams(location.search).get('bicis') === '1') { cajaBicis.checked = true; if (mapa.loaded()) ponerBicis(); else mapa.once('load', ponerBicis); }
+    casilla.addEventListener('change', poner);
+    if (new URLSearchParams(location.search).get(param) === '1') { casilla.checked = true; if (mapa.loaded()) poner(); else mapa.once('load', poner); }
   }
+  capaViva({ caja: 'ver-bicis', leyenda: 'bicis-leyenda', script: 'bicis.js', clave: 'bicis', param: 'bicis',
+    falla: 'No se pudo bajar la capa de bicicletas. Revisa la conexión e intenta de nuevo.' });
+  capaViva({ caja: 'ver-canales', leyenda: 'canales-leyenda', script: 'canales.js', clave: 'canales', param: 'canales',
+    falla: 'No se pudo bajar la capa de niveles. Revisa la conexión e intenta de nuevo.' });
 
   // Ventana con los datos de lo que se toca.
   const consultables = ['lluvia', 'metro-estaciones', 'troncal', 'paraderos', 'construcciones', 'pisos-sector', 'construcciones-3d', 'sectores-3d'];
@@ -638,6 +646,7 @@
   }
   mapa.on('click', (e) => {
     if (B.bicis && B.bicis.tocar(e)) return;
+    if (B.canales && B.canales.tocar(e)) return;
     const capas = consultables.filter(id => mapa.getLayer(id) && mapa.getLayoutProperty(id, 'visibility') !== 'none');
     const caja = [[e.point.x - 6, e.point.y - 6], [e.point.x + 6, e.point.y + 6]];
     const f = mapa.queryRenderedFeatures(caja, { layers: capas })[0];
