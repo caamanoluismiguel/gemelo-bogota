@@ -813,6 +813,17 @@
     if (new URLSearchParams(location.search).get('pm25') === '1') { cajaPm25.checked = true; trasCarga(ponerPm25); }
   }
 
+  // «¿Qué pasa si…?» (pestaña Probar): el modelo y el panel bajan la primera vez que se abre la
+  // pestaña, o al cargar con ?esc= en la URL.
+  let bajandoEsc = null;
+  const bajarEscenarios = () => bajandoEsc || (bajandoEsc = bajarVivo()
+    .then(() => ['aire-anual-datos.js', 'escenarios-modelo.js', 'escenarios.js'].filter((f) => !(f === 'aire-anual-datos.js' && B.aireAnualDatos))
+      .reduce((p, f) => p.then(() => bajarScript(f)), Promise.resolve()))
+    .then(() => trasCarga(() => B.escenarios.iniciar(mapa)))
+    .catch((e) => { bajandoEsc = null; const n = document.getElementById('escenarios-cuerpo'); if (n) n.textContent = 'No se pudo bajar esta herramienta. Revisa la conexión e intenta de nuevo.'; throw e; }));
+  window.addEventListener('bogotwin:pestana', (ev) => { if (ev.detail && ev.detail.p === 'probar') bajarEscenarios().catch(() => {}); });
+  if ((B.panelUi && B.panelUi.estado && B.panelUi.estado.pestana === 'probar') || new URLSearchParams(location.search).has('esc')) bajarEscenarios().catch(() => {});
+
   // Ventana con los datos de lo que se toca.
   const consultables = ['lluvia', 'metro-estaciones', 'troncal', 'paraderos', 'construcciones', 'pisos-sector', 'construcciones-3d', 'construcciones-lejos-3d', 'sectores-3d'];
   function ventana(lngLat, filas, metaArgs, extra) {
@@ -824,6 +835,7 @@
   }
   mapa.on('click', (e) => {
     if (B.edificioNuevo && B.edificioNuevo.tomaClic(e)) return;
+    if (B.escenarios && B.escenarios.tomaClic(e)) return;
     if (B.bicis && B.bicis.tocar(e)) return;
     if (B.aireAnual && B.aireAnual.tocarPunto(e)) return;
     if (B.canales && B.canales.tocar(e)) return;

@@ -313,8 +313,11 @@
     if (!VV || !a) info = { estado: 'cargando' };
     else if (!a.datos) info = { estado: a.error ? 'sin_dato' : 'cargando' };
     else info = VV.aireEnHora(a.datos, S.ahora ? Date.now() : msMomento());
+    // Con un escenario del aire prendido («¿Qué pasa si…?», escenarios.js) la bruma sigue el escenario.
+    const E = B.escenario;
+    if (VV && E && E.tipo === 'aire' && Number.isFinite(E.pm25)) info = { estado: 'ok', pm25: E.pm25, escenario: true };
     const k = A.on && info.estado === 'ok' ? VV.pesoBruma(info.pm25) : 0;
-    const cambio = k !== A.k || info.estado !== A.info.estado || info.pm25 !== A.info.pm25;
+    const cambio = k !== A.k || info.estado !== A.info.estado || info.pm25 !== A.info.pm25 || !!info.escenario !== !!A.info.escenario;
     A.info = info; A.k = k;
     // Lo lee edificios-luz.js para lavar los edificios lejanos con la misma bruma: el peso del
     // color y la escala de Beer-Lambert (1 / extinción, en metros) del aire de esa hora.
@@ -355,6 +358,7 @@
       const v = B.num ? B.num(i.pm25) : String(i.pm25);
       const km = Math.round(B.vivo.visibilidad(i.pm25) / 1000);
       const vis = `se vería a unos ${km} km`;
+      if (i.escenario) return { texto: `Escenario, no el aire de hoy: la bruma va con ${v} µg/m³ de PM2,5 para toda la ciudad, ${vis}.`, marca: 'supuesto', hay: A.k > 0.3 };
       return A.k > 0.3
         ? { texto: `La bruma sigue el pronóstico de PM2,5 para toda la ciudad: ${v} µg/m³ a esta hora, ${vis}.`, marca: true, hay: true }
         : { texto: `Pronóstico de PM2,5 para toda la ciudad: ${v} µg/m³ a esta hora, ${vis}. Con aire así de limpio casi no hay bruma.`, marca: true };
@@ -372,6 +376,9 @@
     const t = textoAire();
     $('#sb-aire').textContent = t.texto;
     $('#sb-aire-marca').hidden = !t.marca;
+    const mk = t.marca === 'supuesto' ? 'supuesto' : 'estimado';
+    $('#sb-aire-marca').dataset.marca = mk;
+    $('#sb-aire-marca').textContent = mk;
     // En la barra corta de la vista de calle la línea sale solo cuando hay bruma que explicar.
     p.classList.toggle('sb-aire-hay', !!t.hay);
     $('#sb-aire-boton').textContent = A.on ? 'Quitar la bruma' : 'Poner la bruma';

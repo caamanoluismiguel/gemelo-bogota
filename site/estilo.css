@@ -250,6 +250,52 @@ details.mas summary { cursor: pointer; font-weight: 600; margin-top: 10px; min-h
   .edn-aviso-texto { font-size: 13px; }
 }
 
+/* «¿Qué pasa si…?» (escenarios.js). Lo que decides va en azul (acento) y lo que nadie controla en
+   morado (supuesto). Mientras hay escenario, el mapa lleva un marco morado y un sello arriba. */
+.esc-elegir-fila { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.esc-elegir { font: inherit; font-weight: 600; min-height: 44px; padding: 8px 12px; border: 1px solid var(--borde); border-radius: 8px;
+  background: var(--papel); color: var(--tinta, #1f1f1f); cursor: pointer; flex: 1 1 140px; text-align: left; }
+.esc-elegir[aria-pressed="true"] { border: 2px solid var(--m-supuesto); background: #f1ebf6; }
+.esc-volver[hidden], .esc-panel[hidden], .esc-sello [hidden] { display: none; }
+.esc-grupo { margin: 12px 0; padding: 4px 12px 8px; border: 1px solid var(--borde); border-left-width: 4px; border-radius: 8px; }
+.esc-grupo legend { font-weight: 650; padding: 0 4px; }
+.esc-palanca { border-left-color: var(--acento); }
+.esc-incierto { border-left-color: var(--m-supuesto); border-left-style: dotted; }
+.esc-incierto .edn-fila input[type=range] { accent-color: var(--m-supuesto); }
+.esc-cuando { border-left-color: var(--borde); }
+.esc-chip { display: inline-block; font-size: 12px; font-weight: 600; padding: 1px 6px; border-radius: 4px; color: #fff; }
+.esc-chip-palanca { background: var(--acento); }
+.esc-chip-incierto { background: var(--m-supuesto); }
+.esc-nombre { margin: 0 0 4px; font-weight: 600; }
+.esc-opciones { display: flex; flex-wrap: wrap; gap: 6px; }
+.esc-opcion, .esc-atajo { font: inherit; min-height: 44px; padding: 6px 10px; border: 1px solid var(--borde); border-radius: 8px;
+  background: var(--papel); color: inherit; cursor: pointer; }
+.esc-palanca .esc-opcion[aria-pressed="true"] { background: var(--acento); border-color: var(--acento); color: #fff; }
+.esc-atajo { margin: 0 6px 6px 0; font-size: 14px; }
+.esc-atajo .marca { margin-left: 2px; }
+.esc-casilla { display: flex; align-items: center; gap: 6px; min-height: 44px; }
+.esc-casilla input { width: 20px; height: 20px; accent-color: var(--acento); }
+.esc-resultado { margin-top: 12px; padding: 10px 12px; border: 1px solid var(--m-supuesto); border-radius: 8px; background: #faf7fc; }
+.esc-resultado h3 { margin: 0 0 6px; font-size: 15px; }
+.esc-resultado .dato { margin: 6px 0; }
+.esc-resultado .dato .que { display: block; font-size: 14px; }
+.esc-quiebre { font-weight: 600; }
+.esc-sello { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); z-index: 3; width: min(520px, calc(100% - 32px));
+  display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: center; padding: 8px 10px 10px 12px; background: var(--papel);
+  border: 2px solid var(--m-supuesto); border-radius: 10px; box-shadow: 0 1px 2px rgba(0,0,0,.12), 0 4px 12px rgba(0,0,0,.08); }
+.esc-sello[hidden] { display: none; }
+.esc-sello-chip { flex: none; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; padding: 2px 6px;
+  border-radius: 4px; background: var(--m-supuesto); color: #fff; }
+.esc-sello-texto { margin: 0; flex: 1 1 160px; font-weight: 600; }
+.esc-sello .boton-edn { margin: 0; flex: none; }
+body.en-escenario #mapa::after { content: ""; position: absolute; inset: 0; z-index: 2; pointer-events: none; border: 4px solid var(--m-supuesto); }
+@media (min-width: 601px) { .esc-sello { left: calc(50% + 190px); } }
+@media (max-width: 600px) {
+  .esc-sello { top: 8px; flex-wrap: nowrap; padding: 6px 6px 6px 10px; }
+  .esc-sello-chip { display: none; }
+  .esc-sello-texto { flex: 1 1 0; min-width: 0; font-size: 13px; }
+}
+
 /* Ficha para imprimir: solo se ve en papel. */
 .edn-ficha { display: none; }
 @media print {
