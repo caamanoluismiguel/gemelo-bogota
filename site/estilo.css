@@ -407,3 +407,17 @@ details.mas summary { cursor: pointer; font-weight: 600; margin-top: 10px; min-h
 }
 .leyenda-mapa .bicis-ley { display: grid; grid-template-columns: 1fr 1fr; gap: 0 10px; margin: 2px 0; }
 .leyenda-mapa .bicis-ley li { margin: 2px 0; }
+
+/* Buses troncales programados por hora (frecuencia.js). Planos, sin degradados. */
+.frec-aviso { font-weight: 600; color: var(--tinta); }
+.frec-dias { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; }
+.frec-dia { min-height: 36px; padding: 4px 10px; border: 1px solid #b8b2a6; border-radius: 18px; background: #fff; color: var(--tinta); font: inherit; font-size: 12.5px; cursor: pointer; }
+.frec-dia[aria-pressed="true"] { background: #1f2a33; border-color: #1f2a33; color: #fff; }
+.frec-hora { display: flex; flex-direction: column; gap: 2px; font-size: 12.5px; font-weight: 600; margin: 4px 0; }
+.frec-hora input[type="range"] { width: 100%; min-height: 32px; accent-color: #1f2a33; }
+.frec-ahora { min-height: 36px; padding: 4px 10px; border: 1px solid #1f2a33; border-radius: 6px; background: #fff; color: #1f2a33; font: inherit; font-size: 12.5px; cursor: pointer; margin-bottom: 4px; }
+.frec-ahora:disabled { border-color: #d6d1c7; color: #6b6b6b; cursor: default; }
+.frec-barras { display: block; width: 100%; max-width: 240px; height: 62px; margin-top: 4px; }
+.g-frec { fill: #e9803f; }
+.g-frec-hora { fill: #55112f; }
+.g-frec-eje { font-size: 8px; fill: #555; }

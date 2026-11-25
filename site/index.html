@@ -79,6 +79,7 @@
         <label class="toque" data-pestana="ahora" data-tipo="color"><input type="checkbox" data-grupo="lluvia"> Lluvia de hoy en los pluviómetros del SAB</label>
         <label class="toque" data-pestana="ahora" data-tipo="color"><input type="checkbox" id="ver-bicis"> Bicicletas compartidas <span class="nota-inline">(8 KB)</span></label>
         <label class="toque" data-pestana="ahora" data-tipo="color"><input type="checkbox" id="ver-canales"> Nivel de quebradas, ríos y canales <span class="nota-inline">(11 KB)</span></label>
+        <label class="toque" data-pestana="ahora" data-tipo="color"><input type="checkbox" id="ver-frecuencia"> Buses troncales por hora, programados <span class="nota-inline">(36 KB)</span></label>
         <p class="capas-sub">Referencias, se pueden juntar</p>
         <label class="toque" data-pestana="ahora" data-tipo="referencia"><input type="checkbox" data-grupo="troncal" checked> Estaciones de TransMilenio</label>
         <label class="toque" data-pestana="ahora" data-tipo="referencia"><input type="checkbox" data-grupo="metro" checked> Metro línea 1 (en obra)</label>
@@ -185,6 +186,10 @@
   <div class="ley-bloque" data-capa="canales" hidden>
     <p class="ley-titulo">Nivel de quebradas, ríos y canales</p>
     <div class="bicis-caja" id="canales-leyenda" hidden></div>
+  </div>
+  <div class="ley-bloque" data-capa="frecuencia" hidden>
+    <p class="ley-titulo">Buses troncales por hora, programados</p>
+    <div class="bicis-caja" id="frecuencia-leyenda" hidden></div>
   </div>
   <div class="ley-bloque" data-capa="pm25" hidden>
     <p class="ley-titulo">PM2,5 de todo 2025</p>

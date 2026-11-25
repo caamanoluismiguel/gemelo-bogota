@@ -107,7 +107,7 @@ const serie = V.serieDe(lineas, 'c', campos);
 revisar('serieDe ordena por hora y busca el id en cada línea', serie.length === 2 && serie[0][1] === 2 && serie[1][1] === 3);
 
 // 7. Nada nuevo promete «en vivo» ni «tiempo real».
-const nuevos = ['site/index.html', 'site/fuentes.html', 'site/bicis.js', 'site/canales.js', 'site/pronostico.js', 'site/vivo-datos.js'];
+const nuevos = ['site/index.html', 'site/fuentes.html', 'site/bicis.js', 'site/canales.js', 'site/frecuencia.js', 'site/pronostico.js', 'site/vivo-datos.js'];
 const conVivo = nuevos.filter((f) => /en vivo|tiempo real/i.test(leer(f)));
 revisar('ni «en vivo» ni «tiempo real» en las páginas y capas nuevas', conVivo.length === 0, conVivo.join(', '));
 

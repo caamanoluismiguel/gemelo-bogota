@@ -1,0 +1,29 @@
+{
+  "esquema": "bogotwin/evidencia-licencia/1",
+  "fuente": "TransMilenio S.A., GTFS estático del SITP",
+  "consultado": "2026-11-25T10:27:06Z",
+  "consultado_hora_bogota": "2026-11-25 05:27",
+  "fichas": [
+    {
+      "url": "https://datosabiertos.bogota.gov.co/dataset/especificacion-gtfs-general-transport-feed-specification-sitp",
+      "api": "https://datosabiertos.bogota.gov.co/api/3/action/package_show?id=especificacion-gtfs-general-transport-feed-specification-sitp",
+      "titulo": "Especificación GTFS (General Transport Feed Specification) - SITP",
+      "organizacion": "Empresa de Transporte del Tercer Milenio - Transmilenio S.A.",
+      "license_id": "CC-BY-SA-4.0",
+      "license_title": "Creative Commons Attribution Share-Alike 4.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+      "metadata_modified": "2023-12-18T20:26:51.077171",
+      "recurso": "https://datosabiertos-transmilenio.hub.arcgis.com/search?collection=Document&tags=gtfs",
+      "sha256_respuesta_ckan": "c7b9d0d6e29d84d4c736cc788b23ffa62ddba3e899ea92bdeb3342bc2496d64a"
+    }
+  ],
+  "archivo": {
+    "bucket": "https://storage.googleapis.com/gtfs-estaticos/",
+    "nombre": "GTFS_20261125.zip",
+    "bytes": 117936269,
+    "modificado": "2026-11-25T09:19:51.195Z",
+    "sha256": "748da68ff43f4531907f532e4a6a7ac0b9dc4e5653ddd10a75cb59005d2ae198",
+    "nota": "El bucket es público y se puede listar sin clave. Trae un GTFS_AAAAMMDD.zip nuevo cada día. Sus archivos no traen licencia propia; vale la de la ficha de Datos Abiertos Bogotá, que enlaza el hub de TransMilenio donde se catalogan las mismas versiones."
+  },
+  "consecuencia": "Todo lo derivado (frecuencia/troncal.json y la copia del sitio) queda bajo CC BY-SA 4.0, con crédito a TransMilenio S.A., en un archivo aparte. No se combina con datos CC BY-NC (SAB, SDA) ni con OpenStreetMap (ODbL)."
+}
