@@ -424,6 +424,9 @@
     for (const id of ['pisos-sector', 'construcciones']) mapa.setLayoutProperty(id, 'visibility', on ? 'none' : (document.querySelector('[data-grupo="pisos"]').checked ? 'visible' : 'none'));
     // Cielo y atmósfera: con 3D el cielo estático de día; sol-barra.js lo anima si hay sombras.
     if (on) { mapa.setSky(CIELO_DIA); } else { mapa.setSky({}); }
+    // De noche, el primer cuadro ya es de noche; la barra del sol sigue cuando llega.
+    const arranqueNoche = alArrancar && on && cajaSombras.checked && !q0.has('sol') && B.cieloArranque(Date.now());
+    if (arranqueNoche) { mapa.setSky(arranqueNoche.cielo); fijarNoche(arranqueNoche.noche); }
     if (!on) fijarNoche(false);
     // Verdes: con 3D, más saturados para que los parques se lean verdes a la altura de la calle
     // (la bruma del horizonte los lava). En 2D, los de siempre.
@@ -564,7 +567,7 @@
     if (!conWebGL2) {
       for (const n of document.querySelectorAll('.solo-sombras')) n.hidden = true;
     } else {
-      const MODULOS = ['sol.js', 'sombra-geom.js', 'mvt.js', 'sombras-capa.js', 'sol-texto.js', 'horizonte.js', 'sol-barra.js'];
+      const MODULOS = ['sombra-geom.js', 'mvt.js', 'sombras-capa.js', 'sol-texto.js', 'horizonte.js', 'sol-barra.js'];
       let cargando = null;
       const cargar = () => cargando || (cargando = MODULOS.reduce((p, f) => p.then(() => new Promise((ok, mal) => {
         const s = document.createElement('script');
@@ -572,7 +575,8 @@
         document.head.append(s);
       })), Promise.resolve()).catch((e) => { cargando = null; throw e; }));
       const ponerSombras = () => {
-        if (!cajaSombras.checked) { if (B.solBarra) B.solBarra.apagar(); return; }
+        // Si se apagan antes de que llegue la barra, se quita la noche del arranque.
+        if (!cajaSombras.checked) { if (B.solBarra) B.solBarra.apagar(); else if (noche) { fijarNoche(false); mapa.setSky(caja3d.checked ? CIELO_DIA : {}); } return; }
         cargar().then(() => {
           const ir = () => { if (cajaSombras.checked) B.solBarra.prender(); };
           if (mapa.isStyleLoaded()) ir(); else mapa.once('load', ir);

@@ -174,6 +174,27 @@
       ['to-color', ['at', tono, ['literal', TONO_LADRILLO.map(c)]]]];
   }
 
+  // Cielo del primer cuadro en 3D. La barra del sol llega cuando la ciudad ya está quieta (hasta
+  // 12 s en un teléfono); antes de eso, si el sol está bajo el horizonte, el cielo y el mapa ya
+  // van de noche. Los colores son los de cieloPorAltura en sol-barra.js, que toma el relevo.
+  // Devuelve null de día o si sol.js no está.
+  const CENTRO_SOL = [4.6097, -74.0817];   // el mismo de sol-barra.js
+  const CIELO_NOCHE = { 'sky-color': '#0a1628', 'sky-horizon-blend': 0.4, 'horizon-color': '#1a2a40',
+    'fog-color': '#141e2e', 'horizon-fog-blend': 0.3, 'fog-ground-blend': 0.6, 'atmosphere-blend': 1.0 };
+  const CIELO_OCASO = { 'sky-color': '#2a4a7a', 'sky-horizon-blend': 0.5, 'horizon-color': '#d4956a',
+    'fog-color': '#8a7060', 'horizon-fog-blend': 0.3, 'fog-ground-blend': 0.3, 'atmosphere-blend': 1.0 };
+  function cieloArranque(ms) {
+    const sol = window.Bogotwin && window.Bogotwin.sol;
+    if (!sol) return null;
+    const alt = sol.posicion(ms, CENTRO_SOL[0], CENTRO_SOL[1]).altura;
+    if (!(alt < 0)) return null;
+    // noche: de 0 (sol en el horizonte) a 1 (sol a 6° bajo él), igual que ponerCielo.
+    const noche = Math.min(1, -alt / 6);
+    const cielo = {};
+    for (const k of Object.keys(CIELO_NOCHE)) cielo[k] = mezclarValor(CIELO_OCASO[k], CIELO_NOCHE[k], noche);
+    return { noche, cielo };
+  }
+
   // Se suma a lo que ya haya (sol.js y sombra-geom.js cuelgan sus piezas aquí también).
-  window.Bogotwin = Object.assign(window.Bogotwin || {}, { el, enlace, marca, marcaDe, meta, valor, edad, edadTexto, minutosDesde, num, valorFicha, horaLocal, fechaLocal, sinTildes, nombrePropio, frase, MARCAS, mezclarColor, mezclarValor, colorFachada, exprFachada, PALETA_FACHADA });
+  window.Bogotwin = Object.assign(window.Bogotwin || {}, { el, enlace, marca, marcaDe, meta, valor, edad, edadTexto, minutosDesde, num, valorFicha, horaLocal, fechaLocal, sinTildes, nombrePropio, frase, MARCAS, mezclarColor, mezclarValor, cieloArranque, colorFachada, exprFachada, PALETA_FACHADA });
 })();
