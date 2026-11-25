@@ -6,7 +6,7 @@
 (function () {
   const B = window.Bogotwin;
   const V = B.vivo;
-  const FUENTE = 'frecuencia', CAPA = 'frecuencia', ESQUEMA = 'bogotwin/troncal-frecuencia/1';
+  const FUENTE = 'frecuencia', CAPA = 'frecuencia', BORDE = 'frecuencia-borde', ESQUEMA = 'bogotwin/troncal-frecuencia/1';
   const COPIA = 'datos/transporte/troncal-frecuencia.json';
   const TIPOS = ['habil', 'sabado', 'domingo'];
   const NOMBRE_TIPO = { habil: 'Día hábil', sabado: 'Sábado', domingo: 'Domingo o festivo' };
@@ -93,9 +93,14 @@
     if (mapaRef.getSource(FUENTE)) mapaRef.getSource(FUENTE).setData(fc);
     else {
       mapaRef.addSource(FUENTE, { type: 'geojson', data: fc });
+      // Borde claro debajo: la línea se lee igual sobre el mapa de noche, la foto o el claro.
+      mapaRef.addLayer({ id: BORDE, type: 'line', source: FUENTE, metadata: { grupo: 'frecuencia' },
+        layout: { 'line-cap': 'round', 'line-join': 'round' },
+        paint: { 'line-color': '#ffffff', 'line-opacity': 0.9,
+          'line-width': ['interpolate', ['linear'], ['zoom'], 10, 5.5, 12, 7.5, 14, 10, 16, 13] } });
       mapaRef.addLayer({ id: CAPA, type: 'line', source: FUENTE, metadata: { grupo: 'frecuencia' },
         layout: { 'line-cap': 'round', 'line-join': 'round' },
-        paint: { 'line-color': ['get', 'col'], 'line-width': ['interpolate', ['linear'], ['zoom'], 10, 3, 12, 4.5, 14, 7, 16, 10],
+        paint: { 'line-color': ['get', 'col'], 'line-width': ['interpolate', ['linear'], ['zoom'], 10, 3.5, 12, 5, 14, 7, 16, 10],
           'line-opacity': ['case', ['==', ['get', 'v'], 0], 0.6, 1] } });
       mapaRef.on('mouseenter', CAPA, () => { mapaRef.getCanvas().style.cursor = 'pointer'; });
       mapaRef.on('mouseleave', CAPA, () => { mapaRef.getCanvas().style.cursor = ''; });
@@ -161,7 +166,7 @@
   const alSol = () => { if (encendida && seguir()) pintar(); };
   function prender(mapa) {
     mapaRef = mapa; encendida = true;
-    if (mapa.getLayer(CAPA)) mapa.setLayoutProperty(CAPA, 'visibility', 'visible');
+    for (const id of [BORDE, CAPA]) if (mapa.getLayer(id)) mapa.setLayoutProperty(id, 'visibility', 'visible');
     const c = caja();
     if (c) { c.hidden = false; if (!datos) c.replaceChildren(el('p', { clase: 'nota', texto: 'Trayendo la programación…' })); }
     (datos ? Promise.resolve(datos) : traer()).then((d) => {
@@ -180,7 +185,7 @@
     encendida = false;
     clearInterval(reloj);
     window.removeEventListener('bogotwin:sol', alSol);
-    if (mapa.getLayer(CAPA)) mapa.setLayoutProperty(CAPA, 'visibility', 'none');
+    for (const id of [BORDE, CAPA]) if (mapa.getLayer(id)) mapa.setLayoutProperty(id, 'visibility', 'none');
     const c = caja(); if (c) c.hidden = true;
     if (popup) { popup.remove(); popup = null; }
   }
