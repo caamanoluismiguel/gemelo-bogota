@@ -1,0 +1,101 @@
+{
+ "_nota": "Bajado una sola vez con pipelines/aire-anual/bajar.sh. El visor sirve estos archivos y no llama a los servidores del Distrito.",
+ "bajado": "2026-11-25T00:13:09Z",
+ "fuentes": {
+  "pm25": {
+   "url": "https://datosabiertos.bogota.gov.co/dataset/a32d342a-fe03-44a9-b006-b5997a816f70/resource/d6b61b68-9e28-4b9e-91dd-1b4dbdce9e94/download/pm25_prom_anual.geojson",
+   "metodo": "Especificación técnica de la SDA: estaciones RMCAB con al menos 75 % de datos válidos, interpoladas con kriging ordinario o universal; escala 1:150.000; solo área urbana. El diccionario dice que Concentracion_PM25 es el valor que representa la franja, sin decir si es mínimo, máximo o promedio.",
+   "otras_evidencias": {
+    "servicio_rest": "https://mapas.ambientebogota.gov.co/server/rest/services/Calidad_aire/PM_25_promedio_anual_2025/MapServer",
+    "copyrightText_del_servicio": "Secretaría Distrital de Ambiente -Subdirección de Calidad del Aire, Auditiva y Visual",
+    "especificacion_tecnica_1.1.6_restricciones": "Ninguna"
+   },
+   "ficha": "https://datosabiertos.bogota.gov.co/dataset/pm-25-promedio-anual-bogota-d-c",
+   "productor": "Secretaría Distrital de Ambiente (SDA), Subdirección de Calidad del Aire, Auditiva y Visual",
+   "licencia": {
+    "nombre": "CC BY 4.0",
+    "url": "https://creativecommons.org/licenses/by/4.0/"
+   },
+   "sha256_crudo": "ba910008779b71f25d5ed63de348d848bcaf59adf35e2eca52defa0c197d08ad",
+   "bytes_crudo": 42226,
+   "producto": "pm25-anual-2025.geojson",
+   "sha256_producto": "fb5ae98240ccaa63adfa87eacc607095ed77cd3e03630492ac62a2ab2c51f4c6",
+   "bytes_producto": 30933,
+   "resumen": {
+    "franjas": 8,
+    "valores": [
+     11.04,
+     12.44,
+     15.11,
+     18.84,
+     20.92,
+     23.78,
+     27.41,
+     29.82
+    ]
+   },
+   "ficha_dice": {
+    "title": "PM 2,5 promedio anual. Bogotá D.C",
+    "license_id": "CC-BY-4.0",
+    "license_title": "Creative Commons Attribution 4.0",
+    "license_url": "https://creativecommons.org/licenses/by/4.0/",
+    "isopen": true,
+    "metadata_modified": "2026-10-29T14:04:14.626523"
+   }
+  },
+  "colegios": {
+   "url": "https://datosabiertos.bogota.gov.co/dataset/d451b52f-e30c-43b3-9066-3a7816638fea/resource/4cb45e38-779b-483b-acc4-5673c5db9505/download/colegios092026.geojson",
+   "ficha": "https://datosabiertos.bogota.gov.co/dataset/colegios-bogota-d-c",
+   "productor": "Secretaría de Educación del Distrito (SED), publicado por IDECA",
+   "licencia": {
+    "nombre": "CC BY-SA 4.0",
+    "url": "https://creativecommons.org/licenses/by-sa/4.0/"
+   },
+   "sha256_crudo": "eb8bfb216e84979fd9357889ee1dc535b01c8435e778f2cf904c6d1f04624473",
+   "bytes_crudo": 2098632,
+   "producto": "colegios-sed.geojson",
+   "sha256_producto": "8894b8e485b78e9b5cde03458d2c9e250188b4b20780d707db870e44e9d33899",
+   "bytes_producto": 314843,
+   "resumen": {
+    "sedes": 2176,
+    "oficiales": 775,
+    "fuera_de_caja": 0
+   },
+   "ficha_dice": {
+    "title": "Colegios. Bogotá D.C.",
+    "license_id": "CC-BY-SA-4.0",
+    "license_title": "Creative Commons Attribution Share-Alike 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "isopen": true,
+    "metadata_modified": "2026-10-20T22:28:06.812303"
+   }
+  },
+  "salud": {
+   "url": "https://serviciosgis.catastrobogota.gov.co/arcgis/rest/services/salud/instituciones/MapServer/1/query?where=1%3D1&outFields=*&outSR=4326&f=geojson",
+   "ficha": "https://datosabiertos.bogota.gov.co/dataset/red-adscrita-de-salud-para-bogota",
+   "productor": "Secretaría Distrital de Salud (SDS)",
+   "licencia": {
+    "nombre": "CC BY 4.0",
+    "url": "https://creativecommons.org/licenses/by/4.0/"
+   },
+   "sha256_crudo": "0df3e221f62b3ba2b94231634ba13c07d68535bc23b91001819af3e0044c2fec",
+   "bytes_crudo": 65294,
+   "producto": "salud-red-publica.geojson",
+   "sha256_producto": "602c814297cc4a9cd0e76aaac17f60fbebaae57115612d5d54a4135c1b4916df",
+   "bytes_producto": 18792,
+   "resumen": {
+    "sedes": 116,
+    "fuera_de_caja": 0,
+    "sin_coordenadas": 1
+   },
+   "ficha_dice": {
+    "title": "Red adscrita de salud para Bogotá D.C.",
+    "license_id": "CC-BY-4.0",
+    "license_title": "Creative Commons Attribution 4.0",
+    "license_url": "https://creativecommons.org/licenses/by/4.0/",
+    "isopen": true,
+    "metadata_modified": "2025-06-13T14:26:08.233561"
+   }
+  }
+ }
+}
