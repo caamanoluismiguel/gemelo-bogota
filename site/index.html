@@ -48,6 +48,18 @@
       <div id="noches-cuerpo"><p class="estado">Cargando el registro de anoche…</p></div>
     </section>
 
+    <section class="tarjeta" id="pronostico" aria-labelledby="t-pron">
+      <h2 id="t-pron">Pronóstico de 48 horas <span class="marca" data-marca="estimado">estimado</span></h2>
+      <p class="estado" id="pron-estado">El pronóstico se carga después del mapa…</p>
+      <div id="pron-cuerpo"></div>
+    </section>
+
+    <section class="tarjeta" id="aire" aria-labelledby="t-aire">
+      <h2 id="t-aire">Aire de los próximos días <span class="marca" data-marca="estimado">estimado, celda de 45 km</span></h2>
+      <p class="estado" id="aire-estado">El pronóstico del aire se carga después del mapa…</p>
+      <div id="aire-cuerpo"></div>
+    </section>
+
     <section class="tarjeta" aria-labelledby="t-capas">
       <h2 id="t-capas">Qué ves en el mapa</h2>
       <fieldset class="capas">
@@ -82,6 +94,8 @@
         <label><input type="checkbox" data-grupo="metro" checked> Metro línea 1 (en obra)</label>
         <label><input type="checkbox" data-grupo="paraderos"> Paraderos del SITP <span class="nota-inline">(se descargan al marcar, 140 KB)</span></label>
         <label><input type="checkbox" data-grupo="lluvia"> Lluvia de hoy en los pluviómetros del SAB</label>
+        <label class="toque"><input type="checkbox" id="ver-bicis"> Bicicletas compartidas <span class="nota-inline">(se descargan al marcar, 8 KB)</span></label>
+        <div class="bicis-caja" id="bicis-leyenda" hidden></div>
         <label><input type="checkbox" data-grupo="localidades" checked> Localidades y UPL</label>
         <label><input type="checkbox" data-grupo="sectores"> Sectores catastrales</label>
         <label><input type="checkbox" data-grupo="base" checked> Calles, agua y verde</label>

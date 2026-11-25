@@ -138,6 +138,7 @@
     s.classList.toggle('viejo', viejo);
   }
   setInterval(() => document.querySelectorAll('.hora-dato[data-hora]').forEach(pintarHora), 60000);
+  B.horaYEdad = horaYEdad;
 
   function pintarCielo(j) {
     const fs = j.fuentes || {};
@@ -171,6 +172,25 @@
   }
   cargarCielo();
   setInterval(cargarCielo, 10 * 60000);
+
+  // Pronóstico y aire: su código y sus JSON bajan después del primer cuadro del mapa (o de
+  // cargar la página si no hay mapa), para que el arranque no pese más.
+  let pronPedido = false;
+  function pedirPronostico() {
+    if (pronPedido) return;
+    pronPedido = true;
+    const js = (f) => new Promise((ok, mal) => { const s = el('script', { src: f }); s.onload = ok; s.onerror = mal; document.head.append(s); });
+    (B.vivo ? Promise.resolve() : js('vivo-datos.js')).then(() => js('pronostico.js')).catch(() => {
+      for (const id of ['pron-estado', 'aire-estado']) { const n = document.getElementById(id); if (n) n.textContent = 'No se pudo bajar esta tarjeta. Revisa la conexión y recarga la página.'; }
+    });
+  }
+  const enCalma = () => window.requestIdleCallback ? requestIdleCallback(pedirPronostico, { timeout: 3000 }) : setTimeout(pedirPronostico, 1000);
+  const trasPrimerCuadro = () => {
+    const m = window.BogotwinMapa;
+    if (m && !(m.loaded() && m.areTilesLoaded())) { m.once('idle', enCalma); setTimeout(pedirPronostico, 20000); }
+    else enCalma();
+  };
+  if (document.readyState === 'complete') trasPrimerCuadro(); else addEventListener('load', trasPrimerCuadro, { once: true });
 
   // Noches frías: el sitio publica el último registro diario como datos/noches-frias/ultima.json.
   const nc = document.getElementById('noches-cuerpo');

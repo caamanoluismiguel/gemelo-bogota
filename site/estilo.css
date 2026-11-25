@@ -198,3 +198,48 @@ details.mas summary { cursor: pointer; font-weight: 600; margin-top: 10px; min-h
   .vista-calle #sol-barra:not(.sb-abierta) .sb-ahora { padding: 0 10px; }
   .vista-calle #sol-barra:not(.sb-abierta) .sb-nombre { display: none; }
 }
+
+/* Datos vivos nuevos: bicicletas, pronóstico de 48 h y aire. Colores planos, sin degradados. */
+.capas label.toque { min-height: 44px; align-items: center; }
+.bicis-caja { margin: 2px 0 8px 26px; }
+.bicis-caja[hidden] { display: none; }
+.bicis-ley { list-style: none; margin: 4px 0; padding: 0; font-size: 12.5px; }
+.bicis-ley li { display: flex; align-items: center; gap: 8px; margin: 3px 0; }
+.bicis-sw { width: 14px; height: 14px; border-radius: 3px; border: 1px solid rgba(0,0,0,.25); flex: none; }
+.bicis-pop .bicis-nombre { font-weight: 650; margin-bottom: 4px; }
+.bicis-aviso { margin: 4px 0; padding: 4px 8px; border-left: 3px solid var(--aviso); color: var(--tinta); }
+.bicis-linea { display: block; width: 100%; max-width: 220px; height: 44px; margin-top: 2px; }
+.g-bicis { fill: none; stroke: #1d5b99; stroke-width: 1.6; stroke-linejoin: round; }
+.g-bicis-p { fill: #1d5b99; }
+.pron-grafica { display: block; width: 100%; height: auto; margin: 6px 0 2px; background: var(--papel); border: 1px solid var(--borde); border-radius: 6px; }
+.g-temp { fill: none; stroke: #b5531a; stroke-width: 2; stroke-linejoin: round; }
+.g-lluvia { fill: #7fa9d4; }
+.g-medio { stroke: #4a7fb5; stroke-width: 1; stroke-dasharray: 3 3; }
+.g-base { stroke: #b9b4aa; stroke-width: 1; }
+.g-dia { stroke: #9a948a; stroke-width: 1; }
+.g-hora { stroke: #e4e0d8; stroke-width: 1; }
+.g-rot { font: 9px system-ui, sans-serif; fill: var(--tinta-2); }
+.g-rot-dia { font-weight: 700; fill: var(--tinta); }
+.g-leyenda { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; font-size: 11.5px; color: var(--tinta-2); }
+.g-leyenda span { display: inline-block; flex: none; }
+.g-l-temp { width: 16px; height: 2px; background: #b5531a; }
+.g-l-lluvia { width: 10px; height: 10px; background: #7fa9d4; margin-left: 6px; }
+.g-l-medio { width: 14px; height: 0; border-top: 1px dashed #4a7fb5; margin-left: 6px; }
+.pron-tabla { width: 100%; border-collapse: collapse; font-size: 12.5px; margin: 6px 0; font-variant-numeric: tabular-nums; }
+.pron-tabla th, .pron-tabla td { text-align: left; padding: 4px 6px; border-bottom: 1px solid var(--borde); vertical-align: top; }
+.pron-tabla thead th { font-size: 11.5px; color: var(--tinta-2); font-weight: 600; }
+.pron-tabla tbody th { font-weight: 500; }
+.pron-tabla .valor.chico { font-size: 14px; }
+#pronostico details.mas summary, #aire details.mas summary { min-height: 44px; }
+.aire-dias { margin: 6px 0; }
+.aire-dia { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; padding: 6px 0; border-bottom: 1px solid var(--borde); font-size: 13px; }
+.aire-fecha { font-weight: 600; }
+.aire-cifras { text-align: right; font-variant-numeric: tabular-nums; }
+.aire-cifras .valor.chico { font-size: 15px; }
+.aire-barra { grid-column: 1 / -1; position: relative; height: 10px; background: #ece9e3; border-radius: 2px; }
+.aire-barra span { position: absolute; top: 0; bottom: 0; left: 0; }
+.aire-max { background: #c9c2b4; border-radius: 2px; }
+.aire-media { background: #6b6358; border-radius: 2px; }
+.aire-media.pasa { background: #8a4b00; }
+.aire-oms { width: 2px; margin-left: -1px; top: -3px !important; bottom: -3px !important; background: var(--tinta); }
+.aire-nota { grid-column: 1 / -1; font-size: 12px; color: var(--aviso); font-weight: 600; }
