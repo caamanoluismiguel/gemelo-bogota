@@ -28,4 +28,18 @@ const sinLicencia = llamadas.filter((c) => !/licencia:\s*\{\s*nombre:/.test(c)).
 revisar('cada ficha del mapa trae marca, fuente y licencia', llamadas.length >= 6 && sinLicencia.length === 0,
   `${llamadas.length} fichas` + (sinLicencia.length ? '; sin licencia: ' + sinLicencia.join(', ') : ''));
 
+// Paso 2. Movimiento reducido. MapLibre 5.24 ya salta sin animar easeTo, flyTo y fitBounds cuando
+// el sistema pide menos movimiento, salvo si la llamada dice essential: true. Medido en el
+// navegador: con «reduce» el 3D llega a zoom 17 en 150 ms sin moverse; sin él va en 13,5 y
+// sigue moviéndose. Esta prueba cuida que nadie le ponga essential: true a un movimiento.
+const js = fs.readdirSync(path.join(raiz, 'site')).filter((f) => f.endsWith('.js'));
+const esenciales = js.filter((f) => /essential\s*:\s*true/.test(leer('site/' + f)));
+revisar('ningún movimiento de cámara se salta el movimiento reducido (essential: true)', esenciales.length === 0, esenciales.join(', '));
+const camara = js.filter((f) => /\.(easeTo|flyTo|fitBounds)\(/.test(leer('site/' + f)));
+revisar('los movimientos de cámara son de MapLibre (easeTo, flyTo, fitBounds)', camara.length >= 2, camara.join(', '));
+const animaciones = js.filter((f) => /requestAnimationFrame/.test(leer('site/' + f)) && !/sombras-capa|prueba-sombras/.test(f));
+const css = leer('site/estilo.css');
+revisar('sin animaciones propias fuera del mapa (CSS ni requestAnimationFrame)', !/@keyframes|animation\s*:|transition\s*:/.test(css) && animaciones.length === 0,
+  animaciones.join(', '));
+
 cierre('ux');
