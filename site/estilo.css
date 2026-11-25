@@ -199,6 +199,75 @@ details.mas summary { cursor: pointer; font-weight: 600; margin-top: 10px; min-h
   .vista-calle #sol-barra:not(.sb-abierta) .sb-nombre { display: none; }
 }
 
+/* Escenario «Edificio nuevo» (edificio-nuevo.js). Colores planos, botones de 44 px. */
+.boton-edn { font: inherit; font-weight: 600; min-height: 44px; padding: 8px 14px; margin: 6px 6px 0 0; border: 1px solid var(--acento);
+  border-radius: 8px; background: var(--acento); color: #fff; cursor: pointer; }
+.boton-edn.secundario { background: var(--papel); color: var(--acento); }
+.boton-edn:hover { filter: brightness(1.08); }
+.edn-paso { margin-top: 10px; }
+.edn-paso[hidden] { display: none; }
+.edn-control { margin: 10px 0; }
+.edn-control-cabeza { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+.edn-control-cabeza label { font-weight: 600; }
+.edn-salida { font-variant-numeric: tabular-nums; font-weight: 650; }
+.edn-fila { display: flex; align-items: center; gap: 8px; }
+.edn-fila input[type=range] { flex: 1; min-width: 0; height: 44px; accent-color: var(--acento); }
+.edn-paso-boton { flex: none; width: 44px; height: 44px; font: inherit; font-size: 20px; font-weight: 700; border: 1px solid var(--borde);
+  border-radius: 8px; background: var(--fondo); color: var(--tinta); cursor: pointer; }
+.edn-resumen { margin-top: 4px; }
+.edn-sub { font-size: 14px; margin: 14px 0 2px; }
+.edn-cifras .dato .valor.chico { font-size: 17px; }
+.edn-tonos { list-style: none; margin: 4px 0; padding: 0; }
+.edn-tonos li { display: flex; gap: 8px; align-items: flex-start; margin: 4px 0; font-size: 13px; }
+.edn-tono { flex: none; width: 18px; height: 14px; margin-top: 3px; border-radius: 3px; border: 1px solid #2b2350; }
+.edn-tono.segura { background: #7c7697; }
+.edn-tono.banda { background: #c9c5d6; border-style: dashed; }
+.edn-tono.sol { background: #f8eec4; border-color: #a88a1e; border-style: dashed; }
+.edn-supuestos { margin: 6px 0; padding-left: 18px; font-size: 13px; }
+.edn-supuestos li { margin: 4px 0; }
+.edn-acciones { display: flex; flex-wrap: wrap; }
+.edn-aviso { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); z-index: 3; width: min(520px, calc(100% - 32px));
+  display: flex; gap: 10px; align-items: center; padding: 8px 10px 10px 14px; background: var(--papel); border: 1px solid var(--borde);
+  border-radius: 10px; box-shadow: 0 1px 2px rgba(0,0,0,.12), 0 4px 12px rgba(0,0,0,.08); }
+.edn-aviso[hidden] { display: none; }
+.edn-aviso-texto { margin: 0; flex: 1; font-weight: 600; }
+.edn-aviso .boton-edn { margin: 0; flex: none; }
+.edn-tirador { position: absolute; left: 0; top: 0; z-index: 2; min-width: 44px; height: 44px; padding: 0 8px; display: flex; align-items: center;
+  gap: 4px; border: 2px solid #2b2350; border-radius: 22px; background: #fff; color: #2b2350; font: inherit; font-weight: 700;
+  cursor: ns-resize; touch-action: none; user-select: none; box-shadow: 0 1px 3px rgba(0,0,0,.25); }
+.edn-tirador[hidden] { display: none; }
+.edn-tirador.arrastrando { background: #2b2350; color: #fff; }
+.edn-flechas { font-size: 18px; line-height: 1; }
+.edn-tirador-n { font-size: 13px; white-space: nowrap; }
+@media (min-width: 601px) { .edn-aviso { left: calc(50% + 190px); } }
+@media (max-width: 600px) {
+  .edn-aviso { top: 8px; }
+  .edn-aviso-texto { font-size: 13px; }
+}
+
+/* Ficha para imprimir: solo se ve en papel. */
+.edn-ficha { display: none; }
+@media print {
+  body > *:not(#edificio-ficha) { display: none !important; }
+  html, body { height: auto; background: #fff; }
+  .edn-ficha { display: block; color: #000; font-size: 11pt; line-height: 1.4; }
+  .edn-ficha h1 { font-size: 17pt; margin: 0 0 6pt; }
+  .edn-ficha h2 { font-size: 13pt; margin: 14pt 0 4pt; border-bottom: 1px solid #999; }
+  .edn-ficha h3 { font-size: 11pt; margin: 10pt 0 4pt; }
+  .edn-ficha table { border-collapse: collapse; width: 100%; }
+  .edn-ficha th, .edn-ficha td { text-align: left; vertical-align: top; padding: 3pt 6pt 3pt 0; border-bottom: 1px solid #ddd; }
+  .edn-ficha th { width: 45%; font-weight: 600; }
+  .edn-ficha .edn-url span { word-break: break-all; }
+  .edn-ficha-dos { display: flex; gap: 14pt; align-items: flex-start; }
+  .edn-ficha-dos > div { flex: 1; }
+  .edn-ficha figure { margin: 0; width: 6.5cm; }
+  .edn-plano { width: 6.5cm; height: 6.5cm; }
+  .edn-ficha figcaption { font-size: 9pt; }
+  .edn-ficha .marca { font-size: 8pt; border: 1px solid #555; padding: 0 3pt; border-radius: 3pt; }
+  .edn-ficha h2, .edn-ficha h3 { break-after: avoid; }
+  .edn-ficha table, .edn-ficha figure { break-inside: avoid; }
+}
+
 /* Datos vivos nuevos: bicicletas, pronóstico de 48 h y aire. Colores planos, sin degradados. */
 .capas label.toque { min-height: 44px; align-items: center; }
 .bicis-caja { margin: 2px 0 8px 26px; }

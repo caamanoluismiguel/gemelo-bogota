@@ -584,9 +584,36 @@
       };
       cajaSombras.addEventListener('change', ponerSombras);
       B.quitarSombras = () => { cajaSombras.checked = false; ponerSombras(); };
+      // Para el escenario «Edificio nuevo»: prende las sombras y espera a que la barra esté lista.
+      B.prenderSombras = () => {
+        if (!cajaSombras.checked) { cajaSombras.checked = true; ponerSombras(); }
+        return cargar().then(() => new Promise((ok) => { if (mapa.isStyleLoaded()) ok(); else mapa.once('load', ok); }));
+      };
+      // Escenario «Edificio nuevo» (edificio-nuevo.js): se baja solo al abrirlo o con ?edificio=.
+      const botonEdificio = document.getElementById('edificio-abrir');
+      let bajandoEdificio = null;
+      const abrirEdificio = () => {
+        if (!bajandoEdificio) {
+          bajandoEdificio = B.prenderSombras()
+            .then(() => ['edificio-calculo.js', 'edificio-nuevo.js'].reduce((p, f) => p.then(() => new Promise((ok, mal) => {
+              const s = document.createElement('script');
+              s.src = f; s.onload = ok; s.onerror = () => mal(new Error(f));
+              document.head.append(s);
+            })), Promise.resolve()))
+            .catch((e) => {
+              bajandoEdificio = null;
+              const n = document.getElementById('edificio-cuerpo');
+              if (n) n.textContent = 'No se pudo abrir el escenario. Revisa la conexión e intenta de nuevo.';
+              throw e;
+            });
+        }
+        return bajandoEdificio.then(() => B.edificioNuevo.abrir());
+      };
+      if (botonEdificio) botonEdificio.addEventListener('click', () => { abrirEdificio().catch(() => {}); });
       // Un enlace con ?sombras=1 o ?sol=... abre con las sombras prendidas.
       const q = new URLSearchParams(location.search);
-      if (q.get('sombras') === '1' || q.has('sol')) { cajaSombras.checked = true; ponerSombras(); }
+      if (q.has('edificio')) abrirEdificio().catch(() => {});
+      else if (q.get('sombras') === '1' || q.has('sol')) { cajaSombras.checked = true; ponerSombras(); }
       // Al abrir sin enlace, la barra del sol entra cuando la ciudad ya está de pie: así el
       // primer cuadro 3D no compite con las teselas que piden las sombras.
       else if (porDefecto && arranca3d) { cajaSombras.checked = true; cuandoQuieto(() => { if (cajaSombras.checked) ponerSombras(); }); }
@@ -637,6 +664,7 @@
     new maplibregl.Popup({ maxWidth: '270px' }).setLngLat(lngLat).setDOMContent(caja).addTo(mapa);
   }
   mapa.on('click', (e) => {
+    if (B.edificioNuevo && B.edificioNuevo.tomaClic(e)) return;
     if (B.bicis && B.bicis.tocar(e)) return;
     const capas = consultables.filter(id => mapa.getLayer(id) && mapa.getLayoutProperty(id, 'visibility') !== 'none');
     const caja = [[e.point.x - 6, e.point.y - 6], [e.point.x + 6, e.point.y + 6]];
