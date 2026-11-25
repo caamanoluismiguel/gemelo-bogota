@@ -109,7 +109,7 @@ revisar('paso 9: una sola leyenda flotante con pisos, lluvia, bicis, canales y P
 revisar('paso 9: la leyenda en el teléfono se esconde con la hoja abierta', /#panel:not\(\[data-hoja="asomada"\]\) ~ \.leyenda-mapa \{ display: none; \}/.test(css2));
 const colores = [...html.matchAll(/data-tipo="color"[^\n]*?(?:data-grupo="(\w+)"|id="(ver-[\w-]+)")|(?:data-grupo="(\w+)"|id="(ver-[\w-]+)")[^\n]*?data-tipo="color"/g)].map((m) => m[1] || m[2] || m[3] || m[4]);
 const nombres = (mapa.match(/const NOMBRE_CAPA = \{[\s\S]*?\};/) || [''])[0];
-revisar('paso 10: cada capa de color tiene su nombre para la línea que explica', colores.length === 5 && colores.every((c) => nombres.includes(c.includes('-') ? `'${c}'` : `${c}:`)), colores.join(' '));
+revisar('paso 10: cada capa de color tiene su nombre para la línea que explica', colores.length >= 6 && colores.every((c) => nombres.includes(c.includes('-') ? `'${c}'` : `${c}:`)), colores.join(' '));
 revisar('paso 10: prender una capa de color apaga las otras y lo dice', /function unaDeColor/.test(mapa) && /Apagamos \$\{/.test(mapa) && /id="capa-aviso" aria-live="polite"/.test(html));
 
 cierre('ux');

@@ -562,7 +562,8 @@
   // 3D su color sale de la lente, no de la casilla.
   const cajasColor = [...document.querySelectorAll('[data-tipo="color"] > input[type="checkbox"], input[type="checkbox"][data-tipo="color"]')];
   const NOMBRE_CAPA = { pisos: ['los pisos', 'n'], lluvia: ['los pluviómetros', 'n'], 'ver-bicis': ['las bicis', 'n'],
-    'ver-canales': ['los niveles de los canales', 'n'], 'ver-pm25': ['el PM2,5 de 2025', ''] };
+    'ver-canales': ['los niveles de los canales', 'n'], 'ver-pm25': ['el PM2,5 de 2025', ''],
+    'ver-frecuencia': ['los buses programados', 'n'] };
   const claveCapa = (c) => c.dataset.grupo || c.id;
   const cuentaColor = (c) => c.checked && !(claveCapa(c) === 'pisos' && caja3d.checked);
   const juntar = (xs) => xs.length > 1 ? xs.slice(0, -1).join(', ') + ' y ' + xs[xs.length - 1] : xs[0];
@@ -792,6 +793,8 @@
     falla: 'No se pudo bajar la capa de bicicletas. Revisa la conexión e intenta de nuevo.' });
   capaViva({ caja: 'ver-canales', leyenda: 'canales-leyenda', script: 'canales.js', clave: 'canales', param: 'canales',
     falla: 'No se pudo bajar la capa de niveles. Revisa la conexión e intenta de nuevo.' });
+  capaViva({ caja: 'ver-frecuencia', leyenda: 'frecuencia-leyenda', script: 'frecuencia.js', clave: 'frecuencia', param: 'frecuencia',
+    falla: 'No se pudo bajar la programación de los buses. Revisa la conexión e intenta de nuevo.' });
 
   // PM2,5 de todo 2025 (SDA) con colegios y sedes de salud: aire-anual-datos.js y aire-anual.js
   // bajan solo al prender la capa, y los datos salen de site/datos/aire/. ?pm25=1 la abre prendida.
@@ -839,6 +842,7 @@
     if (B.bicis && B.bicis.tocar(e)) return;
     if (B.aireAnual && B.aireAnual.tocarPunto(e)) return;
     if (B.canales && B.canales.tocar(e)) return;
+    if (B.frecuencia && B.frecuencia.tocar(e)) return;
     const capas = consultables.filter(id => mapa.getLayer(id) && mapa.getLayoutProperty(id, 'visibility') !== 'none');
     const caja = [[e.point.x - 6, e.point.y - 6], [e.point.x + 6, e.point.y + 6]];
     const f = mapa.queryRenderedFeatures(caja, { layers: capas })[0];
