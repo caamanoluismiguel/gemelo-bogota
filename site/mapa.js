@@ -3,6 +3,10 @@
 (function () {
   const B = window.Bogotwin;
   const movil = matchMedia('(max-width: 600px)');
+  // La hoja de MapLibre entra con media="print" (index.html) para que no frene el primer pintado:
+  // el panel no la usa. Se activa aquí, antes de crear el mapa, que es lo único que la necesita.
+  const hojaMapa = document.querySelector('link[href*="maplibre-gl.css"]');
+  if (hojaMapa) hojaMapa.media = 'all';
 
   // Teselas: por defecto ./teselas/ junto a esta página. Con ?datos=https://... se prueba otro servidor.
   const param = new URLSearchParams(location.search).get('datos');
