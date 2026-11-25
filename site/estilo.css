@@ -286,6 +286,9 @@ details.mas summary { cursor: pointer; font-weight: 600; margin-top: 10px; min-h
 .pm25-punto[data-k="colegios"] { background: #1f2a33; border: 1.5px solid #fff; box-shadow: 0 0 0 1px #1f2a33; }
 .pm25-punto[data-k="salud"] { background: #fff; border: 2.5px solid #0f6b62; }
 .pm25-pop .valor { font-weight: 650; }
+.canales-pop .nota { margin: 2px 0 4px; }
+.canales-linea { height: 52px; }
+.g-desborde { stroke: #5a1010; stroke-width: 1; stroke-dasharray: 4 3; }
 .pron-grafica { display: block; width: 100%; height: auto; margin: 6px 0 2px; background: var(--papel); border: 1px solid var(--borde); border-radius: 6px; }
 .g-temp { fill: none; stroke: #b5531a; stroke-width: 2; stroke-linejoin: round; }
 .g-lluvia { fill: #7fa9d4; }

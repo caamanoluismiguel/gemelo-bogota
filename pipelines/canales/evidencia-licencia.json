@@ -1,0 +1,50 @@
+{
+  "esquema": "bogotwin/evidencia-licencia/1",
+  "fuente": "IDIGER, Sistema de Alerta de Bogotá (SAB)",
+  "consultado": "2026-11-25T00:05:00Z",
+  "consultado_hora_bogota": "2026-11-24 19:05",
+  "fichas": [
+    {
+      "url": "https://datosabiertos.bogota.gov.co/dataset/sab-sistema-de-alerta-de-bogota-lluvia-minutal-idiger-bogota-d-c",
+      "api": "https://datosabiertos.bogota.gov.co/api/3/action/package_show?id=sab-sistema-de-alerta-de-bogota-lluvia-minutal-idiger-bogota-d-c",
+      "titulo": "SAB - Sistema de Alerta de Bogotá (Lluvia Minutal) Idiger. Bogotá D.C",
+      "organizacion": "Instituto Distrital de Gestión de Riesgos y Cambio Climático - IDIGER",
+      "license_id": "CC-BY-NC-4.0",
+      "license_title": "Creative Commons Attribution-NonCommercial 4.0",
+      "license_url": "https://creativecommons.org/licenses/by-nc/4.0/",
+      "metadata_modified": "2026-07-21T15:36:15.585803",
+      "recurso": "https://app.sab.gov.co//sab/ServletTipoSensores?idtiposensor=5",
+      "texto": "La información de lluvias a descargar corresponde a datos crudos, los cuales no han sido validados en su totalidad, razón por la cual es responsabilidad del usuario el manejo de los mismos.",
+      "sha256_respuesta_ckan": "d53ceb0f1b94e39098b397c6a42231a227910d45341d15a16b4a04ada32f921c"
+    },
+    {
+      "url": "https://datosabiertos.bogota.gov.co/dataset/edit-sab-sistema-de-alerta-de-bogota",
+      "titulo": "SAB - Sistema de Alerta de Bogotá (Lluvia Diaria) Idiger. Bogotá D.C",
+      "license_id": "CC-BY-NC-4.0",
+      "license_title": "Creative Commons Attribution-NonCommercial 4.0",
+      "license_url": "https://creativecommons.org/licenses/by-nc/4.0/",
+      "metadata_modified": "2026-07-21T15:36:56.977942",
+      "sha256_respuesta_ckan": "93e7b3192e60de5de51f80f812266958a10b0ff0559e6fa98939310ccab7ee4a"
+    }
+  ],
+  "diccionario": {
+    "url": "https://datosabiertos.bogota.gov.co/dataset/5d1518a7-d55a-463c-a71a-247732dcc35d/resource/7590ce55-42d8-46ad-9d4b-a07b6cdfb4a3/download/json_metadatos_05_estaciones_sab2026.pdf",
+    "titulo": "Metadatos de la Red de Pluviómetros en Tiempo Real, 7 de julio de 2026",
+    "texto": "IDTIPOSENSOR: Código del tipo de sensor. Para este conjunto de datos el valor fijo es 5.",
+    "sha256": "6ac94768b510fda3f1e0683dcbae6d303833708395e9aa335ac0db9ddeae55c3"
+  },
+  "busqueda_ficha_nivel": {
+    "consultas": [
+      "https://datosabiertos.bogota.gov.co/api/3/action/package_search?q=SAB%20sistema%20de%20alerta&rows=30",
+      "https://datosabiertos.bogota.gov.co/api/3/action/package_search?q=nivel%20quebradas%20IDIGER&rows=30"
+    ],
+    "resultado": "No hay ficha para los sensores de nivel (idtiposensor=3). Las dos fichas del SAB son de lluvia y las dos son CC BY-NC 4.0."
+  },
+  "decision": {
+    "licencia_aplicada": "CC BY-NC 4.0, con crédito al IDIGER y al SAB",
+    "por_que": "Es el mismo sistema, la misma entidad y el mismo servicio (ServletTipoSensores) que la ficha publicada; solo cambia idtiposensor. LM aceptó publicar el SAB bajo CC BY-NC con crédito.",
+    "marca": "inferido",
+    "pendiente": "La ficha no nombra el nivel. Antes de publicar, el verificador y LM deben aceptar extender la licencia de la ficha al nivel."
+  },
+  "regla_de_mezcla": "Lo NC y lo SA nunca se combinan en un mismo cálculo ni archivo (README del repo gemelo-bogota-vivo, sección Licencias). canales/ahora.json lleva solo datos del SAB y cálculos hechos solo con ellos."
+}

@@ -161,5 +161,53 @@ with tempfile.TemporaryDirectory() as tmp:
     f = noches.fechas_a_registrar(hoy, consulta, tmp, 40)
     revisar("el relleno no pasa de 30 días", len(f) <= 30 and min(f) >= hoy - timedelta(days=30), str(len(f)))
 
+# --- canales (nivel del SAB) -------------------------------------------------
+canales = cargar("canales", "pipelines/canales/canales.py")
+# Valores reales del 24 nov 2026 a las 19:09 de Bogotá.
+def sensor(sid, tipo, lect, cota, fondo, desb, umbr=None, fecha="2026-11-24 19:09:00.0", **k):
+    s = {"IDSENSOR": sid, "ESTACION": "S" + str(sid), "TITULO": "RÍO  TUNJUELO", "LOCALIDAD": "KENNEDY", "VISIBLE": 1,
+         "LATITUD": 4.62, "LONGITUD": -74.15, "IDTIPOLECTURA": tipo, "VALORLECTURA": lect, "FECHALECTURA": fecha,
+         "COTASENSOR": cota, "MINSENSOR": fondo, "MINGRAFICA": fondo, "NIVELDESBORDAMIENTO": desb,
+         "NIVELBAJO": None, "NIVELMEDIO": None, "NIVELALTO": None}
+    if umbr:
+        s["NIVELBAJO"], s["NIVELMEDIO"], s["NIVELALTO"] = umbr
+    s.update(k)
+    return s
+consulta = datetime(2026, 11, 25, 0, 13, tzinfo=timezone.utc)
+crudo = [
+    sensor(22007, 2, 10.19, 2554.68, 2543.72, 2549.43, (2547.93, 2548.43, 2548.93)),   # Kennedy, distancia
+    sensor(17007, 1, 1.032, 2557.5, 2551.44, 2558.31, (2556.81, 2557.31, 2557.81)),    # San Benito, altura
+    sensor(24000, 0, None, None, None, None, fecha=None),                               # acueducto, sin lectura
+    sensor(99, 3, 1.0, 2560.0, 2550.0, 2558.0),                                        # tipo que no sabemos leer
+    sensor(98, 2, -0.5, 2560.0, 2550.0, 2558.0),                                       # lectura negativa
+    sensor(97, 2, 4.0, 2560.0, 2550.0, 2558.0, VISIBLE=0),                             # oculto en el SAB
+    sensor(96, 2, 4.0, 2560.0, 2550.0, 2558.0, LATITUD=-23.5),                         # fuera de la Sabana
+]
+ss, tot = canales.armar(crudo, consulta)
+por = {s["id"]: s for s in ss}
+k, sb = por["22007"]["v"], por["17007"]["v"]
+revisar("canales: tipo 2 es distancia (Kennedy 2554,68 - 10,19)", k[1] == 2544.49 and k[2] == 4.94, str(k))
+revisar("canales: tipo 1 es altura sobre el fondo (San Benito 2551,44 + 1,032)", sb[1] == 2552.472 and sb[2] == 5.838, str(sb))
+revisar("canales: la hora del SAB es de Bogotá", por["22007"]["hora"] == "2026-11-25T00:09:00Z" and k[3] == 4)
+revisar("canales: estaciones del acueducto fuera", "24000" not in por and tot["sin_lectura_acueducto"] == 1)
+revisar("canales: tipo desconocido sin espejo ni borde", por["99"]["v"][1] is None and por["99"]["v"][2] is None and tot["tipo_desconocido"] == 1)
+revisar("canales: lectura negativa es dudosa", por["98"]["v"][4] == 1 and tot["dudosos"] == 1)
+revisar("canales: ocultos y fuera de la Sabana no entran", "97" not in por and "96" not in por and tot["sensores"] == 4)
+revisar("canales: umbrales solo si vienen los tres", por["22007"]["umbrales_msnm"] == {"bajo": 2547.93, "medio": 2548.43, "alto": 2548.93}
+        and por["99"]["umbrales_msnm"] is None)
+doc = canales.documento(ss, tot, consulta)
+revisar("canales: licencia NC con crédito", doc["fuente"]["licencia"]["nombre"] == "CC BY-NC 4.0" and "IDIGER" in doc["fuente"]["licencia"]["credito"])
+revisar("canales: etiquetas medido e inferido", doc["etiquetas"]["lectura_m"] == "medido" and doc["etiquetas"]["borde_libre_m"] == "inferido")
+fila = canales.fila_serie(doc["hora_dato"], ss)
+revisar("canales: la serie va con ids y v alineados", len(fila["ids"]) == len(fila["v"]) and fila["v"][fila["ids"].index("22007")] == k)
+viejas = [{"t": "2026-11-22T00:00:00Z", "ids": [], "v": []}, {"t": "2026-11-24T23:00:00Z", "ids": [], "v": []}, {"t": "2026-11-24T23:00:00Z", "ids": [], "v": []}]
+revisar("canales: la serie guarda 48 h sin duplicados", [f["t"] for f in canales.podar(viejas, consulta)] == ["2026-11-24T23:00:00Z"])
+with tempfile.TemporaryDirectory() as tmp:
+    tmp = Path(tmp)
+    filas = [{"t": "2026-11-24T04:00:00Z", "ids": ["22007"], "v": [k]}, {"t": "2026-11-24T06:00:00Z", "ids": ["22007"], "v": [k]}]
+    e = canales.cerrar_dia(date(2026, 11, 23), filas, ss, tmp / "c", tmp / "m")
+    revisar("canales: cierra el día de Bogotá (las 23 h del 23 son 04 Z del 24)", e is not None and e["filas"] == 1 and e["licencia"] == "CC BY-NC 4.0")
+    revisar("canales: no cierra dos veces el mismo día", canales.cerrar_dia(date(2026, 11, 23), filas, ss, tmp / "c", tmp / "m") is None)
+
 print(f"Cosecha viva: {fallas} fallan")
 sys.exit(1 if fallas else 0)

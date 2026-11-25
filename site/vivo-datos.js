@@ -1,5 +1,5 @@
 'use strict';
-// Lectura de los datos del repo vivo (bicis, pronóstico, acierto y aire). Solo funciones
+// Lectura de los datos del repo vivo (bicis, canales, pronóstico, acierto y aire). Solo funciones
 // puras: se cargan después del primer cuadro y se prueban en Node (pruebas/vivo.prueba.js).
 (function () {
   const BASE = 'https://caamanoluismiguel.github.io/gemelo-bogota-vivo/';
@@ -153,7 +153,67 @@
       .slice(0, max || 5).map((d) => ({ fecha: d.fecha_bogota, media: d.media, maxima: d.maxima, horas: d.horas, pasaOms: d.media > OMS_24H }));
   }
 
-  const api = { BASE, url, limiteMin, sinDatoReciente, leerEstado, enSabana, categoria, decodificarBicis, serieDe, leerNdjson, horasPronostico, resumen24, anchoRotulo, rotulosEje, marcador, diasAire, OMS_24H, MIN_SIN_REPORTE };
+  // Canales: nivel del SAB. El color dice qué tan cerca está el agua del umbral del IDIGER.
+  // Nunca inventamos un umbral: sin bajo, medio y alto publicados, la categoría es «sin_umbrales».
+  const MIN_SIN_LECTURA = 60;
+  function categoriaCanal(s) {
+    if (s.lectura == null || s.espejo == null) return 'sin_dato';
+    if (s.min_desde_lectura != null && s.min_desde_lectura > MIN_SIN_LECTURA) return 'quieto';
+    if (s.dudoso) return 'dudoso';
+    if (s.borde != null && s.borde <= 0) return 'desborde';
+    const u = s.umbrales;
+    if (!u || ![u.bajo, u.medio, u.alto].every(Number.isFinite)) return 'sin_umbrales';
+    if (s.espejo >= u.alto) return 'alto';
+    if (s.espejo >= u.medio) return 'medio';
+    if (s.espejo >= u.bajo) return 'bajo';
+    return 'bajo_umbral';
+  }
+
+  function decodificarCanales(j) {
+    if (!j || j.esquema !== 'bogotwin/canales/1' || !Array.isArray(j.campos) || !Array.isArray(j.sensores)) throw new Error('esquema');
+    const ix = {};
+    j.campos.forEach((c, i) => { ix[c] = i; });
+    const num = (v, k) => { const x = ix[k] == null || !Array.isArray(v) ? null : v[ix[k]]; return x == null || !Number.isFinite(Number(x)) ? null : Number(x); };
+    const fin = (x) => (x == null || !Number.isFinite(Number(x)) ? null : Number(x));
+    const sensores = [];
+    for (const s of j.sensores) {
+      const lat = Number(s.lat), lon = Number(s.lon);
+      if (!enSabana(lat, lon)) continue;
+      const u = s.umbrales_msnm;
+      const e = {
+        id: String(s.id), nombre: String(s.nombre || ''), cauce: String(s.cauce || ''), localidad: String(s.localidad || ''), lat, lon,
+        tipo: Number(s.tipo_lectura), cota: fin(s.cota_sensor_msnm), fondo: fin(s.fondo_msnm), desborde: fin(s.desborde_msnm),
+        umbrales: u && typeof u === 'object' ? { bajo: fin(u.bajo), medio: fin(u.medio), alto: fin(u.alto) } : null,
+        hora: s.hora || null,
+        lectura: num(s.v, 'lectura_m'), espejo: num(s.v, 'espejo_msnm'), borde: num(s.v, 'borde_libre_m'),
+        min_desde_lectura: num(s.v, 'min_desde_lectura'), dudoso: num(s.v, 'dudoso') === 1
+      };
+      e.cat = categoriaCanal(e);
+      sensores.push(e);
+    }
+    return { sensores, hora: j.hora_dato || j.generado, generado: j.generado, cadencia: j.cadencia_min, fuente: j.fuente, campos: j.campos, totales: j.totales, etiquetas: j.etiquetas || {} };
+  }
+
+  // Serie de 48 h de un sensor: [t, borde libre]. Si la lectura no cambió de hora, se repite la
+  // misma fila del SAB; se toma la hora de cada corrida y los huecos quedan como huecos.
+  function serieCanal(lineas, id, campos, campo) {
+    const i0 = (campos || []).indexOf(campo || 'borde_libre_m');
+    const out = [];
+    for (const l of lineas) {
+      if (!l || !Array.isArray(l.ids) || !Array.isArray(l.v) || i0 < 0) continue;
+      const i = l.ids.indexOf(String(id));
+      if (i < 0 || !Array.isArray(l.v[i])) continue;
+      const x = l.v[i][i0];
+      const t = Date.parse(l.t);
+      if (x == null || !Number.isFinite(Number(x)) || Number.isNaN(t)) continue;
+      out.push([t, Number(x)]);
+    }
+    return out.sort((a, b) => a[0] - b[0]);
+  }
+
+
+  const api = { BASE, url, limiteMin, sinDatoReciente, leerEstado, enSabana, categoria, decodificarBicis, serieDe, leerNdjson, horasPronostico, resumen24, anchoRotulo, rotulosEje, marcador, diasAire, OMS_24H, MIN_SIN_REPORTE,
+    categoriaCanal, decodificarCanales, serieCanal, MIN_SIN_LECTURA };
   const raiz = typeof window !== 'undefined' ? window : globalThis;
   raiz.Bogotwin = Object.assign(raiz.Bogotwin || {}, { vivo: api });
 })();

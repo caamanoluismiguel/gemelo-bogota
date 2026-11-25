@@ -21,6 +21,8 @@ CADENCIAS_MIN = {  # cada cuánto se busca dato nuevo; el visor marca «sin dato
     "cielo/ahora.json": 20,
     "bicis/ahora.json": 10,
     "bicis/serie-48h.ndjson.gz": 10,
+    "canales/ahora.json": 10,
+    "canales/serie-48h.ndjson.gz": 10,
     "pronostico/ahora.json": 60,
     "pronostico/emitidos-5d.ndjson.gz": 60,
     "pronostico/acierto.json": 1440,
