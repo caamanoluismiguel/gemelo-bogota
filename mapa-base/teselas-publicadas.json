@@ -57,6 +57,16 @@
       "bytes": 2286756,
       "sha256": "c21013ca9a79542b8c63a8c09405f516ec59e0155329102c073f305df7ea8adc",
       "licencia": "CC BY 4.0"
+    },
+    "orto-lejos-bogota.pmtiles": {
+      "bytes": 14296199,
+      "sha256": "ef39bd2055ed4696dd888da70460457b1e9988eb4bcef7cd5b055a9af1ea9426",
+      "licencia": "CC BY 4.0"
+    },
+    "satelite-entorno-bogota.pmtiles": {
+      "bytes": 2709603,
+      "sha256": "01287a4cea0d0de06e8e7421c93c0fe22318b8654620797c18bc24206c7e1208",
+      "licencia": "CC BY 4.0"
     }
   }
 }

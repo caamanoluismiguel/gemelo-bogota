@@ -66,6 +66,18 @@ LICENCIAS = {
         "fuentes": [],
         "scripts": ["scripts/orto.sh", "scripts/orto_bajar.py", "scripts/orto_armar.py"],
     },
+    "orto-lejos-bogota.pmtiles": {
+        "licencia": "CC BY 4.0",
+        "atribucion": "Ortoimágenes 2025 de Bogotá (urbana y Cerros Orientales, SDP; rural, UAECD), publicadas por IDECA. Modificada: reproyectada, recortada en teselas, reducida, unida y comprimida.",
+        "fuentes": [],
+        "scripts": ["scripts/orto_lejos.py"],
+    },
+    "satelite-entorno-bogota.pmtiles": {
+        "licencia": "CC BY 4.0",
+        "atribucion": "ESA WorldCover project 2021 / Contains modified Copernicus Sentinel data (2021) processed by ESA WorldCover consortium. Modificada: recortada, rellenada, tono ajustado, reproyectada y comprimida.",
+        "fuentes": [],
+        "scripts": ["scripts/satelite_entorno.py"],
+    },
 }
 HERRAMIENTAS = {
     "tippecanoe (incluye tile-join)": ["tippecanoe", "--version"],
