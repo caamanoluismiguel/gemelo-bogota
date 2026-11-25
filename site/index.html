@@ -17,116 +17,143 @@
   integrity="sha384-pbKNZbDshUsLnZMIVsn/t+j3xEY9PGfuX5Z22l5rcy/obXz3EwaMx1F5d9sRsJMn" crossorigin="anonymous"></script>
 <script defer src="comun.js"></script>
 <script defer src="sol.js"></script>
+<script defer src="panel.js"></script>
 <script defer src="mapa.js"></script>
 <script defer src="cielo.js"></script>
 </head>
 <body>
 <div id="mapa" role="region" aria-label="Mapa de Bogotá"></div>
 
-<aside id="panel" aria-label="Datos de Bogotá">
+<aside id="panel" aria-label="Datos de Bogotá" data-hoja="asomada">
+  <span class="asa-raya" aria-hidden="true"></span>
   <header class="cabeza">
     <div>
       <h1>Bogotwin</h1>
       <p class="sub">Un gemelo digital abierto e independiente de Bogotá</p>
     </div>
-    <button id="plegar" type="button" aria-expanded="true" aria-controls="cuerpo">Ocultar</button>
+    <button id="plegar" type="button" aria-expanded="false" aria-controls="cuerpo">Más datos</button>
   </header>
+
+  <div class="franja" id="ahora-franja">
+    <div class="franja-cifras">
+      <button type="button" class="franja-dato" id="franja-temp" data-ir="ahora" data-tarjeta="cielo"><span class="franja-valor" data-marca="medido">…</span><span class="franja-que">El Dorado</span></button>
+      <button type="button" class="franja-dato" id="franja-lluvia" data-ir="dias" data-tarjeta="pronostico"><span class="franja-valor" data-marca="estimado">…</span><span class="franja-que">lluvia en 24 h</span></button>
+      <button type="button" class="franja-dato" id="franja-aire" data-ir="dias" data-tarjeta="aire"><span class="franja-valor" data-marca="estimado">…</span><span class="franja-que">PM2,5 µg/m³</span></button>
+    </div>
+    <p class="franja-sello"><span id="franja-sellos">Trayendo el cielo de ahora…</span>
+      <button type="button" id="ayuda-marcas" class="ayuda" aria-expanded="false" aria-controls="marcas-ayuda" aria-label="Cómo leer cada dato">?</button></p>
+    <p class="oculto" id="franja-voz" aria-live="polite"></p>
+  </div>
+
+  <section class="marcas-ayuda" id="marcas-ayuda" aria-labelledby="t-marcas" hidden>
+    <h2 id="t-marcas">Cómo leer cada dato</h2>
+    <ul>
+      <li><span class="marca" data-marca="medido">medido</span> lo registró un instrumento.</li>
+      <li><span class="marca" data-marca="de_fuente">de fuente</span> viene tal cual de un registro oficial.</li>
+      <li><span class="marca" data-marca="inferido">inferido</span> lo calculamos aquí con datos de otros.</li>
+      <li><span class="marca" data-marca="estimado">estimado</span> sale de un modelo, no de una medida. Los pronósticos van con esta marca.</li>
+      <li><span class="marca" data-marca="supuesto">supuesto</span> es un número que pusimos nosotros para poder dibujar; no está medido.</li>
+    </ul>
+    <p class="nota">Cada valor dice hace cuánto se tomó. Si un dato está viejo, el sello lo dice y su borde se pone ámbar.</p>
+  </section>
+
+  <div class="pestanas" role="tablist" aria-label="Qué mirar">
+    <button type="button" role="tab" id="pe-ahora" aria-controls="pa-ahora" aria-selected="true">Ahora</button>
+    <button type="button" role="tab" id="pe-dias" aria-controls="pa-dias" aria-selected="false" tabindex="-1">Próximos días</button>
+    <button type="button" role="tab" id="pe-ciudad" aria-controls="pa-ciudad" aria-selected="false" tabindex="-1">La ciudad</button>
+    <button type="button" role="tab" id="pe-probar" aria-controls="pa-probar" aria-selected="false" tabindex="-1">Probar</button>
+  </div>
 
   <div id="cuerpo">
     <div class="buscador">
-      <label for="buscar">Busca un barrio, una UPL o una localidad</label>
-      <input id="buscar" type="search" autocomplete="off" spellcheck="false" placeholder="Por ejemplo, Cedritos">
+      <label for="buscar" class="oculto">Busca un barrio, una UPL o una localidad</label>
+      <input id="buscar" type="search" autocomplete="off" spellcheck="false" placeholder="Busca un barrio, una UPL o una localidad">
       <ul id="resultados" aria-live="polite"></ul>
     </div>
 
-    <section class="tarjeta" id="cielo" aria-labelledby="t-cielo">
-      <h2 id="t-cielo">El cielo de Bogotá ahora</h2>
-      <p class="estado" id="cielo-estado">Cargando los datos del cielo…</p>
-      <div id="cielo-cuerpo"></div>
-    </section>
+    <div role="tabpanel" id="pa-ahora" aria-labelledby="pe-ahora" tabindex="0">
+      <fieldset class="capas" aria-labelledby="t-capas-ahora">
+        <h2 id="t-capas-ahora" class="capas-titulo">En el mapa</h2>
+        <label class="toque" data-pestana="ahora" data-tipo="color"><input type="checkbox" data-grupo="lluvia"> Lluvia de hoy en los pluviómetros del SAB</label>
+        <label class="toque" data-pestana="ahora" data-tipo="color"><input type="checkbox" id="ver-bicis"> Bicicletas compartidas <span class="nota-inline">(8 KB)</span></label>
+        <label class="toque" data-pestana="ahora" data-tipo="color"><input type="checkbox" id="ver-canales"> Nivel de quebradas, ríos y canales <span class="nota-inline">(11 KB)</span></label>
+        <p class="capas-sub">Referencias, se pueden juntar</p>
+        <label class="toque" data-pestana="ahora" data-tipo="referencia"><input type="checkbox" data-grupo="troncal" checked> Estaciones de TransMilenio</label>
+        <label class="toque" data-pestana="ahora" data-tipo="referencia"><input type="checkbox" data-grupo="metro" checked> Metro línea 1 (en obra)</label>
+        <label class="toque" data-pestana="ahora" data-tipo="referencia"><input type="checkbox" data-grupo="paraderos"> Paraderos del SITP <span class="nota-inline">(140 KB)</span></label>
+        <p class="nota">Una capa de color a la vez; el peso es lo que se baja al marcarla.</p>
+      </fieldset>
 
-    <section class="tarjeta" id="noches" aria-labelledby="t-noches">
-      <h2 id="t-noches">Noches frías</h2>
-      <div id="noches-cuerpo"><p class="estado">Cargando el registro de anoche…</p></div>
-    </section>
+      <section class="tarjeta" id="cielo" aria-labelledby="t-cielo">
+        <h2 id="t-cielo">El cielo de Bogotá ahora</h2>
+        <p class="estado" id="cielo-estado">Cargando los datos del cielo…</p>
+        <div id="cielo-cuerpo"></div>
+      </section>
+    </div>
 
-    <section class="tarjeta" id="pronostico" aria-labelledby="t-pron">
-      <h2 id="t-pron">Pronóstico de 48 horas <span class="marca" data-marca="estimado">estimado</span></h2>
-      <p class="estado" id="pron-estado">El pronóstico se carga después del mapa…</p>
-      <div id="pron-cuerpo"></div>
-    </section>
+    <div role="tabpanel" id="pa-dias" aria-labelledby="pe-dias" tabindex="0" hidden>
+      <section class="tarjeta" id="pronostico" aria-labelledby="t-pron">
+        <h2 id="t-pron">Pronóstico de 48 horas <span class="marca" data-marca="estimado">estimado</span></h2>
+        <p class="estado" id="pron-estado">El pronóstico se carga después del mapa…</p>
+        <div id="pron-cuerpo"></div>
+      </section>
 
-    <section class="tarjeta" id="aire" aria-labelledby="t-aire">
-      <h2 id="t-aire">Aire de los próximos días <span class="marca" data-marca="estimado">estimado, celda de 45 km</span></h2>
-      <p class="estado" id="aire-estado">El pronóstico del aire se carga después del mapa…</p>
-      <div id="aire-cuerpo"></div>
-    </section>
+      <section class="tarjeta" id="aire" aria-labelledby="t-aire">
+        <h2 id="t-aire">Aire de los próximos días <span class="marca" data-marca="estimado">estimado, celda de 45 km</span></h2>
+        <p class="estado" id="aire-estado">El pronóstico del aire se carga después del mapa…</p>
+        <div id="aire-cuerpo"></div>
+      </section>
 
-    <section class="tarjeta solo-sombras" id="edificio" aria-labelledby="t-edificio">
-      <h2 id="t-edificio">Edificio nuevo: el sol que les quita a los vecinos</h2>
-      <p class="nota">Pon un edificio de prueba en un lote y mira cuánto sol les quita a las calles, patios y parques de alrededor en un año. Este visor solo muestra: no aprueba ni niega ninguna obra.</p>
-      <div id="edificio-cuerpo"><button type="button" class="boton-edn" id="edificio-abrir">Probar un edificio</button></div>
-    </section>
+      <section class="tarjeta" id="noches" aria-labelledby="t-noches">
+        <h2 id="t-noches">Noches frías</h2>
+        <div id="noches-cuerpo"><p class="estado">Cargando el registro de anoche…</p></div>
+      </section>
+    </div>
 
-    <section class="tarjeta" aria-labelledby="t-capas">
-      <h2 id="t-capas">Qué ves en el mapa</h2>
-      <fieldset class="capas">
-        <legend class="oculto">Capas</legend>
-        <label><input type="checkbox" data-grupo="pisos" checked> Pisos de cada construcción</label>
-        <div class="leyenda" id="leyenda" aria-hidden="true"></div>
-        <div class="escala" aria-hidden="true"><span>0 a 1</span><span>2</span><span>3</span><span>4 y 5</span><span>6 a 9</span><span>10 a 19</span><span>20+</span></div>
-        <p class="nota">Número de pisos según Catastro, no altura en metros. De lejos ves el promedio de cada sector; acércate para ver cada construcción. <span class="marca" data-marca="de_fuente">de fuente</span></p>
-        <label><input type="checkbox" id="ver-3d"> Levantar la ciudad en 3D</label>
+    <div role="tabpanel" id="pa-ciudad" aria-labelledby="pe-ciudad" tabindex="0" hidden>
+      <fieldset class="capas" aria-labelledby="t-capas">
+        <h2 id="t-capas" class="capas-titulo">Qué ves en el mapa</h2>
+        <label class="toque" data-pestana="ciudad" data-tipo="color"><input type="checkbox" data-grupo="pisos" checked> Pisos de cada construcción</label>
+        <label class="toque"><input type="checkbox" id="ver-3d"> Levantar la ciudad en 3D</label>
         <div class="lente-3d" id="lente-3d" hidden>
           <label><input type="radio" name="lente" value="como-se-ve" checked> Cómo se ve</label>
           <label><input type="radio" name="lente" value="pisos"> Pisos de cada construcción</label>
           <p class="nota" id="nota-fachadas">Colores de fachada ilustrativos: Bogotá es de ladrillo, pero no sabemos el color de cada edificio.</p>
         </div>
-        <p class="nota">Los cerros con su altura real <span class="marca" data-marca="de_fuente">de fuente</span> y los edificios a 3 m por piso, un dibujo y no una medida: Catastro publica los pisos, no la altura. <span class="marca" data-marca="supuesto">supuesto</span></p>
-        <label class="solo-sombras"><input type="checkbox" id="ver-sombras"> Sombras de los edificios</label>
-        <p class="nota solo-sombras" id="sombras-nota">Las sombras se dibujan de cerca, calle por calle. Son un dibujo, no una medida. <span class="marca" data-marca="inferido">inferido</span> <span class="marca" data-marca="supuesto">supuesto</span></p>
-        <p class="nota aviso-hoja" id="sombras-hoja" hidden>El control del sol está sobre el mapa. Toca «Ocultar» para verlo.</p>
-        <details class="mas solo-sombras" id="sombras-como">
-          <summary>Cómo se calcula la sombra</summary>
-          <p class="nota">Ponemos el sol donde está en la fecha y la hora que elijas, siempre en hora de Bogotá. Cada construcción tira su sombra al lado contrario del sol.</p>
-          <p class="nota">Catastro publica los pisos, no la altura. Por eso la sombra va en dos tonos: la parte oscura cuenta 2,5 m por piso y la clara llega hasta 4 m por piso. La sombra de verdad cae en algún punto de esa franja. <span class="marca" data-marca="supuesto">supuesto</span></p>
-          <p class="nota">Las construcciones de un piso (bodegas, naves, casas con cubierta alta) suelen medir más de 4 m y su sombra aquí sale corta. <span class="marca" data-marca="supuesto">supuesto</span></p>
-          <p class="nota">El 3D levanta los edificios con 3 m por piso, que queda dentro de esa misma franja. <span class="marca" data-marca="supuesto">supuesto</span></p>
-          <p class="nota">La sombra de los cerros es el velo gris de la mañana y de la tarde. Los cerros salen del Modelo Digital de Terreno 2025 de Bogotá y, fuera del Distrito, de Copernicus. La misma elevación da el relieve que ves y la hora a la que el sol pasa los cerros, cada 100 m al pie de los cerros y cada 500 m en la sabana. <span class="marca" data-marca="inferido">inferido</span></p>
-          <p class="nota">En la vista de calle salen los árboles del censo del Jardín Botánico (SIGAU). La altura de cada uno es <span class="marca" data-marca="de_fuente">de fuente</span>; la forma de la copa la sacamos de la especie <span class="marca" data-marca="inferido">inferido</span>; el ancho de la copa lo ponemos con la altura y su mancha de sombra en el piso es una aproximación <span class="marca" data-marca="supuesto">supuesto</span>. Los de menos de 1,5 m no salen.</p>
-          <p class="nota">No dibujamos la sombra de las nubes, ni la de los árboles fuera de la vista de calle. Con el 3D cada sombra se apoya en el suelo a la altura de su construcción, pero se dibuja plana: en las lomas se corre un poco.</p>
-          <p class="nota">En «Ahora» miramos el reporte de El Dorado y Guaymaral. Si los dos dicen cielo cubierto, o si llueve, la sombra se dibuja a media intensidad. Una hora que tú elijas se dibuja con cielo despejado.</p>
-          <p class="nota">Con el 3D, la bruma del cielo sigue el pronóstico de PM2,5 de CAMS para toda la ciudad a la hora que elijas, el mismo de la tarjeta del aire. Es un solo valor para una celda de unos 45 km, no el aire de tu barrio. <span class="marca" data-marca="estimado">estimado</span> Fuera de sus horas o con el dato viejo no hay bruma del aire. Se quita con «Quitar la bruma».</p>
-          <p class="nota">Cuánto se ve lo sacamos con la fórmula de Koschmieder: visibilidad ≈ 3,912 / extinción. La extinción es la del aire limpio (0,012 por km) más 4 m²/g × 1,5 por la humedad × PM2,5. Con 45 µg/m³ da unos 14 km y con 6, más de 70. Con esa misma cuenta (Beer-Lambert) la ciudad lejana y el horizonte se lavan de gris pardo, la cercana queda limpia y el cielo de arriba sigue azul. <span class="marca" data-marca="supuesto">supuesto</span></p>
-          <p class="nota">Sirve para comparar horas y épocas del año, no para medir.</p>
-        </details>
-        <label><input type="checkbox" data-grupo="troncal" checked> Estaciones de TransMilenio</label>
-        <label><input type="checkbox" data-grupo="metro" checked> Metro línea 1 (en obra)</label>
-        <label><input type="checkbox" data-grupo="paraderos"> Paraderos del SITP <span class="nota-inline">(se descargan al marcar, 140 KB)</span></label>
-        <label><input type="checkbox" data-grupo="lluvia"> Lluvia de hoy en los pluviómetros del SAB</label>
-        <label class="toque"><input type="checkbox" id="ver-bicis"> Bicicletas compartidas <span class="nota-inline">(se descargan al marcar, 8 KB)</span></label>
-        <div class="bicis-caja" id="bicis-leyenda" hidden></div>
-        <label class="toque"><input type="checkbox" id="ver-pm25" data-pestana="ciudad" data-tipo="color"> PM2,5 de todo 2025, con colegios y sedes de salud <span class="nota-inline">(se descarga al marcar, 8 KB; los colegios, 42 KB más)</span></label>
-        <div class="bicis-caja" id="pm25-leyenda" hidden></div>
-        <label class="toque" data-pestana="ahora" data-tipo="color"><input type="checkbox" id="ver-canales"> Nivel de quebradas, ríos y canales del SAB <span class="nota-inline">(se descargan al marcar, 11 KB)</span></label>
-        <div class="bicis-caja" id="canales-leyenda" hidden></div>
-        <label><input type="checkbox" data-grupo="localidades" checked> Localidades y UPL</label>
-        <label><input type="checkbox" data-grupo="sectores"> Sectores catastrales</label>
-        <label><input type="checkbox" data-grupo="base" checked> Calles, agua y verde</label>
+        <label class="toque solo-sombras"><input type="checkbox" id="ver-sombras"> Sombras de los edificios</label>
+        <p class="nota solo-sombras" id="sombras-nota">Un dibujo calle por calle, no una medida. <span class="marca" data-marca="supuesto">supuesto</span></p>
+        <p class="nota aviso-hoja" id="sombras-hoja" hidden>El control del sol está sobre el mapa. Toca «Menos datos» para verlo.</p>
+        <label class="toque"><input type="checkbox" id="ver-pm25" data-pestana="ciudad" data-tipo="color"> PM2,5 de todo 2025, con colegios y sedes de salud <span class="nota-inline">(8 KB; colegios, 42 KB más)</span></label>
+        <p class="capas-sub">Referencias, se pueden juntar</p>
+        <label class="toque" data-pestana="ciudad" data-tipo="referencia"><input type="checkbox" data-grupo="localidades" checked> Localidades y UPL</label>
+        <label class="toque" data-pestana="ciudad" data-tipo="referencia"><input type="checkbox" data-grupo="sectores"> Sectores catastrales</label>
+        <label class="toque" data-pestana="ciudad" data-tipo="referencia"><input type="checkbox" data-grupo="base" checked> Calles, agua y verde</label>
       </fieldset>
-    </section>
 
-    <section class="tarjeta marcas-ayuda" aria-labelledby="t-marcas">
-      <h2 id="t-marcas">Cómo leer cada dato</h2>
-      <ul>
-        <li><span class="marca" data-marca="medido">medido</span> lo registró un instrumento.</li>
-        <li><span class="marca" data-marca="de_fuente">de fuente</span> viene tal cual de un registro oficial.</li>
-        <li><span class="marca" data-marca="inferido">inferido</span> lo calculamos aquí con datos de otros.</li>
-        <li><span class="marca" data-marca="estimado">estimado</span> sale de un modelo, no de una medida. Los pronósticos van con esta marca.</li>
-        <li><span class="marca" data-marca="supuesto">supuesto</span> es un número que pusimos nosotros para poder dibujar; no está medido.</li>
-      </ul>
-      <p class="nota">Cada valor dice hace cuánto se tomó. Si un dato está viejo, lo verás marcado.</p>
-    </section>
+      <details class="mas como-se-hizo" id="sombras-como">
+        <summary>Cómo se hizo: 3D, sombras, árboles y bruma</summary>
+        <p class="nota">Los cerros van con su altura real <span class="marca" data-marca="de_fuente">de fuente</span> y los edificios a 3 m por piso, un dibujo y no una medida: Catastro publica los pisos, no la altura. <span class="marca" data-marca="supuesto">supuesto</span></p>
+        <p class="nota">Ponemos el sol donde está en la fecha y la hora que elijas, siempre en hora de Bogotá. Cada construcción tira su sombra al lado contrario del sol.</p>
+        <p class="nota">Catastro publica los pisos, no la altura. Por eso la sombra va en dos tonos: la parte oscura cuenta 2,5 m por piso y la clara llega hasta 4 m por piso. La sombra de verdad cae en algún punto de esa franja. <span class="marca" data-marca="supuesto">supuesto</span></p>
+        <p class="nota">Las construcciones de un piso (bodegas, naves, casas con cubierta alta) suelen medir más de 4 m y su sombra aquí sale corta. <span class="marca" data-marca="supuesto">supuesto</span></p>
+        <p class="nota">El 3D levanta los edificios con 3 m por piso, que queda dentro de esa misma franja. <span class="marca" data-marca="supuesto">supuesto</span></p>
+        <p class="nota">La sombra de los cerros es el velo gris de la mañana y de la tarde. Los cerros salen del Modelo Digital de Terreno 2025 de Bogotá y, fuera del Distrito, de Copernicus. La misma elevación da el relieve que ves y la hora a la que el sol pasa los cerros, cada 100 m al pie de los cerros y cada 500 m en la sabana. <span class="marca" data-marca="inferido">inferido</span></p>
+        <p class="nota">En la vista de calle salen los árboles del censo del Jardín Botánico (SIGAU). La altura de cada uno es <span class="marca" data-marca="de_fuente">de fuente</span>; la forma de la copa la sacamos de la especie <span class="marca" data-marca="inferido">inferido</span>; el ancho de la copa lo ponemos con la altura y su mancha de sombra en el piso es una aproximación <span class="marca" data-marca="supuesto">supuesto</span>. Los de menos de 1,5 m no salen.</p>
+        <p class="nota">No dibujamos la sombra de las nubes, ni la de los árboles fuera de la vista de calle. Con el 3D cada sombra se apoya en el suelo a la altura de su construcción, pero se dibuja plana: en las lomas se corre un poco.</p>
+        <p class="nota">En «Ahora» miramos el reporte de El Dorado y Guaymaral. Si los dos dicen cielo cubierto, o si llueve, la sombra se dibuja a media intensidad. Una hora que tú elijas se dibuja con cielo despejado.</p>
+        <p class="nota">Con el 3D, la bruma del cielo sigue el pronóstico de PM2,5 de CAMS para toda la ciudad a la hora que elijas, el mismo de la tarjeta del aire. Es un solo valor para una celda de unos 45 km, no el aire de tu barrio. <span class="marca" data-marca="estimado">estimado</span> Fuera de sus horas o con el dato viejo no hay bruma del aire. Se quita con «Quitar la bruma».</p>
+        <p class="nota">Cuánto se ve lo sacamos con la fórmula de Koschmieder: visibilidad ≈ 3,912 / extinción. La extinción es la del aire limpio (0,012 por km) más 4 m²/g × 1,5 por la humedad × PM2,5. Con 45 µg/m³ da unos 14 km y con 6, más de 70. Con esa misma cuenta (Beer-Lambert) la ciudad lejana y el horizonte se lavan de gris pardo, la cercana queda limpia y el cielo de arriba sigue azul. <span class="marca" data-marca="supuesto">supuesto</span></p>
+        <p class="nota">Sirve para comparar horas y épocas del año, no para medir. Lo mismo está en <a href="fuentes.html#como-se-hizo">Fuentes</a>.</p>
+      </details>
+    </div>
+
+    <div role="tabpanel" id="pa-probar" aria-labelledby="pe-probar" tabindex="0" hidden>
+      <section class="tarjeta solo-sombras" id="edificio" aria-labelledby="t-edificio">
+        <h2 id="t-edificio">Edificio nuevo: el sol que les quita a los vecinos</h2>
+        <p class="nota">Pon un edificio de prueba en un lote y mira cuánto sol les quita a las calles, patios y parques de alrededor en un año. Este visor solo muestra: no aprueba ni niega ninguna obra.</p>
+        <div id="edificio-cuerpo"><button type="button" class="boton-edn" id="edificio-abrir">Probar un edificio</button></div>
+      </section>
+    </div>
 
     <footer class="pie">
       <p><a href="fuentes.html">Fuentes, licencias y lo que este visor no tiene</a></p>
@@ -135,5 +162,32 @@
     </footer>
   </div>
 </aside>
+
+<div class="leyenda-mapa" id="leyenda-mapa" role="region" aria-label="Leyenda del mapa" hidden>
+  <p class="capa-aviso" id="capa-aviso" aria-live="polite" hidden></p>
+  <div class="ley-bloque" data-capa="pisos" hidden>
+    <p class="ley-titulo">Pisos de cada construcción</p>
+    <div class="leyenda" id="leyenda" aria-hidden="true"></div>
+    <div class="escala" aria-hidden="true"><span>0 a 1</span><span>2</span><span>3</span><span>4 y 5</span><span>6 a 9</span><span>10 a 19</span><span>20+</span></div>
+    <p class="nota">Pisos según Catastro, no altura en metros. De lejos, el promedio de cada sector.</p>
+    <div class="meta"><span class="marca sello" data-marca="de_fuente">de fuente</span><a href="https://creativecommons.org/licenses/by/4.0/deed.es" rel="noopener noreferrer" target="_blank">CC BY 4.0</a><span>UAECD, Catastro Bogotá</span></div>
+  </div>
+  <div class="ley-bloque" data-capa="lluvia" hidden>
+    <p class="ley-titulo">Lluvia de hoy, mm desde la medianoche</p>
+    <div class="bicis-caja" id="lluvia-leyenda"><p class="nota">Trayendo los pluviómetros…</p></div>
+  </div>
+  <div class="ley-bloque" data-capa="bicis" hidden>
+    <p class="ley-titulo">Bicicletas compartidas</p>
+    <div class="bicis-caja" id="bicis-leyenda" hidden></div>
+  </div>
+  <div class="ley-bloque" data-capa="canales" hidden>
+    <p class="ley-titulo">Nivel de quebradas, ríos y canales</p>
+    <div class="bicis-caja" id="canales-leyenda" hidden></div>
+  </div>
+  <div class="ley-bloque" data-capa="pm25" hidden>
+    <p class="ley-titulo">PM2,5 de todo 2025</p>
+    <div class="bicis-caja" id="pm25-leyenda" hidden></div>
+  </div>
+</div>
 </body>
 </html>

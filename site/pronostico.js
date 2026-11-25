@@ -136,6 +136,8 @@
       meta({ tipo: 'estimado', licencia: lic(j.fuente), fuente: 'Weather data by Open-Meteo.com' }),
       el('p', { clase: 'nota', texto: 'Es el pronóstico de un modelo para el aeropuerto El Dorado, en el occidente. No es el de cada barrio. Las alertas oficiales son del IDEAM y del IDIGER.' }));
     pEstado.replaceChildren(...estadoCon(j, 'Lo renovamos cerca de cada hora.', V.BASE + 'pronostico/ahora.json'));
+    // La franja del ahora (panel.js) muestra la probabilidad más alta de lluvia en 24 h.
+    window.dispatchEvent(new CustomEvent('bogotwin:pronostico', { detail: { prob: lluvia ? lluvia.prob : null, generado: j.generado, viejoMin: V.limiteMin(j.cadencia_min) || 120 } }));
     if (acierto) pCuerpo.append(bloqueAcierto(acierto));
     else pCuerpo.append(el('h3', { texto: 'Cuánto ha acertado' }), el('p', { clase: 'estado', texto: 'No pudimos traer el marcador de acierto en esta consulta.' }));
   }
@@ -173,7 +175,10 @@
   async function cargar() {
     const [p, a, r] = await Promise.allSettled([traer('pronostico/ahora.json'), traer('pronostico/acierto.json'), traer('aire/pronostico.json')]);
     try { if (p.status !== 'fulfilled') throw p.reason; pintarPronostico(p.value, a.status === 'fulfilled' ? a.value : null); }
-    catch { if (primera) pEstado.textContent = 'No pudimos traer el pronóstico. Lo intentamos de nuevo en 30 minutos.'; }
+    catch {
+      if (primera) pEstado.textContent = 'No pudimos traer el pronóstico. Lo intentamos de nuevo en 30 minutos.';
+      if (primera) window.dispatchEvent(new CustomEvent('bogotwin:pronostico', { detail: { prob: null } }));
+    }
     try { if (r.status !== 'fulfilled') throw r.reason; pintarAire(r.value); }
     catch { if (primera) aEstado.textContent = 'No pudimos traer el pronóstico del aire. Lo intentamos de nuevo en 30 minutos.'; }
     // La bruma del cielo 3D (sol-barra.js) usa este mismo JSON: no se baja dos veces. Si esta

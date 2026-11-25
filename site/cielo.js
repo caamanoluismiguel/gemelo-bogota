@@ -96,8 +96,13 @@
     return frag;
   }
 
+  // «Ver más»: radar, satélite, fuego y sismos. La imagen del satélite no se baja hasta abrirlo.
   function bloqueMas(fs) {
-    const d = el('details', { clase: 'mas' }, el('summary', { texto: 'Fuego y sismos cerca' }));
+    const d = el('details', { clase: 'mas' }, el('summary', { texto: 'Ver más: radar, satélite, fuego y sismos' }));
+    d.append(bloqueRadar(fs.radar_tablazo));
+    try { d.append(fs.goes19 && fs.goes19.estado === 'ok' ? bloqueGoes(fs.goes19) : falla('Satélite GOES‑19', fs.goes19)); }
+    catch { d.append(falla('Satélite GOES‑19', fs.goes19)); }
+    d.append(el('h3', { texto: 'Fuego y sismos cerca' }));
     const fc = fs.focos_calor;
     if (fc && fc.estado === 'ok') {
       d.append(el('div', { clase: 'dato' },
@@ -150,8 +155,6 @@
     seccion('Temperatura (METAR)', fs.metar, bloqueMetar);
     seccion('Índice UV (CAMS)', fs.uv, bloqueUV);
     seccion('Lluvia (SAB)', fs.lluvia_sab, bloqueLluvia);
-    cuerpo.append(bloqueRadar(fs.radar_tablazo));
-    seccion('Satélite GOES‑19', fs.goes19, bloqueGoes);
     cuerpo.append(bloqueMas(fs));
     estado.replaceChildren(horaYEdad(j.generado, 40, 'Sin dato reciente'), '. Lo armamos cerca de cada 20 minutos; a veces se atrasa. ', B.enlace(VIVO + 'ahora.json', 'Ver el JSON'));
     window.dispatchEvent(new CustomEvent('bogotwin:cielo', { detail: j }));

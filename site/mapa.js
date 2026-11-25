@@ -171,9 +171,10 @@
   mapa.once('load', () => { mapaCargado = true; });
   const trasCarga = (fn) => { if (mapaCargado || mapa.loaded()) fn(); else mapa.once('load', fn); };
 
-  // Panel: en teléfono arranca plegado para que el mapa se vea primero.
+  // Panel: la hoja y las pestañas viven en panel.js; aquí solo se mide lo que tapa del mapa.
   const panel = document.getElementById('panel');
   const boton = document.getElementById('plegar');
+  const ui = B.panelUi;
   // --alto-panel: lo que tapa el borde de abajo del mapa (hoja del teléfono más la barra del sol),
   // para subir la escala y los créditos. --alto-cabeza: dónde se apoya la barra en el teléfono.
   const fijarAlto = () => {
@@ -183,15 +184,10 @@
     raizCss.setProperty('--alto-cabeza', panel.offsetHeight + 'px');
     raizCss.setProperty('--alto-panel', movil.matches ? panel.offsetHeight + hb + 'px' : (hb ? hb + 24 + 'px' : '0px'));
   };
-  const plegar = (si) => {
-    panel.classList.toggle('plegado', si);
-    boton.setAttribute('aria-expanded', String(!si));
-    boton.textContent = si ? 'Ver datos' : 'Ocultar';
-    window.dispatchEvent(new CustomEvent('bogotwin:panel', { detail: { plegado: si } }));
-    fijarAlto();
-  };
-  boton.addEventListener('click', () => plegar(!panel.classList.contains('plegado')));
-  plegar(movil.matches);
+  // plegar(true) deja la hoja asomada (cabecera, franja y pestañas); plegar(false) la sube.
+  const plegar = (si) => ui.abrir(!si);
+  window.addEventListener('bogotwin:panel', fijarAlto);
+  fijarAlto();
   movil.addEventListener('change', fijarAlto);
   addEventListener('resize', fijarAlto);
 
@@ -385,6 +381,7 @@
   // pliega a su barra de título y la barra del sol queda en su forma corta; los dos se abren
   // con un toque. Si el foco estaba dentro del panel, pasa al botón que lo vuelve a abrir.
   let vistaCalle = false;
+  let enArranque = false;   // al arrancar no se pliega lo que abrió un enlace con ?p=
   let alVistaCalle = () => {};   // luz propia de los edificios (más abajo, solo con WebGL2)
   function ponerVistaCalle() {
     const si = caja3d.checked && lenteActual() === 'como-se-ve';
@@ -393,7 +390,7 @@
     alVistaCalle(si);
     window.dispatchEvent(new CustomEvent('bogotwin:vista-calle', { detail: { on: si } }));
     document.body.classList.toggle('vista-calle', si);
-    if (si && !panel.classList.contains('plegado')) {
+    if (si && !enArranque && !panel.classList.contains('plegado')) {
       const conFoco = panel.querySelector('#cuerpo').contains(document.activeElement);
       plegar(true);
       if (conFoco) boton.focus();
@@ -402,22 +399,40 @@
     }
   }
 
+  // Leyenda flotante única (#leyenda-mapa): muestra solo las capas de color que están a la vista.
+  // Pisos: en 2D con su casilla, en 3D con la lente «pisos». Lluvia: con su casilla. Bicis,
+  // canales y PM2,5: cuando su módulo muestra su caja (al prender o al fallar).
+  const leyMapa = document.getElementById('leyenda-mapa');
+  const avisoCapa = document.getElementById('capa-aviso');
+  const cajaPisos = document.querySelector('[data-grupo="pisos"]');
+  const cajaLluvia = document.querySelector('[data-grupo="lluvia"]');
+  function ponerLeyenda() {
+    if (!leyMapa) return;
+    let alguno = false;
+    for (const b of leyMapa.querySelectorAll('.ley-bloque')) {
+      const k = b.dataset.capa;
+      let si;
+      if (k === 'pisos') si = caja3d.checked ? lenteActual() === 'pisos' : !!(cajaPisos && cajaPisos.checked);
+      else if (k === 'lluvia') si = !!(cajaLluvia && cajaLluvia.checked);
+      else { const c = b.querySelector('.bicis-caja'); si = !!c && !c.hidden; }
+      b.hidden = !si;
+      alguno = alguno || si;
+    }
+    leyMapa.hidden = !alguno && (!avisoCapa || avisoCapa.hidden);
+  }
+  if (leyMapa) {
+    const vigia = new MutationObserver(ponerLeyenda);
+    for (const c of leyMapa.querySelectorAll('.bicis-caja')) vigia.observe(c, { attributes: true, attributeFilter: ['hidden'] });
+  }
+
   function aplicarLente() {
     ponerVistaCalle();
-    const ley = document.getElementById('leyenda');
-    const esc = ley && ley.nextElementSibling;
-    if (!caja3d.checked) {
-      // Sin 3D, la leyenda y la escala siguen a la capa de pisos (siempre visibles si pisos está marcada).
-      if (ley) ley.hidden = false;
-      if (esc && esc.classList.contains('escala')) esc.hidden = false;
-      return;
+    if (caja3d.checked) {
+      const esPisos = lenteActual() === 'pisos';
+      if (mapa.getLayer('sectores-3d')) mapa.setPaintProperty('sectores-3d', 'fill-extrusion-color', esPisos ? pasos('pisos_prom') : neutro('pisos_prom'));
+      if (mapa.getLayer('construcciones-3d')) mapa.setPaintProperty('construcciones-3d', 'fill-extrusion-color', esPisos ? pasos('pisos') : neutro('pisos'));
     }
-    const esPisos = lenteActual() === 'pisos';
-    if (mapa.getLayer('sectores-3d')) mapa.setPaintProperty('sectores-3d', 'fill-extrusion-color', esPisos ? pasos('pisos_prom') : neutro('pisos_prom'));
-    if (mapa.getLayer('construcciones-3d')) mapa.setPaintProperty('construcciones-3d', 'fill-extrusion-color', esPisos ? pasos('pisos') : neutro('pisos'));
-    // Leyenda y escala: solo con la lente «pisos».
-    if (ley) ley.hidden = !esPisos;
-    if (esc && esc.classList.contains('escala')) esc.hidden = !esPisos;
+    ponerLeyenda();
   }
   lente3d.addEventListener('change', aplicarLente);
 
@@ -431,6 +446,7 @@
   function poner3d(ev) {
     const on = caja3d.checked;
     const alArrancar = ev === 'arranque';
+    enArranque = alArrancar && !!(ui && ui.porEnlace);
     ponerTerreno(on);
     ponerOrto(on);
     // Mostrar u ocultar el selector de lente.
@@ -451,13 +467,17 @@
     if (on) { mapa.setSky(CIELO_DIA); } else { mapa.setSky({}); }
     // De noche, el primer cuadro ya es de noche; la barra del sol sigue cuando llega.
     const arranqueNoche = alArrancar && on && cajaSombras.checked && !q0.has('sol') && B.cieloArranque(Date.now());
-    if (arranqueNoche) { mapa.setSky(arranqueNoche.cielo); fijarNoche(arranqueNoche.noche); }
+    if (arranqueNoche) { mapa.setSky(arranqueNoche.cielo); fijarNoche(arranqueNoche.noche); B.solArranque = arranqueNoche.sol; }
+    else if (!alArrancar) B.solArranque = null;
     if (!on) fijarNoche(false);
     // Verdes: con 3D, más saturados para que los parques se lean verdes a la altura de la calle
     // (la bruma del horizonte los lava). En 2D, los de siempre.
     if (noche === 0) mapa.setPaintProperty('verde', 'fill-color', on ? VERDE_3D : VERDE_2D);
-    // Leyenda y escala según la lente activa.
+    // Leyenda según la lente activa.
     aplicarLente();
+    enArranque = false;
+    // Sin 3D vuelve el color de los pisos: si había otra capa de color, los pisos se apagan.
+    if (!on && !alArrancar) unaDeColor(null);
     // freezeElevation y el terreno puesto después de arrancar el giro: sin eso MapLibre 5.24 deja
     // la altura de la cámara congelada en la de antes de llegar las teselas (0 m) y la cámara
     // queda bajo el suelo de la sabana, con el mapa en blanco. Así la altura sigue al terreno.
@@ -513,6 +533,44 @@
   });
   cajas.forEach(c => c.addEventListener('change', () => aplicar(c)));
 
+  // Una capa de color a la vez (paso 10). Las casillas con data-tipo="color" se excluyen entre
+  // sí; las referencias (líneas y puntos finos) se juntan sin límite. Prender una apaga la otra
+  // y una línea sobre la leyenda dice qué se apagó y por qué. Los pisos cuentan solo en 2D: en
+  // 3D su color sale de la lente, no de la casilla.
+  const cajasColor = [...document.querySelectorAll('[data-tipo="color"] > input[type="checkbox"], input[type="checkbox"][data-tipo="color"]')];
+  const NOMBRE_CAPA = { pisos: ['los pisos', 'n'], lluvia: ['los pluviómetros', 'n'], 'ver-bicis': ['las bicis', 'n'],
+    'ver-canales': ['los niveles de los canales', 'n'], 'ver-pm25': ['el PM2,5 de 2025', ''] };
+  const claveCapa = (c) => c.dataset.grupo || c.id;
+  const cuentaColor = (c) => c.checked && !(claveCapa(c) === 'pisos' && caja3d.checked);
+  const juntar = (xs) => xs.length > 1 ? xs.slice(0, -1).join(', ') + ' y ' + xs[xs.length - 1] : xs[0];
+  let tAviso = null;
+  function decirCapa(texto) {
+    if (!avisoCapa) return;
+    clearTimeout(tAviso);
+    avisoCapa.textContent = texto;
+    avisoCapa.hidden = !texto;
+    if (texto) tAviso = setTimeout(() => decirCapa(''), 10000);
+    ponerLeyenda();
+  }
+  // nueva = la casilla que se acaba de prender; null = revisar que no queden dos (al volver a 2D).
+  function unaDeColor(nueva) {
+    let quedan = nueva;
+    if (!nueva) {
+      const prendidas = cajasColor.filter(cuentaColor);
+      if (prendidas.length < 2) return;
+      quedan = prendidas.find((c) => claveCapa(c) !== 'pisos') || prendidas[0];
+    }
+    if (!cuentaColor(quedan)) return;
+    const apagadas = cajasColor.filter((c) => c !== quedan && cuentaColor(c));
+    if (!apagadas.length) return;
+    for (const c of apagadas) { c.checked = false; c.dispatchEvent(new Event('change')); }
+    const [nombre, n] = NOMBRE_CAPA[claveCapa(quedan)] || ['la capa nueva', ''];
+    decirCapa(B.frase(`Apagamos ${juntar(apagadas.map((c) => (NOMBRE_CAPA[claveCapa(c)] || ['la otra capa'])[0]))} para que se lea${n} ${nombre}.`));
+  }
+  for (const c of cajasColor) c.addEventListener('change', () => { if (c.checked) unaDeColor(c); ponerLeyenda(); });
+  // Un enlace con ?bicis=1 (o canales, pm25) en 2D apaga los pisos al arrancar.
+  trasCarga(() => { unaDeColor(null); ponerLeyenda(); });
+
   // Sombras de los edificios (pasos 8 a 12): los módulos se bajan solo al prenderlas.
   // Sin WebGL2 no hay sombras y la casilla no se muestra.
   const cajaSombras = document.getElementById('ver-sombras');
@@ -541,7 +599,7 @@
     mapa.on('error', alFallar3d);
     mapa.once('idle', () => { primerCuadro = true; if (!caido) { mapa.off('error', alFallar3d); mapa.on('error', sinOrto); } });
   } else mapa.on('error', sinOrto);
-  B.mapaApi = { mapa, movil, plegar, fijarAlto, pmCat, panel, teselaUrl: (f) => new URL(f, base).href, es3d: () => caja3d.checked, fijarNoche, panelAbierto: () => !panel.classList.contains('plegado'), cieloDia: CIELO_DIA };
+  B.mapaApi = { mapa, movil, plegar, fijarAlto, pmCat, panel, teselaUrl: (f) => new URL(f, base).href, es3d: () => caja3d.checked, fijarNoche, panelAbierto: () => (movil.matches ? ui.estado.hoja === 'completa' : ui.abierto()), cieloDia: CIELO_DIA };
   // Luz propia de los edificios en la vista de calle (edificios-luz.js): cara al sol cálida,
   // cara a la sombra fría y el pie de las fachadas un poco más oscuro. Se baja solo al entrar a
   // la vista de calle y solo con WebGL2; si no carga o falla, queda la luz de MapLibre.
@@ -590,6 +648,7 @@
 
   if (cajaSombras) {
     if (!conWebGL2) {
+      // Sin WebGL2 no hay sombras ni escenario; la pestaña «Probar» (.solo-sombras) se va con ellos.
       for (const n of document.querySelectorAll('.solo-sombras')) n.hidden = true;
     } else {
       const MODULOS = ['sombra-geom.js', 'mvt.js', 'sombras-capa.js', 'sol-texto.js', 'horizonte.js', 'sol-barra.js'];
@@ -601,7 +660,8 @@
       })), Promise.resolve()).catch((e) => { cargando = null; throw e; }));
       const ponerSombras = () => {
         // Si se apagan antes de que llegue la barra, se quita la noche del arranque.
-        if (!cajaSombras.checked) { if (B.solBarra) B.solBarra.apagar(); else if (noche) { fijarNoche(false); mapa.setSky(caja3d.checked ? CIELO_DIA : {}); } return; }
+        // La luz de los edificios y de los árboles también deja el sol del arranque.
+        if (!cajaSombras.checked) { B.solArranque = null; if (B.solBarra) B.solBarra.apagar(); else if (noche) { fijarNoche(false); mapa.setSky(caja3d.checked ? CIELO_DIA : {}); } return; }
         cargar().then(() => {
           const ir = () => { if (cajaSombras.checked) B.solBarra.prender(); };
           trasCarga(ir);
@@ -636,6 +696,8 @@
               throw e;
             });
         }
+        // El escenario vive en la pestaña «Probar».
+        ui.elegir('probar');
         return bajandoEdificio.then(() => B.edificioNuevo.abrir());
       };
       if (botonEdificio) botonEdificio.addEventListener('click', () => { abrirEdificio().catch(() => {}); });
@@ -649,10 +711,27 @@
     }
   }
 
+  // Leyenda de la lluvia de hoy: los mismos pasos y colores de la capa «lluvia».
+  const PASOS_LLUVIA = [['menos de 1', '#e3eef7'], ['1 a 5', '#a9cbe6'], ['5 a 20', '#5b97c9'], ['20 a 50', '#24609b'], ['50 o más', '#0e3a66'], ['sin dato hoy', '#ffffff']];
+  function pintarLeyendaLluvia(sab) {
+    const caja = document.getElementById('lluvia-leyenda');
+    if (!caja) return;
+    if (!sab || sab.estado !== 'ok') { caja.replaceChildren(B.el('p', { clase: 'nota', texto: 'Sin dato de los pluviómetros en la última consulta.' })); return; }
+    const filas = B.el('ul', { clase: 'bicis-ley' });
+    for (const [t, c] of PASOS_LLUVIA) {
+      const sw = B.el('span', { clase: 'bicis-sw' });
+      sw.style.background = c;
+      filas.append(B.el('li', null, sw, t === 'sin dato hoy' ? t : t + ' mm'));
+    }
+    caja.replaceChildren(filas, B.meta({ tipo: 'medido', hora: sab.hora_dato, viejoMin: 30, fuente: 'IDIGER, SAB',
+      licencia: { nombre: 'CC BY‑NC 4.0', url: 'https://creativecommons.org/licenses/by-nc/4.0/deed.es' } }));
+  }
+
   // Lluvia del SAB: la pone cielo.js cuando llega el JSON vivo.
   window.addEventListener('bogotwin:cielo', (ev) => {
     B.ultimoCielo = ev.detail;
     const sab = ev.detail && ev.detail.fuentes && ev.detail.fuentes.lluvia_sab;
+    pintarLeyendaLluvia(sab);
     if (!sab || !Array.isArray(sab.estaciones)) return;
     const fc = { type: 'FeatureCollection', features: sab.estaciones
       .filter(e => Number.isFinite(e.lat) && Number.isFinite(e.lon))
@@ -747,7 +826,7 @@
       ventana(ll, [['Pisos', p.pisos], lejos ? ['Huella', 'unida por manzana (vista lejana); acércate para ver cada construcción'] : ['Sótanos', p.sotanos], ['Altura en metros', 'no la publica Catastro'] ].concat(f.layer.id.endsWith('-3d') ? [['Alto dibujado', `${3 * Math.max(1, Number(p.pisos) || 1)} m (3 m por piso, supuesto)`]] : []),
         { tipo: 'de_fuente', fuente: 'UAECD, Catastro Bogotá', licencia: { nombre: 'CC BY 4.0', url: 'https://creativecommons.org/licenses/by/4.0/deed.es' } }, extra);
     } else if (id === 'pisos-sector') {
-      ventana(ll, [['Sector', p.nombre], ['Pisos promedio', p.pisos_prom], ['Pisos máximo', p.pisos_max], ['Construcciones', p.construcciones]],
+      ventana(ll, [['Sector', B.nombrePropio(String(p.nombre || ''))], ['Pisos promedio', p.pisos_prom], ['Pisos máximo', p.pisos_max], ['Construcciones', p.construcciones]],
         { tipo: 'inferido', fuente: 'promedio ponderado por área, calculado aquí con datos de UAECD, Catastro Bogotá', licencia: { nombre: 'CC BY 4.0', url: 'https://creativecommons.org/licenses/by/4.0/deed.es' } });
     } else if (id === 'troncal') {
       ventana(ll, [['Estación de TransMilenio', p.nombre]], { tipo: 'de_fuente', fuente: 'TransMilenio S.A.', licencia: { nombre: 'CC BY 4.0', url: 'https://creativecommons.org/licenses/by/4.0/deed.es' } });
