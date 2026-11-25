@@ -627,6 +627,26 @@
     if (new URLSearchParams(location.search).get('bicis') === '1') { cajaBicis.checked = true; if (mapa.loaded()) ponerBicis(); else mapa.once('load', ponerBicis); }
   }
 
+  // PM2,5 de todo 2025 (SDA) con colegios y sedes de salud: aire-anual-datos.js y aire-anual.js
+  // bajan solo al prender la capa, y los datos salen de site/datos/aire/. ?pm25=1 la abre prendida.
+  const cajaPm25 = document.getElementById('ver-pm25');
+  if (cajaPm25) {
+    let bajandoPm25 = null;
+    const bajarPm25 = () => bajandoPm25 || (bajandoPm25 = ['aire-anual-datos.js', 'aire-anual.js'].reduce((p, f) => p.then(() => new Promise((ok, mal) => {
+      const s = document.createElement('script'); s.src = f; s.onload = ok; s.onerror = () => mal(new Error(f)); document.head.append(s);
+    })), Promise.resolve()).catch((e) => { bajandoPm25 = null; throw e; }));
+    const ponerPm25 = () => {
+      if (!cajaPm25.checked) { if (B.aireAnual) B.aireAnual.apagar(mapa); return; }
+      bajarPm25().then(() => cajaPm25.checked && B.aireAnual.prender(mapa)).catch(() => {
+        cajaPm25.checked = false;
+        const n = document.getElementById('pm25-leyenda');
+        if (n) { n.hidden = false; n.textContent = 'No se pudo bajar la capa de PM2,5. Revisa la conexión e intenta de nuevo.'; }
+      });
+    };
+    cajaPm25.addEventListener('change', ponerPm25);
+    if (new URLSearchParams(location.search).get('pm25') === '1') { cajaPm25.checked = true; if (mapa.loaded()) ponerPm25(); else mapa.once('load', ponerPm25); }
+  }
+
   // Ventana con los datos de lo que se toca.
   const consultables = ['lluvia', 'metro-estaciones', 'troncal', 'paraderos', 'construcciones', 'pisos-sector', 'construcciones-3d', 'sectores-3d'];
   function ventana(lngLat, filas, metaArgs, extra) {
@@ -638,10 +658,12 @@
   }
   mapa.on('click', (e) => {
     if (B.bicis && B.bicis.tocar(e)) return;
+    if (B.aireAnual && B.aireAnual.tocarPunto(e)) return;
     const capas = consultables.filter(id => mapa.getLayer(id) && mapa.getLayoutProperty(id, 'visibility') !== 'none');
     const caja = [[e.point.x - 6, e.point.y - 6], [e.point.x + 6, e.point.y + 6]];
     const f = mapa.queryRenderedFeatures(caja, { layers: capas })[0];
-    if (!f) return;
+    // Sin nada más bajo el dedo, la franja de PM2,5 si la capa está prendida.
+    if (!f) { if (B.aireAnual) B.aireAnual.tocarFranja(e); return; }
     const p = f.properties;
     const id = ({ 'construcciones-3d': 'construcciones', 'sectores-3d': 'pisos-sector' })[f.layer.id] || f.layer.id;
     const ll = f.geometry.type === 'Point' ? f.geometry.coordinates : e.lngLat;
