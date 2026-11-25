@@ -134,10 +134,18 @@ revisar('sin JSON, con otro esquema o sin hora: sin_dato',
   V.aireEnHora(jAire, NaN, ahoraAire).estado === 'sin_dato');
 const otroOrden = Object.assign({}, jAire, { horas_campos: ['pm25', 't'], horas: [[33, '2026-11-24T23:00:00Z']] });
 revisar('horas_campos manda el orden', enHora('2026-11-24T23:10:00Z', otroOrden).pm25 === 33);
-revisar('bruma: nada hasta 10 µg/m³', V.brumaAire(0) === 0 && V.brumaAire(10) === 0 && V.brumaAire(8.2) === 0);
-revisar('bruma: toda a 55 y no pasa de 1', V.brumaAire(55) === 1 && V.brumaAire(200) === 1);
-revisar('bruma: sube con el PM2,5', V.brumaAire(20) < V.brumaAire(30) && V.brumaAire(30) < V.brumaAire(45));
-revisar('bruma: sin valor no hay bruma', V.brumaAire(null) === 0 && V.brumaAire(undefined) === 0 && V.brumaAire(NaN) === 0 && V.brumaAire('x') === 0);
+// Koschmieder: V ≈ 3,912 / extinción; extinción = Rayleigh + 4 m²/g × 1,5 × PM2,5.
+const km = (pm) => V.visibilidad(pm) / 1000;
+revisar('visibilidad: 45 µg/m³ da entre 5 y 15 km (mañana mala en Bogotá)', km(45) >= 5 && km(45) <= 15, km(45).toFixed(1) + ' km');
+revisar('visibilidad: 6 µg/m³ pasa de 50 km', km(6) > 50, km(6).toFixed(1) + ' km');
+revisar('visibilidad: baja con el PM2,5', km(6) > km(25) && km(25) > km(45) && km(45) > km(100));
+revisar('extinción = 3,912 / visibilidad', Math.abs(V.extincion(30) * V.visibilidad(30) - 3.912) < 1e-9);
+revisar('bruma: el aire de fondo (5 µg/m³) ya lo dibuja el visor, no suma', V.brumaAire(0) === 0 && V.brumaAire(5) === 0);
+revisar('bruma: con 6 µg/m³ el aire sucio pone poco (peso < 15 %)', V.pesoBruma(6) > 0 && V.pesoBruma(6) < 0.15, V.pesoBruma(6).toFixed(3));
+revisar('bruma: con 45 µg/m³ el aire sucio pone más de 80 % de la extinción', V.pesoBruma(45) > 0.8 && V.pesoBruma(45) < 0.9, V.pesoBruma(45).toFixed(3));
+revisar('peso = bruma / extinción total', Math.abs(V.pesoBruma(30) - V.brumaAire(30) / V.extincion(30)) < 1e-12);
+revisar('bruma: sube con el PM2,5 y nunca llega a 1', V.pesoBruma(20) < V.pesoBruma(30) && V.pesoBruma(30) < V.pesoBruma(45) && V.pesoBruma(1e4) < 1);
+revisar('bruma: sin valor no hay bruma', V.pesoBruma(null) === 0 && V.brumaAire(null) === 0 && V.brumaAire(undefined) === 0 && V.brumaAire(NaN) === 0 && V.brumaAire('x') === 0);
 
 // 9. Una sola fuente escribe el cielo y el JSON del aire no se baja dos veces.
 const conSky = fs.readdirSync(path.join(raiz, 'site')).filter((f) => f.endsWith('.js') && /\.setSky\(/.test(leer('site/' + f)));

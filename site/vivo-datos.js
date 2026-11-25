@@ -247,8 +247,14 @@
     if (!pmValido(pm25)) return 0;
     return MEE_M2_G * F_HR * 1e-6 * Math.max(0, Number(pm25) - PM_FONDO);
   }
+  // Qué parte de la extinción pone el aire sucio (0 a 1): la bruma sobre el aire de fondo
+  // dividida por la extinción total. Con ese peso el horizonte y la distancia se van al gris pardo.
+  function pesoBruma(pm25) {
+    const b = brumaAire(pm25);
+    return b > 0 ? b / extincion(pm25) : 0;
+  }
 
-  const api = { BASE, url, limiteMin, sinDatoReciente, leerEstado, enSabana, categoria, decodificarBicis, serieDe, leerNdjson, horasPronostico, resumen24, anchoRotulo, rotulosEje, marcador, diasAire, aireEnHora, brumaAire, extincion, visibilidad, BRUMA_FISICA, OMS_24H, MIN_SIN_REPORTE,
+  const api = { BASE, url, limiteMin, sinDatoReciente, leerEstado, enSabana, categoria, decodificarBicis, serieDe, leerNdjson, horasPronostico, resumen24, anchoRotulo, rotulosEje, marcador, diasAire, aireEnHora, brumaAire, pesoBruma, extincion, visibilidad, BRUMA_FISICA, OMS_24H, MIN_SIN_REPORTE,
     categoriaCanal, decodificarCanales, serieCanal, MIN_SIN_LECTURA };
   const raiz = typeof window !== 'undefined' ? window : globalThis;
   raiz.Bogotwin = Object.assign(raiz.Bogotwin || {}, { vivo: api });

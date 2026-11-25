@@ -301,7 +301,7 @@
   // B.aire y avisa con «bogotwin:aire»). Fuera de las horas del pronóstico, con el dato viejo
   // o sin dato, no hay bruma de aire y la línea de la barra lo dice. Se puede apagar.
   const CLAVE_BRUMA = 'bogotwin-bruma-aire';
-  const BRUMA_AIRE_HEX = ['#bdb8ad', '#1f2636'];   // día y noche, por si edificios-luz.js no está
+  const BRUMA_AIRE_HEX = ['#b3a896', '#1f2636'];   // día y noche, por si edificios-luz.js no está
   function leerBruma() { try { return raiz.localStorage.getItem(CLAVE_BRUMA) !== '0'; } catch { return true; } }
   function guardarBruma(on) { try { raiz.localStorage.setItem(CLAVE_BRUMA, on ? '1' : '0'); } catch { /* sin almacenamiento vale para esta visita */ } }
   const A = { on: leerBruma(), info: { estado: 'cargando' }, k: 0 };
@@ -313,29 +313,32 @@
     if (!VV || !a) info = { estado: 'cargando' };
     else if (!a.datos) info = { estado: a.error ? 'sin_dato' : 'cargando' };
     else info = VV.aireEnHora(a.datos, S.ahora ? Date.now() : msMomento());
-    const k = A.on && info.estado === 'ok' ? VV.brumaAire(info.pm25) : 0;
+    const k = A.on && info.estado === 'ok' ? VV.pesoBruma(info.pm25) : 0;
     const cambio = k !== A.k || info.estado !== A.info.estado || info.pm25 !== A.info.pm25;
     A.info = info; A.k = k;
-    // Lo lee edificios-luz.js para lavar los edificios lejanos con la misma bruma.
-    S.brumaAire = S.activo && api.es3d() ? k : 0;
+    // Lo lee edificios-luz.js para lavar los edificios lejanos con la misma bruma: el peso del
+    // color y la escala de Beer-Lambert (1 / extinción, en metros) del aire de esa hora.
+    const ver = S.activo && api.es3d() && A.on && info.estado === 'ok';
+    S.brumaAire = ver ? k : 0;
+    S.escalaAireM = ver ? 1 / VV.extincion(info.pm25) : 0;
     return cambio;
   }
 
-  // Suma la bruma del aire al cielo de la hora: el horizonte, la niebla del relieve y un poco
-  // el cielo se van hacia un gris pardo. k de 0 a 1. Es un dibujo, no una medida de visibilidad.
+  // Suma la bruma del aire al cielo de la hora. k (0 a 1) es la parte de la extinción que pone
+  // el aire sucio (vivo-datos.js, pesoBruma). El horizonte y la niebla del relieve se van hacia
+  // un gris pardo en esa parte; el cielo de arriba queda azul. La distancia a la que se lava la
+  // ciudad la lleva edificios-luz.js con la misma cuenta. Es un dibujo, no una medida.
   function conAire(c, k, alt) {
     if (!(k > 0)) return reducido.matches ? sinTransicion(c) : c;
     const L = B.luzEdificios;
     const gris = L && L.brumaAireHex ? L.brumaAireHex(alt) : lerpHex(BRUMA_AIRE_HEX[0], BRUMA_AIRE_HEX[1], Math.min(1, Math.max(0, -alt / 6)));
     const r = Object.assign({}, c, {
-      'horizon-color': lerpHex(c['horizon-color'], gris, 0.55 * k),
-      'sky-color': lerpHex(c['sky-color'], gris, 0.3 * k),
-      'sky-horizon-blend': lerp(c['sky-horizon-blend'], 0.85, 0.6 * k),
-      'horizon-fog-blend': lerp(c['horizon-fog-blend'], 0.6, k),
-      'fog-ground-blend': c['fog-ground-blend'] * (1 - k)
+      'horizon-color': lerpHex(c['horizon-color'], gris, k),
+      'sky-horizon-blend': lerp(c['sky-horizon-blend'], 0.9, k),
+      'horizon-fog-blend': lerp(c['horizon-fog-blend'], 0.7, k)
     });
     // Sin edificios-luz.js la niebla no trae la bruma del aire: se mezcla aquí.
-    if (!(L && L.brumaHex)) r['fog-color'] = lerpHex(c['fog-color'], gris, 0.55 * k);
+    if (!(L && L.brumaHex)) r['fog-color'] = lerpHex(c['fog-color'], gris, k);
     return reducido.matches ? sinTransicion(r) : r;
   }
   // Con movimiento reducido el cielo cambia de golpe, sin el fundido de MapLibre.
@@ -350,9 +353,11 @@
     if (!A.on) return { texto: 'Bruma del aire apagada.', marca: false };
     if (i.estado === 'ok') {
       const v = B.num ? B.num(i.pm25) : String(i.pm25);
-      return A.k > 0
-        ? { texto: `La bruma sigue el pronóstico de PM2,5 para toda la ciudad: ${v} µg/m³ a esta hora.`, marca: true, hay: true }
-        : { texto: `Pronóstico de PM2,5 para toda la ciudad: ${v} µg/m³ a esta hora. Con menos de 10 no ponemos bruma.`, marca: true };
+      const km = Math.round(B.vivo.visibilidad(i.pm25) / 1000);
+      const vis = `se vería a unos ${km} km`;
+      return A.k > 0.3
+        ? { texto: `La bruma sigue el pronóstico de PM2,5 para toda la ciudad: ${v} µg/m³ a esta hora, ${vis}.`, marca: true, hay: true }
+        : { texto: `Pronóstico de PM2,5 para toda la ciudad: ${v} µg/m³ a esta hora, ${vis}. Con aire así de limpio casi no hay bruma.`, marca: true };
     }
     if (i.estado === 'fuera') return { texto: 'Sin bruma del aire: el pronóstico de PM2,5 no llega a esa hora.', marca: false };
     if (i.estado === 'viejo') return { texto: 'Sin bruma del aire: el pronóstico de PM2,5 está viejo.', marca: false };
@@ -620,7 +625,7 @@
   function apagar() {
     if (!S.activo) return;
     S.activo = false;
-    S.brumaAire = 0;
+    S.brumaAire = 0; S.escalaAireM = 0;
     clearTimeout(relojInicio); clearInterval(reloj); clearTimeout(tCalculo); tCalculo = null; S.calculando = false;
     mapa.off('zoomend', pintar);
     mapa.off('moveend', pintar);
