@@ -3,7 +3,9 @@
 
 python -m http.server no responde Range y PMTiles los necesita. Las teselas no se copian:
 /teselas/<archivo>.pmtiles se lee, solo para leer, de mapa-base/salida/ (lo que publica
-pages.yml), y /teselas/horizonte-bogota.hzn.gz de mapa-base/salida/terreno/. Solo atiende GET y HEAD, y solo nombres de archivo sin rutas.
+pages.yml), y /teselas/horizonte-bogota.hzn.gz de mapa-base/salida/terreno/. Como pages.yml,
+/datos/noches-frias/ sale de data/noches-frias/: ultima.json es el último día registrado.
+Solo atiende GET y HEAD, y solo nombres de archivo sin rutas.
 
 Uso: python3 pruebas/servir-sitio.py [puerto]   (8086 por defecto)
 """
@@ -19,6 +21,18 @@ TESELAS = os.path.join(RAIZ, 'mapa-base', 'salida')
 NOMBRE = re.compile(r'^[a-z0-9-]+\.pmtiles$')
 # Archivos de teselas/ que no son PMTiles y viven en otra carpeta de salida (lista cerrada).
 OTROS = {'horizonte-bogota.hzn.gz': os.path.join('terreno', 'horizonte-bogota.hzn.gz')}
+NOCHES = os.path.join(RAIZ, 'data', 'noches-frias')
+DIA = re.compile(r'^\d{4}-\d{2}-\d{2}\.json$')
+
+
+def noches_frias(nombre):
+    """Lo mismo que arma pages.yml en publicar/datos/noches-frias/, sin copiar nada."""
+    dias = sorted(f for f in os.listdir(NOCHES) if DIA.match(f)) if os.path.isdir(NOCHES) else []
+    if nombre == 'ultima.json':
+        return os.path.join(NOCHES, dias[-1]) if dias else None
+    if DIA.match(nombre) and nombre in dias:
+        return os.path.join(NOCHES, nombre)
+    return None
 
 
 class Manejador(http.server.SimpleHTTPRequestHandler):
@@ -34,6 +48,9 @@ class Manejador(http.server.SimpleHTTPRequestHandler):
             if not NOMBRE.match(nombre):
                 return None
             return os.path.join(TESELAS, nombre)
+        if ruta.startswith('/datos/noches-frias/'):
+            # Sin registro todavía: 404, igual que en Pages antes del primer día.
+            return noches_frias(ruta[len('/datos/noches-frias/'):]) or ''
         return None
 
     def end_headers(self):
