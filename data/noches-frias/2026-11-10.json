@@ -1,0 +1,235 @@
+{
+  "esquema": "noches-frias/1",
+  "fecha": "2026-11-10",
+  "consultado_utc": "2026-11-24T23:43:06+00:00",
+  "relleno": true,
+  "pronostico_faltante": true,
+  "ventana_noche": {
+    "inicio_local": "2026-11-09T18:00:00-05:00",
+    "fin_local": "2026-11-10T06:00:00-05:00",
+    "regla": "Noche que termina la mañana de «fecha»: de 18:00 del día anterior a 06:00, hora de Bogotá (UTC-5), ambas incluidas. Misma ventana para lo medido y lo pronosticado."
+  },
+  "umbrales": {
+    "noche_fria_c": 6.0,
+    "helada_c": 0.0,
+    "nota": "«Helada» solo si una estación midió 0 °C o menos a 2 m. Esto es un registro, no una alerta: las alertas oficiales son del IDEAM y del IDIGER."
+  },
+  "medido": [
+    {
+      "estacion": "SKBO",
+      "nombre": "Aeropuerto El Dorado",
+      "lugar": "Fontibón, occidente de Bogotá",
+      "lat": 4.706,
+      "lon": -74.151,
+      "altura_m": 2547,
+      "etiqueta": "medido",
+      "minima_c": 8.0,
+      "hora_minima_local": "2026-11-10T04:00:00-05:00",
+      "reportes_en_punto": 13,
+      "reportes_esperados": 13,
+      "ventana_completa": true,
+      "observaciones": [
+        {
+          "hora_local": "2026-11-09T18:00:00-05:00",
+          "temperatura_c": 16.0,
+          "tipo": "METAR",
+          "texto": "METAR SKBO 092300Z 12007KT 090V150 9999 FEW040 16/06 Q1029 NOSIG"
+        },
+        {
+          "hora_local": "2026-11-09T19:00:00-05:00",
+          "temperatura_c": 15.0,
+          "tipo": "METAR",
+          "texto": "METAR SKBO 100000Z 10006KT 060V140 9999 FEW040 15/07 Q1030 NOSIG"
+        },
+        {
+          "hora_local": "2026-11-09T20:00:00-05:00",
+          "temperatura_c": 15.0,
+          "tipo": "METAR",
+          "texto": "METAR SKBO 100100Z 11005KT 070V140 9999 FEW040 15/07 Q1031 NOSIG"
+        },
+        {
+          "hora_local": "2026-11-09T21:00:00-05:00",
+          "temperatura_c": 13.0,
+          "tipo": "METAR",
+          "texto": "METAR SKBO 100200Z 07005KT 050V140 9999 NSC 13/07 Q1031 NOSIG"
+        },
+        {
+          "hora_local": "2026-11-09T22:00:00-05:00",
+          "temperatura_c": 13.0,
+          "tipo": "METAR",
+          "texto": "METAR SKBO 100300Z 09004KT 040V150 9999 FEW030 13/07 Q1032 NOSIG"
+        },
+        {
+          "hora_local": "2026-11-09T23:00:00-05:00",
+          "temperatura_c": 13.0,
+          "tipo": "METAR",
+          "texto": "METAR SKBO 100400Z 11005KT 060V140 9999 FEW030 13/07 Q1032 NOSIG"
+        },
+        {
+          "hora_local": "2026-11-10T00:00:00-05:00",
+          "temperatura_c": 12.0,
+          "tipo": "METAR",
+          "texto": "METAR SKBO 100500Z 09004KT 040V130 9999 FEW030 12/07 Q1032 NOSIG"
+        },
+        {
+          "hora_local": "2026-11-10T01:00:00-05:00",
+          "temperatura_c": 9.0,
+          "tipo": "METAR",
+          "texto": "METAR SKBO 100600Z 06005KT 9999 FEW030 09/08 Q1031 NOSIG"
+        },
+        {
+          "hora_local": "2026-11-10T02:00:00-05:00",
+          "temperatura_c": 9.0,
+          "tipo": "METAR",
+          "texto": "METAR SKBO 100700Z 06005KT 9999 FEW030 09/08 Q1031 NOSIG"
+        },
+        {
+          "hora_local": "2026-11-10T03:00:00-05:00",
+          "temperatura_c": 9.0,
+          "tipo": "METAR",
+          "texto": "METAR SKBO 100800Z 06005KT 9999 FEW040 09/08 Q1030 NOSIG"
+        },
+        {
+          "hora_local": "2026-11-10T04:00:00-05:00",
+          "temperatura_c": 8.0,
+          "tipo": "METAR",
+          "texto": "METAR SKBO 100900Z 07004KT 020V080 9999 FEW040 08/07 Q1030 NOSIG"
+        },
+        {
+          "hora_local": "2026-11-10T05:00:00-05:00",
+          "temperatura_c": 8.0,
+          "tipo": "METAR",
+          "texto": "METAR SKBO 101000Z 07008KT 040V100 9999 FEW040 08/07 Q1030 NOSIG"
+        },
+        {
+          "hora_local": "2026-11-10T05:30:00-05:00",
+          "temperatura_c": 8.0,
+          "tipo": "SPECI",
+          "texto": "SPECI SKBO 101030Z 06007KT 9999 FEW040 08/07 Q1030 NOSIG"
+        },
+        {
+          "hora_local": "2026-11-10T06:00:00-05:00",
+          "temperatura_c": 8.0,
+          "tipo": "METAR",
+          "texto": "METAR SKBO 101100Z 06006KT 9999 FEW040 08/07 Q1030 NOSIG"
+        }
+      ],
+      "fuente": {
+        "nombre": "METAR de la Aerocivil, servidos por el Aviation Weather Center (NOAA/NWS)",
+        "url": "https://aviationweather.gov/api/data/metar",
+        "licencia": "Dominio público (NOAA/NWS): https://www.weather.gov/disclaimer",
+        "atribucion": "Observaciones METAR vía aviationweather.gov (NOAA/NWS)",
+        "notas": "El METAR da la temperatura en grados enteros y cada hora; la mínima real entre dos reportes puede ser más baja. Es el aire a 2 m en la pista del aeropuerto, no en cada calle.",
+        "url_consulta": "https://aviationweather.gov/api/data/metar?ids=SKBO%2CSKGY&format=json&hours=15&date=2026-11-10T12%3A00%3A00Z",
+        "consultado_utc": "2026-11-24T23:43:06+00:00"
+      },
+      "noche_fria": false,
+      "helada_a_2m": false
+    },
+    {
+      "estacion": "SKGY",
+      "nombre": "Aeropuerto Guaymaral",
+      "lugar": "Suba, norte de Bogotá",
+      "lat": 4.812,
+      "lon": -74.065,
+      "altura_m": 2557,
+      "etiqueta": "medido",
+      "minima_c": 7.0,
+      "hora_minima_local": "2026-11-10T01:00:00-05:00",
+      "reportes_en_punto": 12,
+      "reportes_esperados": 13,
+      "ventana_completa": false,
+      "observaciones": [
+        {
+          "hora_local": "2026-11-09T18:00:00-05:00",
+          "temperatura_c": 15.0,
+          "tipo": "METAR",
+          "texto": "METAR SKGY 092300Z 08008KT 9000 FEW035 15/07 Q1029"
+        },
+        {
+          "hora_local": "2026-11-09T19:00:00-05:00",
+          "temperatura_c": 14.0,
+          "tipo": "METAR",
+          "texto": "METAR SKGY 100000Z AUTO 08006KT 040V110 CAVOK 14/07 Q1030"
+        },
+        {
+          "hora_local": "2026-11-09T20:00:00-05:00",
+          "temperatura_c": 12.0,
+          "tipo": "METAR",
+          "texto": "METAR SKGY 100100Z AUTO 08004KT 060V120 CAVOK 12/06 Q1031"
+        },
+        {
+          "hora_local": "2026-11-09T21:00:00-05:00",
+          "temperatura_c": 11.0,
+          "tipo": "METAR",
+          "texto": "METAR SKGY 100200Z AUTO VRB03KT CAVOK 11/07 Q1032"
+        },
+        {
+          "hora_local": "2026-11-09T22:00:00-05:00",
+          "temperatura_c": 10.0,
+          "tipo": "METAR",
+          "texto": "METAR SKGY 100300Z AUTO 09004KT CAVOK 10/07 Q1033"
+        },
+        {
+          "hora_local": "2026-11-09T23:00:00-05:00",
+          "temperatura_c": 8.0,
+          "tipo": "METAR",
+          "texto": "METAR SKGY 100400Z AUTO VRB02KT CAVOK 08/06 Q1033"
+        },
+        {
+          "hora_local": "2026-11-10T00:00:00-05:00",
+          "temperatura_c": 8.0,
+          "tipo": "METAR",
+          "texto": "METAR SKGY 100500Z AUTO VRB02KT CAVOK 08/06 Q1033"
+        },
+        {
+          "hora_local": "2026-11-10T01:00:00-05:00",
+          "temperatura_c": 7.0,
+          "tipo": "METAR",
+          "texto": "METAR SKGY 100600Z AUTO VRB01KT CAVOK 07/05 Q1032"
+        },
+        {
+          "hora_local": "2026-11-10T03:00:00-05:00",
+          "temperatura_c": 8.0,
+          "tipo": "METAR",
+          "texto": "METAR SKGY 100800Z AUTO 03006KT 360V070 CAVOK 08/06 Q1030"
+        },
+        {
+          "hora_local": "2026-11-10T04:00:00-05:00",
+          "temperatura_c": 8.0,
+          "tipo": "METAR",
+          "texto": "METAR SKGY 100900Z AUTO 04005KT 010V080 CAVOK 08/06 Q1030"
+        },
+        {
+          "hora_local": "2026-11-10T05:00:00-05:00",
+          "temperatura_c": 8.0,
+          "tipo": "METAR",
+          "texto": "METAR SKGY 101000Z AUTO 01005KT CAVOK 08/06 Q1031"
+        },
+        {
+          "hora_local": "2026-11-10T06:00:00-05:00",
+          "temperatura_c": 7.0,
+          "tipo": "METAR",
+          "texto": "METAR SKGY 101100Z 03003KT 350V070 9000 NSC 07/05 Q1031"
+        }
+      ],
+      "fuente": {
+        "nombre": "METAR de la Aerocivil, servidos por el Aviation Weather Center (NOAA/NWS)",
+        "url": "https://aviationweather.gov/api/data/metar",
+        "licencia": "Dominio público (NOAA/NWS): https://www.weather.gov/disclaimer",
+        "atribucion": "Observaciones METAR vía aviationweather.gov (NOAA/NWS)",
+        "notas": "El METAR da la temperatura en grados enteros y cada hora; la mínima real entre dos reportes puede ser más baja. Es el aire a 2 m en la pista del aeropuerto, no en cada calle.",
+        "url_consulta": "https://aviationweather.gov/api/data/metar?ids=SKBO%2CSKGY&format=json&hours=15&date=2026-11-10T12%3A00%3A00Z",
+        "consultado_utc": "2026-11-24T23:43:06+00:00"
+      },
+      "noche_fria": false,
+      "helada_a_2m": false
+    }
+  ],
+  "pronostico": [],
+  "errores": [],
+  "notas": [
+    "Registro hecho después del día (relleno): solo lleva lo medido. El pronóstico de esa mañana no se guardó y no se rellena, porque sería un pronóstico hecho a posteriori."
+  ],
+  "licencia_registro": "CC BY 4.0. Cita las fuentes de cada valor."
+}
