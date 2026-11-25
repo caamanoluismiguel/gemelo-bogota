@@ -280,6 +280,12 @@ details.mas summary { cursor: pointer; font-weight: 600; margin-top: 10px; min-h
 .bicis-linea { display: block; width: 100%; max-width: 220px; height: 44px; margin-top: 2px; }
 .g-bicis { fill: none; stroke: #1d5b99; stroke-width: 1.6; stroke-linejoin: round; }
 .g-bicis-p { fill: #1d5b99; }
+/* PM2,5 de todo 2025 (aire-anual.js) */
+.capas label.pm25-sub { align-items: center; gap: 8px; font-size: 12.5px; margin: 4px 0; min-height: 44px; }
+.pm25-punto { width: 10px; height: 10px; border-radius: 50%; flex: none; box-sizing: border-box; }
+.pm25-punto[data-k="colegios"] { background: #1f2a33; border: 1.5px solid #fff; box-shadow: 0 0 0 1px #1f2a33; }
+.pm25-punto[data-k="salud"] { background: #fff; border: 2.5px solid #0f6b62; }
+.pm25-pop .valor { font-weight: 650; }
 .pron-grafica { display: block; width: 100%; height: auto; margin: 6px 0 2px; background: var(--papel); border: 1px solid var(--borde); border-radius: 6px; }
 .g-temp { fill: none; stroke: #b5531a; stroke-width: 2; stroke-linejoin: round; }
 .g-lluvia { fill: #7fa9d4; }
