@@ -22,6 +22,7 @@
 <script defer src="panel.js"></script>
 <script defer src="mapa.js"></script>
 <script defer src="cielo.js"></script>
+<script defer src="preguntar.js"></script>
 </head>
 <body>
 <div id="mapa" role="region" aria-label="Mapa de Bogotá"></div>
@@ -35,6 +36,14 @@
     </div>
     <button id="plegar" type="button" aria-expanded="false" aria-controls="cuerpo">Más datos</button>
   </header>
+
+  <form class="preguntar" id="preguntar" role="search" autocomplete="off">
+    <label for="pregunta" class="oculto">Pregúntale a la ciudad</label>
+    <input id="pregunta" type="search" enterkeyhint="search" maxlength="140" spellcheck="false" placeholder="Pregúntale a la ciudad: ¿va a llover hoy?">
+    <button type="submit">Preguntar</button>
+  </form>
+  <div class="respuesta" id="respuesta" aria-live="polite" hidden></div>
+  <div class="chips" id="preguntas-chips" hidden></div>
 
   <div class="franja" id="ahora-franja">
     <div class="franja-cifras">

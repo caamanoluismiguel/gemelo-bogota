@@ -453,3 +453,39 @@ body.en-escenario #mapa::after { content: ""; position: absolute; inset: 0; z-in
 }
 .leyenda-mapa .bicis-ley { display: grid; grid-template-columns: 1fr 1fr; gap: 0 10px; margin: 2px 0; }
 .leyenda-mapa .bicis-ley li { margin: 2px 0; }
+
+/* Pregúntale a la ciudad: la caja va bajo el título, a la vista con la hoja asomada y en escritorio.
+   Colores planos, sin transiciones. */
+.preguntar { display: flex; gap: 6px; padding: 6px 14px; border-bottom: 1px solid var(--borde); }
+.preguntar input { flex: 1; min-width: 0; min-height: 40px; padding: 0 10px; border: 1px solid var(--borde); border-radius: 8px;
+  background: var(--papel); color: var(--tinta); font: inherit; font-size: 16px; }
+.preguntar input:focus-visible { outline: 2px solid var(--acento); outline-offset: 1px; }
+.preguntar button { flex: none; min-height: 40px; padding: 0 12px; border: 0; border-radius: 8px; background: var(--acento); color: #fff;
+  font: inherit; font-weight: 600; cursor: pointer; }
+.respuesta { position: relative; max-height: 42vh; overflow: auto; padding: 8px 14px 10px; border-bottom: 1px solid var(--borde); background: var(--fondo); }
+.respuesta[hidden], .chips[hidden] { display: none; }
+.resp-pregunta { margin: 0 32px 6px 0; font-weight: 650; }
+.resp-linea { margin: 4px 0; line-height: 1.45; }
+.respuesta .meta { margin-top: 6px; }
+.resp-cerrar { position: absolute; top: 4px; right: 6px; width: 32px; height: 32px; border: 0; border-radius: 50%; background: none;
+  color: var(--tinta-2); font-size: 22px; line-height: 1; cursor: pointer; }
+.resp-cerrar:hover { background: var(--papel); }
+.resp-accion { margin: 6px 0 2px; min-height: 36px; padding: 0 12px; border: 1px solid var(--acento); border-radius: 6px; background: var(--papel);
+  color: var(--acento); font: inherit; font-weight: 600; cursor: pointer; }
+.chips { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 6px 14px 8px; border-bottom: 1px solid var(--borde); }
+.chips-titulo { flex-basis: 100%; font-size: 12px; color: var(--tinta-2); }
+.chip { min-height: 32px; padding: 4px 10px; border: 1px solid var(--borde); border-radius: 16px; background: var(--papel); color: var(--acento);
+  font: inherit; font-size: 13px; text-align: left; cursor: pointer; }
+.chip:hover { border-color: var(--acento); }
+@media (max-width: 600px) {
+  .preguntar { padding: 4px 10px; }
+  .respuesta { max-height: 30dvh; padding: 6px 10px 8px; }
+  .chips { padding: 4px 10px 6px; flex-wrap: nowrap; overflow-x: auto; }
+  .chips-titulo { display: none; }
+  .chip { flex: none; min-height: 36px; white-space: nowrap; }
+  /* Con una respuesta abierta, la barra del sol y la leyenda ceden su lugar al mapa. */
+  body.con-respuesta #sol-barra, body.con-respuesta .leyenda-mapa { display: none; }
+}
+@media (min-width: 601px) {
+  body.con-respuesta .leyenda-mapa { left: 384px; bottom: calc(var(--alto-panel, 0px) + 8px); }
+}
