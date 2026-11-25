@@ -56,6 +56,10 @@
       <tr><td>Pronóstico de noches frías</td><td>Siete modelos globales servidos por <a href="https://open-meteo.com/">Open‑Meteo</a></td><td>CC BY 4.0</td><td>Cada mañana, con tres intentos entre las 6:40 y las 11:40</td></tr>
       <tr><td>Focos de calor</td><td><a href="https://firms.modaps.eosdis.nasa.gov/">NASA FIRMS</a>, VIIRS</td><td>Datos abiertos de la NASA</td><td>Cerca de cada 20 min; a veces se atrasa</td></tr>
       <tr><td>Sismos</td><td><a href="https://earthquake.usgs.gov/">USGS</a>, catálogo ComCat</td><td>Dominio público de EE. UU.</td><td>Cerca de cada 20 min; a veces se atrasa</td></tr>
+      <tr><td>Bicicletas compartidas por estación</td><td>Sistema de bicicletas compartidas de Bogotá, feed GBFS público; lo bajamos en nuestro <a href="https://github.com/caamanoluismiguel/gemelo-bogota-vivo">repo de datos</a> y el navegador lo lee de ahí</td><td>CC0</td><td>Cerca de cada 10 min; a veces se atrasa</td></tr>
+      <tr><td>Pronóstico de 48 horas <span class="marca" data-marca="estimado">estimado</span></td><td>Weather data by <a href="https://open-meteo.com/">Open-Meteo.com</a></td><td><a href="https://creativecommons.org/licenses/by/4.0/deed.es">CC BY 4.0</a></td><td>Cada hora; a veces se atrasa</td></tr>
+      <tr><td>Cuánto acierta el pronóstico <span class="marca" data-marca="inferido">inferido</span></td><td>Lo calculamos aquí: cada día cerrado comparamos el pronóstico guardado con los reportes METAR del aeropuerto El Dorado, temperatura y si llovió</td><td>CC BY 4.0, citando Open-Meteo y el METAR (dominio público)</td><td>Una vez al día, desde que hay días calificados</td></tr>
+      <tr><td>Aire: PM2,5 de los próximos días <span class="marca" data-marca="estimado">estimado</span></td><td>Copernicus Atmosphere Monitoring Service (CAMS), servido por <a href="https://open-meteo.com/">Open-Meteo</a>. Un solo valor para toda la ciudad, de una celda de unos 45 km</td><td><a href="https://creativecommons.org/licenses/by/4.0/deed.es">CC BY 4.0</a></td><td>Cada hora; a veces se atrasa</td></tr>
     </tbody>
   </table>
   </div>
@@ -71,8 +75,8 @@
     <li><strong>Sombra de las nubes, y la de los árboles fuera de la vista de calle.</strong> Dibujamos la de los edificios y la de los cerros. En la vista de calle cada árbol deja en el piso una mancha hacia el lado contrario del sol: es una aproximación con su copa supuesta, no su sombra real. La de los edificios se corre un poco en las lomas, porque cada una se dibuja plana a la altura de su construcción. La de los cerros va en una rejilla de 100 m al pie de los cerros y de 500 m en la sabana: dentro de una cuadra no cambia.</li>
     <li><strong>Temperatura por calle o por barrio.</strong> Solo hay dos termómetros abiertos con dato cada hora: los de los aeropuertos El Dorado y Guaymaral.</li>
     <li><strong>Alertas.</strong> Esto es un registro y una vitrina, no un sistema de alerta. Las alertas son del IDIGER y del IDEAM.</li>
-    <li><strong>Buses en vivo ni tráfico.</strong> No encontramos posiciones de buses en tiempo real publicadas como datos abiertos. Los paraderos son del archivo del 13 de octubre de 2026.</li>
-    <li><strong>Calidad del aire.</strong> Todavía no está. Antes queremos tener clara la licencia de cada red.</li>
+    <li><strong>Posición de los buses ni tráfico.</strong> No encontramos posiciones de buses minuto a minuto publicadas como datos abiertos. Los paraderos son del archivo del 13 de octubre de 2026.</li>
+    <li><strong>Calidad del aire medida por barrio.</strong> Lo que ves es un pronóstico de modelo para toda la ciudad. Las estaciones de la red distrital no declaran licencia, así que no las mostramos ni calificamos con ellas el pronóstico del aire. Para alertas, mira el IBOCA de la Secretaría de Ambiente.</li>
     <li><strong>Árboles.</strong> Vienen en una próxima fase.</li>
     <li><strong>UV medido.</strong> No hay un sensor abierto de UV en Bogotá; el valor que ves es de un modelo.</li>
     <li><strong>Radar siempre.</strong> Cuando el radar de Tablazo no responde, lo decimos y no mostramos un valor viejo.</li>
