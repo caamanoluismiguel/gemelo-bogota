@@ -37,6 +37,10 @@
   const BRUMA_OCASO = [0.88, 0.73, 0.61];
   const BRUMA_NOCHE = [0.12, 0.15, 0.21];
   const BRUMA_MAX = 0.8;                    // ni los cerros más lejanos se borran del todo
+  // Bruma del aire (PM2,5 del pronóstico, la decide sol-barra.js de 0 a 1): un gris pardo que
+  // lava la distancia. De noche se va al mismo oscuro de la bruma de noche. Supuesto de dibujo.
+  const BRUMA_AIRE = [0.74, 0.72, 0.68];
+  const BRUMA_AIRE_MAX = 0.9;               // con aire muy sucio la distancia se borra un poco más
   // Tinte de la hora sobre toda la escena (multiplica; 1 = nada).
   const TINTE_MANANA = [1.0, 0.95, 0.86];   // ámbar
   const TINTE_TARDE = [1.0, 0.92, 0.87];    // naranja rosado
@@ -52,15 +56,19 @@
   // en línea recta. Es la misma cuenta que usa sol-barra.js para los colores del mapa.
   const deNoche = (altura) => Math.min(1, Math.max(0, -altura / 6));
 
-  // Color de la bruma a esa hora. azimut en grados (menos de 180: mañana).
-  function brumaHora(altura, azimut, intensidad) {
+  // Color de la bruma a esa hora. azimut en grados (menos de 180: mañana). aire: de 0 a 1.
+  const aire01 = (a) => Math.min(1, Math.max(0, Number(a) || 0));
+  const brumaAireColor = (altura) => mezcla(BRUMA_AIRE, BRUMA_NOCHE, deNoche(altura));
+  function brumaHora(altura, azimut, intensidad, aire) {
     const k = suave(0.45, 1, intensidad == null ? 1 : intensidad);
     const dia = mezcla(BRUMA_CUBIERTO, BRUMA_DIA, k);
     const bajo = mezcla(dia, (azimut == null || azimut >= 180) ? BRUMA_OCASO : BRUMA_ALBA, 0.35 + 0.65 * k);
-    return mezcla(mezcla(bajo, dia, suave(2, 18, altura)), BRUMA_NOCHE, deNoche(altura));
+    const hora = mezcla(mezcla(bajo, dia, suave(2, 18, altura)), BRUMA_NOCHE, deNoche(altura));
+    return mezcla(hora, brumaAireColor(altura), 0.55 * aire01(aire));
   }
   const aHex = (c) => '#' + c.map((v) => Math.round(Math.min(1, Math.max(0, v)) * 255).toString(16).padStart(2, '0')).join('');
-  const brumaHex = (altura, azimut, intensidad) => aHex(brumaHora(altura, azimut, intensidad));
+  const brumaHex = (altura, azimut, intensidad, aire) => aHex(brumaHora(altura, azimut, intensidad, aire));
+  const brumaAireHex = (altura) => aHex(brumaAireColor(altura));
 
   // Parte de las ventanas con luz de noche (0 a 1, antes de la variación por edificio y piso).
   // De día 0. Al caer la tarde se prenden en el crepúsculo (sol de −2° a −6°), quedan cerca de
@@ -103,7 +111,9 @@
   }
 
   // altura: grados del sol sobre el horizonte. intensidad: 1 con sol directo, 0,5 cubierto.
-  function paleta(altura, intensidad, azimut) {
+  // aire (0 a 1): la bruma del PM2,5 acerca la distancia a la que se lava la ciudad.
+  function paleta(altura, intensidad, azimut, aire) {
+    const a = aire01(aire);
     const n = deNoche(altura);
     const sol = suave(-1, 4, altura);        // hay sol directo sobre las fachadas
     const k = suave(0.45, 1, intensidad == null ? 1 : intensidad);
@@ -120,7 +130,10 @@
       // dos son supuestos de aspecto, no una medida; la franja se apaga de lejos.
       ao: 0.58 + 0.14 * n,
       contacto: 0.2 - 0.1 * n,
-      bruma: brumaHora(altura, azimut, intensidad).concat(BRUMA_MAX),
+      bruma: brumaHora(altura, azimut, intensidad, a).concat(BRUMA_MAX + (BRUMA_AIRE_MAX - BRUMA_MAX) * a),
+      // Multiplican [inicio, escala] de la bruma en metros: con aire sucio empieza más cerca y
+      // crece más rápido (a 1, la mitad del inicio y un tercio de la escala).
+      lejos: [1 - 0.5 * a, 1 / (1 + 2 * a)],
       encendidas: encendidas(altura, azimut),
       noche: n
     };
@@ -490,8 +503,8 @@ void main() { color = texture(u_tex, v_uv) * u_alfa; }`;   // MapLibre la guarda
     function solActual() {
       const sb = raiz.Bogotwin && raiz.Bogotwin.solBarra;
       const S = sb && sb.estado;
-      if (S && S.activo && S.sol) return { activo: true, altura: S.sol.altura, azimut: S.sol.azimut, intensidad: S.ahora && S.cielo ? S.cielo.intensidad : 1 };
-      return { activo: false, altura: 45, azimut: 180, intensidad: 1 };
+      if (S && S.activo && S.sol) return { activo: true, altura: S.sol.altura, azimut: S.sol.azimut, intensidad: S.ahora && S.cielo ? S.cielo.intensidad : 1, aire: S.brumaAire || 0 };
+      return { activo: false, altura: 45, azimut: 180, intensidad: 1, aire: 0 };
     }
 
     // La luz de MapLibre, como la usa su sombreador de extrusiones (ancla «viewport» gira con el mapa).
@@ -741,7 +754,7 @@ void main() { color = texture(u_tex, v_uv) * u_alfa; }`;   // MapLibre la guarda
       if (mapa.getLayoutProperty(op.capaML, 'visibility') === 'none') return;
       const ter = mapa.terrain || null;
       const sol = solActual();
-      const p = paleta(sol.altura, sol.intensidad, sol.azimut);
+      const p = paleta(sol.altura, sol.intensidad, sol.azimut, sol.aire);
       const cam = caminoCamara();
 
       gl.useProgram(prog);
@@ -752,7 +765,7 @@ void main() { color = texture(u_tex, v_uv) * u_alfa; }`;   // MapLibre la guarda
       gl.uniform1f(loc.u_ao, p.ao);
       gl.uniform1f(loc.u_contacto, p.contacto);
       gl.uniform4fv(loc.u_bruma, p.bruma);
-      gl.uniform2f(loc.u_lejos_m, op.lejos[0], op.lejos[1]);
+      gl.uniform2f(loc.u_lejos_m, op.lejos[0] * p.lejos[0], op.lejos[1] * p.lejos[1]);
       gl.uniform1f(loc.u_encendidas, p.encendidas);
       gl.uniform1f(loc.u_con_terreno, ter ? 1 : 0);
       gl.uniform1i(loc.u_terrain, 3);
@@ -930,7 +943,7 @@ void main() { color = texture(u_tex, v_uv) * u_alfa; }`;   // MapLibre la guarda
     };
   }
 
-  const luzEdificios = { crear, paleta, tinte, deNoche, brumaHora, brumaHex, encendidas,
+  const luzEdificios = { crear, paleta, tinte, deNoche, brumaHora, brumaHex, brumaAireHex, encendidas,
     pesoFoto, FOTO_ALTO, factorSaturacion, factorContraste, CASCADAS, origenCascada,
     indicePaleta, gruposPaleta, semilla, fachada, TIPOS_FACHADA, NOCHE_MATERIAL, hexRgb };
   if (typeof module === 'object' && module.exports) module.exports = luzEdificios;

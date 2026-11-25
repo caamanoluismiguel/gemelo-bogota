@@ -163,6 +163,7 @@
       el('p', { clase: 'que', texto: 'PM2,5 en µg/m³ para toda la ciudad. La barra oscura es la media del día, la clara la hora más alta y la raya la guía de la OMS.' }),
       lista,
       meta({ tipo: 'estimado', licencia: lic(j.fuente), fuente: 'CAMS (Copernicus) vía Open‑Meteo, celda de 45 km' }),
+      el('p', { clase: 'nota', texto: 'Con el 3D y el sol en el mapa, la bruma del cielo sigue este mismo pronóstico, hora por hora.' }),
       el('p', { clase: 'nota', texto: 'Es un modelo con una sola celda de unos 45 km para toda Bogotá: no dice cómo está tu barrio. La guía de la OMS (2021) pide que la media de 24 horas no pase de 15 µg/m³; es una referencia de salud, no una alerta. No mostramos cuánto acierta porque las medidas de la red de la ciudad no declaran licencia. El índice oficial de Bogotá es el IBOCA de la Secretaría de Ambiente.' }));
     aEstado.replaceChildren(...estadoCon(j, 'Lo renovamos cerca de cada hora.', V.BASE + 'aire/pronostico.json'));
   }
@@ -175,6 +176,11 @@
     catch { if (primera) pEstado.textContent = 'No pudimos traer el pronóstico. Lo intentamos de nuevo en 30 minutos.'; }
     try { if (r.status !== 'fulfilled') throw r.reason; pintarAire(r.value); }
     catch { if (primera) aEstado.textContent = 'No pudimos traer el pronóstico del aire. Lo intentamos de nuevo en 30 minutos.'; }
+    // La bruma del cielo 3D (sol-barra.js) usa este mismo JSON: no se baja dos veces. Si esta
+    // vuelta falla, queda el de antes; la barra decide si ya está viejo.
+    const antes = B.aire && B.aire.datos;
+    B.aire = r.status === 'fulfilled' ? { datos: r.value, error: false } : { datos: antes || null, error: !antes };
+    window.dispatchEvent(new CustomEvent('bogotwin:aire'));
     primera = false;
   }
   cargar();
