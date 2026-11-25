@@ -218,6 +218,8 @@
     velo();
     pintar();
     escribirUrl();
+    // Para el escenario «Edificio nuevo» (edificio-nuevo.js): la sombra sigue a la hora elegida.
+    if (typeof raiz.dispatchEvent === 'function') raiz.dispatchEvent(new CustomEvent('bogotwin:sol', { detail: { sol: S.sol } }));
   }
 
   // Con 3D la sombra va más oscura: al ras de la calle el gris suave del 2D no se lee.
@@ -383,10 +385,12 @@
     return api.es3d() || (alt + HZ.SEMI_DISCO > 0 && alt < HZ.SOL_BAJO);
   }
 
+  // Devuelve una promesa que se cumple al terminar (bien o mal): el escenario «Edificio nuevo»
+  // la espera para contar la sombra de los cerros.
   function bajarVelo() {
-    if (V.estado !== 'nada') return;
+    if (V.estado !== 'nada') return V.promesa || Promise.resolve();
     V.estado = 'bajando';
-    fetch(api.teselaUrl('horizonte-bogota.hzn.gz'))
+    return (V.promesa = fetch(api.teselaUrl('horizonte-bogota.hzn.gz'))
       .then((r) => { if (!r.ok) throw new Error('horizonte ' + r.status); return r.arrayBuffer(); })
       .then(HZ.descomprimir)
       .then((bytes) => {
@@ -412,7 +416,7 @@
         // Sin la rejilla no hay sombra de cerros: la línea de honestidad lo dice.
         V.estado = 'fallo';
         if (S.activo) pintar();
-      });
+      }));
   }
 
   function velo() {
@@ -567,5 +571,5 @@
     return T.filaSombra(S.sol, pisos, G.largoSombra);
   }
 
-  B.solBarra = { prender, apagar, filaPopup, estado: S, capa: () => sombras, velo: V };
+  B.solBarra = { prender, apagar, filaPopup, estado: S, capa: () => sombras, velo: V, bajarCerros: () => { if (!api) api = B.mapaApi; return bajarVelo(); } };
 })(window);
