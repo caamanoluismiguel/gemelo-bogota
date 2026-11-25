@@ -170,6 +170,32 @@ function ctxFalso(extra) {
   await sw.atender(pg(), 'sitio', c); await c.vaciar();
   revisar('sitio: un 404 no se guarda', (await (await c.caches.open(sw.cacheSitio(VERSION))).keys()).length === 0);
 
+  // Con los reintentos de pmtiles-red.js: un 503 o una red caída pasan tal cual (sin guardarse)
+  // y el pedido repetido, ya bueno, sí se guarda.
+  let intento = 0;
+  const ok206 = () => new Response(new Uint8Array(100).fill(7), { status: 206, headers: { 'content-range': 'bytes 100-199/1000', 'content-length': '100' } });
+  c = ctxFalso({ fetch: async () => { intento++; if (intento === 1) return new Response('x', { status: 503 }); return ok206(); } });
+  const e1 = await sw.atender(pedir(), 'tesela', c);
+  revisar('503: pasa tal cual al reintento de pmtiles-red.js y no se guarda', e1.status === 503 && (await (await c.caches.open(sw.CACHE_TESELAS)).keys()).length === 0);
+  // Red caída: el worker lo intenta una vez más directo (como si no existiera) y, si también falla, el error sigue siendo TypeError.
+  let cayo = null; const c4 = ctxFalso({ fetch: async () => { throw new TypeError('Failed to fetch'); } });
+  try { await sw.atender(pedir(), 'tesela', c4); } catch (e) { cayo = e; }
+  revisar('red caída: llega TypeError (reintentable por pmtiles-red.js) y no se guarda', cayo instanceof TypeError && (await (await c4.caches.open(sw.CACHE_TESELAS)).keys()).length === 0);
+  const e3 = await sw.atender(pedir(), 'tesela', c); await c.vaciar();
+  revisar('el pedido repetido, ya bueno, sí se guarda', e3.status === 206 && (await (await c.caches.open(sw.CACHE_TESELAS)).keys()).length === 1);
+
+  // Todo PMTiles que usa el sitio (franjas de la urbana y catastro-lejos incluidos) está en el sello.
+  const ancla2 = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'mapa-base', 'teselas-publicadas.json'), 'utf8'));
+  const ctxReal = { ...CTX, teselas: sello.mapaTeselas(ancla2) };
+  const nombres = ['catastro-lejos-bogota.pmtiles', 'catastro-pisos-bogota.pmtiles', 'osm-bogota.pmtiles', 'limites-bogota.pmtiles', 'terreno-bogota.pmtiles', 'arboles-bogota.pmtiles',
+    'orto-cerros-bogota.pmtiles', 'orto-lejos-bogota.pmtiles', 'orto-urbana-cerca-bogota.pmtiles', 'satelite-entorno-bogota.pmtiles', 'horizonte-bogota.hzn.gz'];
+  for (let i = 1; i <= 8; i++) nombres.push('orto-urbana-bogota-' + i + '.pmtiles');
+  revisar('los PMTiles del sitio son «tesela» para el worker', nombres.every((n) => sw.clasificar('GET', BASE + 'teselas/' + n, ctxReal) === 'tesela'), nombres.filter((n) => sw.clasificar('GET', BASE + 'teselas/' + n, ctxReal) !== 'tesela').join());
+  revisar('los PMTiles del sitio son los que usa el código', fs.readdirSync(path.join(__dirname, '..', 'site')).filter((f) => f.endsWith('.js')).every((f) => {
+    const t = fs.readFileSync(path.join(__dirname, '..', 'site', f), 'utf8');
+    return (t.match(/[a-z0-9-]+\.pmtiles/g) || []).filter((n) => !/^(op|raiz)\.pmtiles$/.test(n)).every((n) => nombres.includes(n) || n.includes('-N.'));
+  }));
+
   // unpkg: versionado, primero lo guardado; una respuesta opaca no se guarda.
   const ml = 'https://unpkg.com/maplibre-gl@5.24.1/dist/maplibre-gl.js';
   const cors = (r) => Object.defineProperty(r, 'type', { value: 'cors' });
