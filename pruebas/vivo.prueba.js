@@ -111,4 +111,42 @@ const nuevos = ['site/index.html', 'site/fuentes.html', 'site/bicis.js', 'site/c
 const conVivo = nuevos.filter((f) => /en vivo|tiempo real/i.test(leer(f)));
 revisar('ni «en vivo» ni «tiempo real» en las páginas y capas nuevas', conVivo.length === 0, conVivo.join(', '));
 
+// 8. Bruma del aire: la hora de la barra del sol elige la hora del pronóstico de PM2,5.
+const ahoraAire = Date.parse('2026-11-24T23:50:00Z');
+const jAire = {
+  esquema: 'bogotwin/aire/1', generado: '2026-11-24T23:40:32Z', cadencia_min: 60, horas_campos: ['t', 'pm25'],
+  horas: [['2026-11-24T23:00:00Z', 24.1], ['2026-11-25T00:00:00Z', 8.2], ['2026-11-25T01:00:00Z', null], ['2026-11-25T02:00:00Z', 70]]
+};
+const enHora = (iso, j, ahora) => V.aireEnHora(j || jAire, Date.parse(iso), ahora ?? ahoraAire);
+const h1 = enHora('2026-11-24T23:59:00Z');
+revisar('la hora en curso da su valor', h1.estado === 'ok' && h1.pm25 === 24.1, JSON.stringify(h1));
+revisar('6:20 p. m. de Bogotá cae en la hora de las 6 (23 Z)', enHora('2026-11-24T23:20:00Z').pm25 === 24.1);
+revisar('la hora siguiente da el valor siguiente', enHora('2026-11-25T00:00:00Z').pm25 === 8.2 && enHora('2026-11-25T00:59:59Z').pm25 === 8.2);
+revisar('antes del pronóstico: fuera', enHora('2026-11-24T22:59:00Z').estado === 'fuera');
+revisar('después de la última hora: fuera', enHora('2026-11-25T03:00:00Z').estado === 'fuera');
+revisar('un día que la barra eligió en marzo: fuera', enHora('2026-03-10T15:00:00Z').estado === 'fuera');
+revisar('una hora vacía (null) no es 0: fuera', enHora('2026-11-25T01:30:00Z').estado === 'fuera');
+revisar('archivo de más de 2 h (doble de la cadencia): viejo',
+  enHora('2026-11-24T23:30:00Z', null, Date.parse('2026-11-25T01:41:00Z')).estado === 'viejo' &&
+  enHora('2026-11-24T23:30:00Z', null, Date.parse('2026-11-25T01:40:00Z')).estado === 'ok');
+revisar('sin JSON, con otro esquema o sin hora: sin_dato',
+  V.aireEnHora(null, ahoraAire).estado === 'sin_dato' && V.aireEnHora({ esquema: 'bogotwin/aire/2', horas: [] }, ahoraAire, ahoraAire).estado === 'sin_dato' &&
+  V.aireEnHora(jAire, NaN, ahoraAire).estado === 'sin_dato');
+const otroOrden = Object.assign({}, jAire, { horas_campos: ['pm25', 't'], horas: [[33, '2026-11-24T23:00:00Z']] });
+revisar('horas_campos manda el orden', enHora('2026-11-24T23:10:00Z', otroOrden).pm25 === 33);
+revisar('bruma: nada hasta 10 µg/m³', V.brumaAire(0) === 0 && V.brumaAire(10) === 0 && V.brumaAire(8.2) === 0);
+revisar('bruma: toda a 55 y no pasa de 1', V.brumaAire(55) === 1 && V.brumaAire(200) === 1);
+revisar('bruma: sube con el PM2,5', V.brumaAire(20) < V.brumaAire(30) && V.brumaAire(30) < V.brumaAire(45));
+revisar('bruma: sin valor no hay bruma', V.brumaAire(null) === 0 && V.brumaAire(undefined) === 0 && V.brumaAire(NaN) === 0 && V.brumaAire('x') === 0);
+
+// 9. Una sola fuente escribe el cielo y el JSON del aire no se baja dos veces.
+const conSky = fs.readdirSync(path.join(raiz, 'site')).filter((f) => f.endsWith('.js') && /\.setSky\(/.test(leer('site/' + f)));
+revisar('solo mapa.js (cielo fijo del 3D) y sol-barra.js llaman setSky', conSky.sort().join(',') === 'mapa.js,sol-barra.js', conSky.join(', '));
+const conAireJson = fs.readdirSync(path.join(raiz, 'site')).filter((f) => f.endsWith('.js') && leer('site/' + f).includes('aire/pronostico.json'));
+revisar('solo pronostico.js baja aire/pronostico.json', conAireJson.join(',') === 'pronostico.js', conAireJson.join(', '));
+const barraTxt = leer('site/sol-barra.js');
+revisar('la barra dice que es para toda la ciudad', barraTxt.includes('para toda la ciudad'));
+revisar('la barra dice cuándo no hay bruma del aire', barraTxt.includes('no llega a esa hora') && barraTxt.includes('está viejo'));
+revisar('la bruma respeta prefers-reduced-motion', /reducido\.matches \? sinTransicion/.test(barraTxt));
+
 cierre('Datos del repo vivo');
