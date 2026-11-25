@@ -79,10 +79,18 @@
   }
   setInterval(() => document.querySelectorAll('.edad[data-hora]').forEach(pintarEdad), 60000);
 
-  // Línea de procedencia: marca, edad, licencia y fuente.
+  // Sello: la marca y la edad del dato en una sola píldora, «medido · hace 37 min». Si el dato
+  // pasó su umbral, la edad dice «dato viejo» y el borde va en ámbar (.sello:has(.edad.viejo)).
+  function sello({ tipo, hora, viejoMin }) {
+    const t = MARCAS[tipo] ? tipo : 'de_fuente';
+    const s = el('span', { clase: 'marca sello', 'data-marca': t, texto: MARCAS[t] });
+    if (hora !== undefined) s.append(' · ', edad(hora, viejoMin));
+    return s;
+  }
+
+  // Línea de procedencia: sello (marca y edad), licencia y fuente.
   function meta({ tipo, hora, viejoMin, licencia, fuente }) {
-    const m = el('div', { clase: 'meta' }, marca(tipo));
-    if (hora !== undefined) m.append(edad(hora, viejoMin));
+    const m = el('div', { clase: 'meta' }, sello({ tipo, hora, viejoMin }));
     if (licencia && licencia.nombre) m.append(licencia.url ? enlace(licencia.url, licencia.nombre) : el('span', { texto: licencia.nombre }));
     if (fuente) m.append(el('span', { texto: fuente }));
     return m;
@@ -109,8 +117,10 @@
   const sinTildes = (s) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
   // Los datos traen las localidades sin tilde; las ponemos con su nombre oficial.
   const TILDES = { Usaquen: 'Usaquén', Bolivar: 'Bolívar', Engativa: 'Engativá', Fontibon: 'Fontibón', Cristobal: 'Cristóbal', Martires: 'Mártires', Narino: 'Nariño' };
+  // Los números romanos de los sectores («Tibabuyes II») quedan en mayúscula.
+  const ROMANO = /^(?:i{1,3}|iv|vi{0,3}|ix|xi{0,3})$/i;
   const nombrePropio = (s) => s.toLowerCase().replace(/(^|[\s(\-/.])(\p{L})/gu, (_, a, b) => a + b.toUpperCase())
-    .replace(/\p{L}+/gu, (w) => TILDES[w] || w);
+    .replace(/\p{L}+/gu, (w) => TILDES[w] || (ROMANO.test(w) ? w.toUpperCase() : w));
   // «p. m.» ya trae su punto: evita «p. m..» al final de una frase.
   const frase = (s) => s.replace(/\.\./g, '.');
 
@@ -186,15 +196,17 @@
   function cieloArranque(ms) {
     const sol = window.Bogotwin && window.Bogotwin.sol;
     if (!sol) return null;
-    const alt = sol.posicion(ms, CENTRO_SOL[0], CENTRO_SOL[1]).altura;
+    const pos = sol.posicion(ms, CENTRO_SOL[0], CENTRO_SOL[1]);
+    const alt = pos.altura;
     if (!(alt < 0)) return null;
     // noche: de 0 (sol en el horizonte) a 1 (sol a 6° bajo él), igual que ponerCielo.
     const noche = Math.min(1, -alt / 6);
     const cielo = {};
     for (const k of Object.keys(CIELO_NOCHE)) cielo[k] = mezclarValor(CIELO_OCASO[k], CIELO_NOCHE[k], noche);
-    return { noche, cielo };
+    // sol: para la luz de los edificios y de los árboles mientras la barra no ha llegado.
+    return { noche, cielo, sol: { altura: alt, azimut: pos.azimut } };
   }
 
   // Se suma a lo que ya haya (sol.js y sombra-geom.js cuelgan sus piezas aquí también).
-  window.Bogotwin = Object.assign(window.Bogotwin || {}, { el, enlace, marca, marcaDe, meta, valor, edad, edadTexto, minutosDesde, num, valorFicha, horaLocal, fechaLocal, sinTildes, nombrePropio, frase, MARCAS, mezclarColor, mezclarValor, cieloArranque, colorFachada, exprFachada, PALETA_FACHADA });
+  window.Bogotwin = Object.assign(window.Bogotwin || {}, { el, enlace, marca, marcaDe, sello, meta, valor, edad, edadTexto, minutosDesde, num, valorFicha, horaLocal, fechaLocal, sinTildes, nombrePropio, frase, MARCAS, mezclarColor, mezclarValor, cieloArranque, colorFachada, exprFachada, PALETA_FACHADA });
 })();

@@ -389,6 +389,8 @@ void main() {
       const sb = B.solBarra;
       const S = sb && sb.estado;
       if (S && S.activo && S.sol) return { activo: true, altura: S.sol.altura, azimut: S.sol.azimut, intensidad: S.ahora && S.cielo ? S.cielo.intensidad : 1 };
+      // De noche, antes de que llegue la barra, el sol del arranque (mapa.js, B.solArranque).
+      if (B.solArranque) return { activo: true, altura: B.solArranque.altura, azimut: B.solArranque.azimut, intensidad: 1 };
       return { activo: false, altura: 45, azimut: 180, intensidad: 1 };
     }
 

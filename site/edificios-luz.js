@@ -509,6 +509,9 @@ void main() { color = texture(u_tex, v_uv) * u_alfa; }`;   // MapLibre la guarda
       const sb = raiz.Bogotwin && raiz.Bogotwin.solBarra;
       const S = sb && sb.estado;
       if (S && S.activo && S.sol) return { activo: true, altura: S.sol.altura, azimut: S.sol.azimut, intensidad: S.ahora && S.cielo ? S.cielo.intensidad : 1, aire: S.brumaAire || 0, escalaAireM: S.escalaAireM || 0 };
+      // De noche, antes de que llegue la barra, el sol del arranque (mapa.js, B.solArranque).
+      const A = raiz.Bogotwin && raiz.Bogotwin.solArranque;
+      if (A) return { activo: true, altura: A.altura, azimut: A.azimut, intensidad: 1, aire: 0, escalaAireM: 0 };
       return { activo: false, altura: 45, azimut: 180, intensidad: 1, aire: 0, escalaAireM: 0 };
     }
 
