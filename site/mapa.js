@@ -52,16 +52,23 @@
     for (let p = 1; p <= MAX_PISOS; p++) exp.push(p, B.mezclarColor(B.colorFachada(p), NOCHE_MATERIAL, 0.62 * noche));
     exp.push(B.colorFachada(1));
     // Ronda 7: con «tono» en la tesela, un color por edificio (comun.js); sin él, por pisos.
-    return campo === 'pisos' ? B.exprFachada(exp, (c) => B.mezclarColor(c, NOCHE_MATERIAL, 0.62 * noche)) : exp;
+    // Ronda 12: con «techo» (z12 a z15), el color medido en la foto 2025 va primero.
+    const deNoche = (c) => B.mezclarColor(c, NOCHE_MATERIAL, 0.62 * noche);
+    return campo === 'pisos' ? B.exprTecho(B.exprFachada(exp, deNoche), deNoche) : exp;
   };
   const VERDE_2D = ['match', ['get', 'clase'], 'reserva', '#dde9d3', 'paramo', '#e3e8cf', 'bosque', '#bcd6b0', '#cfe3c4'];
   const VERDE_3D = ['match', ['get', 'clase'], 'reserva', '#9fc287', 'paramo', '#b3bf86', 'bosque', '#76a763', '#93c27c'];
   const leyenda = document.getElementById('leyenda');
   for (const c of PISOS_COLOR) { const s = document.createElement('span'); s.style.background = c; leyenda.append(s); }
+  // Muestras de la leyenda «Color de las construcciones»: grises y tejas medidos, ladrillo supuesto.
+  for (const [id, cs] of [['leyenda-techo-medido', [1, 2, 4, 7, 9].map((i) => B.TECHO_COLOR[i])], ['leyenda-techo-supuesto', ['#b4683f', '#8a4634', '#c28b58', '#e4d9c6', '#b8b2a8']]]) {
+    const n = document.getElementById(id);
+    if (n) for (const c of cs) { const s = document.createElement('span'); s.style.background = c; n.append(s); }
+  }
 
   const OSM = '<a href="https://www.openstreetmap.org/copyright">© colaboradores de OpenStreetMap</a> (ODbL)';
   const LIM = 'Límites: SDP y UAECD, Datos Abiertos Bogotá (CC BY 4.0)';
-  const CAT = 'Pisos: UAECD (Catastro Bogotá), Datos Abiertos Bogotá (CC BY 4.0)';
+  const CAT = 'Pisos: UAECD (Catastro Bogotá), Datos Abiertos Bogotá (CC BY 4.0). Color de techo: Ortoimagen 2025 SDP/IDECA, CC BY 4.0. Modificada: color mediano de techo derivado';
   const TM = 'Estaciones: TransMilenio S.A. (CC BY 4.0)';
   const MET = 'Metro L1: Empresa Metro de Bogotá vía IDECA (CC BY 4.0)';
   const SITP = 'Paraderos: GTFS de TransMilenio, 13 oct 2026 (CC BY‑SA 4.0)';
@@ -254,8 +261,10 @@
   // del servicio de IDECA, se pasaron a WebP y van en PMTiles propios junto a los edificios
   // (mapa-base/scripts/orto.sh): el visor no le pide nada a ningún servidor del Distrito.
   // La urbana tiene z16 a z18 en toda la ciudad y z19 solo en el centro (Chapinero, Teusaquillo
-  // y el centro histórico), en un archivo aparte: fuera de esa caja se estira z18. Aparece de a
-  // poco entre z16 y z17. Si una tesela falla o tarda, debajo sigue el mapa de siempre (ver el
+  // y el centro histórico), en un archivo aparte: fuera de esa caja se estira z18. Aparece desde
+  // z15 (ronda 12): con teselas de 256 px el mapa en z15 ya pide la z16, así que no hay archivo
+  // nuevo; antes, en z15, solo estaba la foto de lejos, más borrosa. Llega del todo en z15,5.
+  // Medido el 25 nov 2026 en un teléfono de 390 px a z15,5: 22 pedidos y 475 KB, con la cabecera y los directorios. Si una tesela falla o tarda, debajo sigue el mapa de siempre (ver el
   // aviso de errores más abajo).
   const MODIFICADA = ' Modificada: reproyectada, recortada en teselas y comprimida.';
   const SDP = '<a href="https://www.sdp.gov.co/">SDP</a>';
@@ -270,7 +279,7 @@
   // Más apagada y menos saturada que la foto cruda, para que quede bajo las fachadas de
   // ladrillo y tome la luz de la hora (el tinte y la bruma la tocan como al resto). De noche
   // baja con NOCHE.orto.
-  const ORTO_PINTURA = { 'raster-opacity': ['interpolate', ['linear'], ['zoom'], 16, 0, 17, 1],
+  const ORTO_PINTURA = { 'raster-opacity': ['interpolate', ['linear'], ['zoom'], 15, 0, 15.5, 1],
     'raster-brightness-max': 0.9, 'raster-contrast': -0.08, 'raster-saturation': -0.22, 'raster-fade-duration': 250 };
   // Ronda 7b: los Cerros Orientales con la Ortoimagen Cerros 2025 (25 cm, 14 feb 2025, CC BY 4.0).
   // Desde la vista de calle los cerros quedan a 2,5 a 4 km y se dibujan con teselas z13 a z15,
@@ -311,7 +320,7 @@
       const capas = mapa.getStyle().layers.map((l) => l.id);
       const encima = capas[capas.indexOf('vias') + 1];
       mapa.addLayer({ id: 'orto-cerros', type: 'raster', source: 'orto-cerros', minzoom: 13, metadata: { grupo: 'orto' }, paint: Object.assign({}, ORTO_CERROS_PINTURA) }, encima);
-      mapa.addLayer({ id: 'orto', type: 'raster', source: 'orto', minzoom: 16, metadata: { grupo: 'orto' }, paint: Object.assign({}, ORTO_PINTURA) }, encima);
+      mapa.addLayer({ id: 'orto', type: 'raster', source: 'orto', minzoom: 15, metadata: { grupo: 'orto' }, paint: Object.assign({}, ORTO_PINTURA) }, encima);
       mapa.addLayer({ id: 'orto-cerca', type: 'raster', source: 'orto-cerca', minzoom: 19, metadata: { grupo: 'orto' }, paint: Object.assign({}, ORTO_PINTURA) }, encima);
       // La foto de lejos y el satélite llegan cuando el mapa queda quieto la primera vez (o a
       // los 12 s): así el arranque baja lo mismo que antes y el fondo lejano se completa después.
@@ -426,6 +435,8 @@
       const k = b.dataset.capa;
       let si;
       if (k === 'pisos') si = caja3d.checked ? lenteActual() === 'pisos' : !!(cajaPisos && cajaPisos.checked);
+      // Techos: con «Cómo se ve», solo de lejos (z12 a z15), donde el color sale de «techo».
+      else if (k === 'techos') { const z = mapa.getZoom(); si = caja3d.checked && lenteActual() === 'como-se-ve' && z >= 12 && z < 16; }
       else if (k === 'lluvia') si = !!(cajaLluvia && cajaLluvia.checked);
       else { const c = b.querySelector('.bicis-caja'); si = !!c && !c.hidden; }
       b.hidden = !si;
@@ -434,6 +445,8 @@
     leyMapa.hidden = !alguno && (!avisoCapa || avisoCapa.hidden);
   }
   if (leyMapa) {
+    // La de techos depende del zoom: se revisa al terminar cada movimiento.
+    mapa.on('zoomend', ponerLeyenda);
     const vigia = new MutationObserver(ponerLeyenda);
     for (const c of leyMapa.querySelectorAll('.bicis-caja')) vigia.observe(c, { attributes: true, attributeFilter: ['hidden'] });
   }

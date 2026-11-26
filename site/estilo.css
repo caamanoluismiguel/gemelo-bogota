@@ -426,6 +426,8 @@ body.en-escenario #mapa::after { content: ""; position: absolute; inset: 0; z-in
 .leyenda-mapa .leyenda, .leyenda-mapa .escala, .leyenda-mapa .bicis-caja { margin-left: 0; }
 .leyenda-mapa .bicis-caja { margin-bottom: 2px; }
 .leyenda-mapa .leyenda span { border-top: 1px solid rgba(0,0,0,.2); border-bottom: 1px solid rgba(0,0,0,.2); }
+.techo-ley { display: grid; grid-template-columns: 64px 1fr; gap: 8px; align-items: center; margin: 2px 0; font-size: 12.5px; }
+.leyenda-mapa .techo-ley .leyenda { margin: 0; }
 .ley-titulo { margin: 0 0 4px; font-weight: 650; font-size: 13px; }
 .ley-bloque + .ley-bloque { margin-top: 8px; padding-top: 6px; border-top: 1px solid var(--borde); }
 .capa-aviso { margin: 0 0 6px; padding: 4px 8px; border-left: 3px solid var(--acento); font-size: 12.5px; }

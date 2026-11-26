@@ -47,7 +47,8 @@ revisar('lo lejano entra después, debajo de los cerros y en orden: satélite y 
   /function ponerLejos\(\) \{[\s\S]*?addLayer\(\{ id: 'orto-satelite'[^\n]*\}, 'orto-cerros'\);\s*mapa\.addLayer\(\{ id: 'orto-lejos'[^\n]*\}, 'orto-cerros'\);/.test(mapa) &&
   /mapa\.once\('idle', luego\);\s*setTimeout\(luego, 12000\);/.test(mapa) && /if \(noche\) \{ const t = noche; noche = -1; fijarNoche\(t\); \}/.test(mapa));
 revisar('orden: cerros, la urbana y su z19 encima', orden.every((i) => i > 0) && orden.every((v, i) => i === 0 || orden[i - 1] < v));
-revisar('la urbana empieza en z16 y aparece de a poco hasta z17', /id: 'orto', type: 'raster', source: 'orto', minzoom: 16/.test(mapa) && /'raster-opacity': \['interpolate', \['linear'\], \['zoom'\], 16, 0, 17, 1\]/.test(mapa));
+// Ronda 12: la capa se ve desde z15 (el mapa en z15 ya pide teselas z16, así que la fuente no cambia).
+revisar('la urbana se ve desde z15 y llega del todo en z15,5', /id: 'orto', type: 'raster', source: 'orto', minzoom: 15/.test(mapa) && /'raster-opacity': \['interpolate', \['linear'\], \['zoom'\], 15, 0, 15\.5, 1\]/.test(mapa));
 revisar('la z19 del centro solo desde z19', /id: 'orto-cerca', type: 'raster', source: 'orto-cerca', minzoom: 19/.test(mapa));
 revisar('solo con el 3D: las fuentes se agregan al prender el 3D', /ponerTerreno\(on\);\s*ponerOrto\(on\);/.test(mapa) && !/sources: \{[^}]*orto/.test(mapa) && /function ponerOrto[\s\S]*addSource\('orto-cerros'[\s\S]*function ponerLejos[\s\S]*addSource\('orto-satelite'/.test(mapa));
 revisar('prender y apagar alcanza a las cinco capas', /const ORTO_CAPAS = \['orto-satelite', 'orto-lejos', 'orto-cerros', 'orto', 'orto-cerca'\];/.test(mapa) && /for \(const id of ORTO_CAPAS\)/.test(mapa));

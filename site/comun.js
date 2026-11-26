@@ -184,6 +184,21 @@
       ['to-color', ['at', tono, ['literal', TONO_LADRILLO.map(c)]]]];
   }
 
+  // Color de techo medido (ronda 12): para las construcciones de hasta 4 pisos, la mediana del
+  // color dentro de la huella en la Ortoimagen urbana 2025 (SDP/IDECA, CC BY 4.0), pasada a
+  // esta paleta corta (mapa-base/scripts/techos.py, que tiene la misma lista; la prueba
+  // pruebas/techos.prueba.js revisa que coincidan). Llega como «techo» (índice) solo en las
+  // teselas de lejos, z12 a z15; desde z16 se ve la foto misma. Bogotá baja es más gris de lo
+  // que la pintaba la paleta de ladrillo: fibrocemento, placa y lámina.
+  const TECHO_COLOR = ['#494549', '#5c5658', '#6f6a6b', '#858082', '#a19b9e', '#bebabd', '#6d4c4d', '#916a67',
+    '#914954', '#466191', '#6e7f9b'];
+  // Envuelve la expresión de fachada: con «techo», el color medido; sin él, la de siempre.
+  function exprTecho(sinTecho, cambiar) {
+    const c = cambiar || ((x) => x);
+    const i = ['min', TECHO_COLOR.length - 1, ['max', 0, ['round', ['to-number', ['get', 'techo'], 0]]]];
+    return ['case', ['has', 'techo'], ['to-color', ['at', i, ['literal', TECHO_COLOR.map(c)]]], sinTecho];
+  }
+
   // Cielo del primer cuadro en 3D. La barra del sol llega cuando la ciudad ya está quieta (hasta
   // 12 s en un teléfono); antes de eso, si el sol está bajo el horizonte, el cielo y el mapa ya
   // van de noche. Los colores son los de cieloPorAltura en sol-barra.js, que toma el relevo.
@@ -208,5 +223,5 @@
   }
 
   // Se suma a lo que ya haya (sol.js y sombra-geom.js cuelgan sus piezas aquí también).
-  window.Bogotwin = Object.assign(window.Bogotwin || {}, { el, enlace, marca, marcaDe, sello, meta, valor, edad, edadTexto, minutosDesde, num, valorFicha, horaLocal, fechaLocal, sinTildes, nombrePropio, frase, MARCAS, mezclarColor, mezclarValor, cieloArranque, colorFachada, exprFachada, PALETA_FACHADA });
+  window.Bogotwin = Object.assign(window.Bogotwin || {}, { el, enlace, marca, marcaDe, sello, meta, valor, edad, edadTexto, minutosDesde, num, valorFicha, horaLocal, fechaLocal, sinTildes, nombrePropio, frase, MARCAS, mezclarColor, mezclarValor, cieloArranque, colorFachada, exprFachada, PALETA_FACHADA, TECHO_COLOR, exprTecho });
 })();
