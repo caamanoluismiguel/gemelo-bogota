@@ -424,6 +424,10 @@
   // colores se mezclan en línea recta. Se redondea a pasos de 1/20 para no repintar el estilo
   // en cada minuto de la barra. También acepta true o false.
   const DIA = {};
+  // Fondo de día: en 3D, lo que aún no carga sale en el tono de sabana del velo del relieve
+  // y no en blanco (los cerros sin cargar parecían nevados). En 2D, el claro de siempre.
+  const FONDO_2D = '#f4f2ee', FONDO_3D = '#a3a594';
+  const fondoDia = () => (caja3d.checked ? FONDO_3D : FONDO_2D);
   function fijarNoche(t) {
     t = Math.round(Math.min(1, Math.max(0, Number(t) || 0)) * 20) / 20;
     if (t === noche) return;
@@ -433,7 +437,8 @@
       for (const k of Object.keys(NOCHE[id])) {
         const clave = id + '|' + k;
         if (!(clave in DIA)) DIA[clave] = mapa.getPaintProperty(id, k);
-        mapa.setPaintProperty(id, k, t === 0 ? DIA[clave] : t === 1 ? NOCHE[id][k] : B.mezclarValor(DIA[clave], NOCHE[id][k], t));
+        const dia = clave === 'fondo|background-color' ? fondoDia() : DIA[clave];
+        mapa.setPaintProperty(id, k, t === 0 ? dia : t === 1 ? NOCHE[id][k] : B.mezclarValor(dia, NOCHE[id][k], t));
       }
     }
     aplicarLente();
@@ -560,6 +565,7 @@
     for (const id of ['pisos-sector', 'construcciones']) mapa.setLayoutProperty(id, 'visibility', on ? 'none' : (document.querySelector('[data-grupo="pisos"]').checked ? 'visible' : 'none'));
     // Cielo y atmósfera: con 3D el cielo estático de día; sol-barra.js lo anima si hay sombras.
     if (on) { mapa.setSky(CIELO_DIA); } else { mapa.setSky({}); }
+    if (noche === 0) mapa.setPaintProperty('fondo', 'background-color', fondoDia());
     // De noche, el primer cuadro ya es de noche; la barra del sol sigue cuando llega.
     const arranqueNoche = alArrancar && on && cajaSombras.checked && !q0.has('sol') && B.cieloArranque(Date.now());
     if (arranqueNoche) { mapa.setSky(arranqueNoche.cielo); fijarNoche(arranqueNoche.noche); B.solArranque = arranqueNoche.sol; }
