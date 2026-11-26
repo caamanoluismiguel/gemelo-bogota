@@ -19,12 +19,12 @@
     'Hasta 5: dentro de la guía de la OMS',
     'De 5 a 10',
     'De 10 a 15',
-    'De 15 a 20: pasa la meta colombiana de 2030',
+    'De 15 a 20: sobre la meta de 2030',
     'De 20 a 25',
-    'Más de 25: pasa la norma anual colombiana'
+    'Más de 25: sobre el valor de la norma anual'
   ];
 
-  // Un valor justo en el corte queda en la clase de abajo: 25 cumple la norma, 25,1 la pasa.
+  // Un valor justo en el corte queda en la clase de abajo: 25 queda en la clase de 20 a 25, 25,1 sobre el valor de la norma.
   function clase(v) {
     let i = 0;
     while (i < CORTES.length && v > CORTES[i]) i++;
@@ -91,10 +91,12 @@
     const oms = v <= OMS
       ? `Está dentro de la guía anual de la OMS (${OMS} µg/m³).`
       : `Es ${vecesTexto(veces)} la guía anual de la OMS (${OMS} µg/m³).`;
+    // La norma se revisa en cada estación: el valor de una franja no dice si una zona la cumple.
+    const cola = 'la norma se revisa en cada estación, no por zona.';
     let norma;
-    if (v > NORMA) norma = `Pasa la norma anual colombiana (${NORMA} µg/m³).`;
-    else if (v > META_2030) norma = `Queda bajo la norma anual colombiana de hoy (${NORMA} µg/m³), pero pasa la de 2030 (${META_2030} µg/m³).`;
-    else norma = `Queda bajo la norma anual colombiana de hoy (${NORMA} µg/m³) y bajo la de 2030 (${META_2030} µg/m³).`;
+    if (v > NORMA) norma = `Su valor supera los ${NORMA} µg/m³ de la norma anual colombiana; ${cola}`;
+    else if (v > META_2030) norma = `Su valor queda bajo los ${NORMA} µg/m³ de la norma anual colombiana y sobre los ${META_2030} de la meta de 2030; ${cola}`;
+    else norma = `Su valor queda bajo los ${NORMA} µg/m³ de la norma anual colombiana y bajo los ${META_2030} de la meta de 2030; ${cola}`;
     return { oms, norma, veces };
   }
 

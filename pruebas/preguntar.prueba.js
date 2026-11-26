@@ -166,7 +166,7 @@ const ra = P.responderAire({ aire: aireJ, ahora: AHORA, lugar: k, pm25: fc, aa: 
 bienFormada('aire', ra);
 revisar('aire: el PM2,5 de esta hora es estimado y para toda la ciudad', cifras(ra).some((x) => x.v === '21,4 µg/m³' && x.m === 'estimado') && /no distingue Kennedy/.test(texto(ra)), texto(ra));
 const fK = AA.franjaEn(fc, k.centro.lon, k.centro.lat);
-revisar('aire: el promedio de 2025 en Kennedy es el de su franja', fK && cifras(ra).some((x) => x.m === 'inferido' && x.v.startsWith(AA.coma ? AA.coma(fK.properties.pm25) : '')), texto(ra));
+revisar('aire: el promedio de 2025 en Kennedy es el de su franja', fK && cifras(ra).some((x) => x.m === 'de_fuente' && x.v.startsWith(AA.coma ? AA.coma(fK.properties.pm25) : '')), texto(ra));
 revisar('aire: compara con la OMS', /guía anual de la OMS/.test(texto(ra)));
 const raV = P.responderAire({ aire: Object.assign({}, aireJ, { generado: '2026-11-25T08:00:00Z' }), ahora: AHORA, lugar: null, pm25: fc, aa: AA });
 revisar('aire con el pronóstico viejo y sin lugar: no lo sé', !raV.sabe);
@@ -176,7 +176,7 @@ const col = json('site/datos/aire/colegios-sed.geojson');
 const rco = P.responderColegios({ colegios: col, pm25: fc, aa: AA, lugar: null });
 bienFormada('colegios', rco);
 const maxFranja = Math.max(...col.features.map((f) => AA.franjaEn(fc, ...f.geometry.coordinates)).filter(Boolean).map((f) => f.properties.pm25));
-revisar('colegios: usa la franja más alta que toca algún colegio', cifras(rco).some((x) => x.m === 'inferido' && x.v === AA.coma(maxFranja) + ' µg/m³'), texto(rco));
+revisar('colegios: usa la franja más alta que toca algún colegio', cifras(rco).some((x) => x.m === 'de_fuente' && x.v === AA.coma(maxFranja) + ' µg/m³'), texto(rco));
 revisar('colegios: nombra hasta tres, sin repetir', /(Son: |Es el )[^.]+/.test(texto(rco)) && (() => { const l = texto(rco).split(/Son: |Es el /).pop().replace(/\.$/, '').split(/; | y \d/); return l.length <= 3 && new Set(l).size === l.length; })(), texto(rco));
 revisar('colegios: cuenta sedes y junta las sedes de un mismo colegio', /De las [\d.]+ sedes de colegios/.test(texto(rco)) && !/Torres \(IED\)[^.]*Torres \(IED\)/.test(texto(rco)), texto(rco));
 revisar('colegios: siglas y tildes en los nombres', AA.nombre('COLEGIO REPUBLICA DE PANAMA (IED)') === 'Colegio República de Panamá (IED)' && AA.nombre('SEDE A - MARIA CRISTINA') === 'Sede A - María Cristina' && !/\(Ied\)/.test(texto(rco)));

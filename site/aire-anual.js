@@ -123,14 +123,14 @@
       filas.append(el('li', null, sw, `${D.ETIQUETAS[i]} (${km})`));
     });
     leyendaCaja.replaceChildren(
-      el('p', { clase: 'nota' }, 'Promedio de todo 2025 en µg/m³. La SDA lo interpoló entre las estaciones de la RMCAB y lo entrega en ', String(datos.pm25.features.length), ' franjas; no se midió en cada cuadra. ', B.marca('inferido')),
+      el('p', { clase: 'nota' }, 'Promedio de todo 2025 en µg/m³. La SDA lo interpoló entre las estaciones de la RMCAB y lo entrega en ', String(datos.pm25.features.length), ' franjas; no se midió en cada cuadra. ', B.marca('de_fuente')),
       filas,
       el('p', { clase: 'nota', texto: `Toda la zona urbana que cubre queda entre ${D.coma(min)} y ${D.coma(max)}: de ${D.coma(min / D.OMS)} a ${D.coma(max / D.OMS)} veces la guía de la OMS. La norma colombiana se revisa en cada estación, así que esta superficie no dice si una zona la cumple.` }),
       el('p', { clase: 'nota', texto: 'Sirve para ver dónde el aire de todo el año es peor y qué colegios y sedes de salud quedan ahí. No dice cómo está el aire hoy.' }),
       casilla('colegios', `Colegios (${CUANTOS.colegios.toLocaleString('es-CO')} sedes, SED)`),
       casilla('salud', `Sedes de la red pública de salud (${CUANTOS.salud}, SDS)`),
       el('p', { clase: 'nota', texto: 'Toca una franja, un colegio o una sede para ver su valor. Mientras esta capa está prendida apagamos los pisos de cada construcción, para no mezclar dos colores, y en 3D de lejos quitamos los bloques de cada sector; de cerca siguen los edificios.' }),
-      B.meta({ tipo: 'inferido', licencia: LIC.pm25, fuente: 'SDA, superficie anual de PM2,5 2025' }));
+      B.meta({ tipo: 'de_fuente', licencia: LIC.pm25, fuente: 'SDA, superficie anual de PM2,5 2025' }));
     leyendaCaja.hidden = false;
   }
 
@@ -171,7 +171,7 @@
       return;
     }
     const v = f.properties.pm25, c = D.comparar(v);
-    caja.append(el('div', null, el('b', { texto: 'PM2,5 promedio de 2025: ' }), B.valor(`${D.coma(v)} µg/m³`, 'inferido', true)));
+    caja.append(el('div', null, el('b', { texto: 'PM2,5 de 2025, valor de la franja (SDA): ' }), B.valor(`${D.coma(v)} µg/m³`, 'de_fuente', true)));
     caja.append(el('p', { clase: 'nota', texto: 'Es el valor que la SDA le da a esta franja al interpolar las estaciones de la RMCAB. No se midió en este punto.' }));
     caja.append(el('p', { clase: 'nota', texto: `${c.oms} ${c.norma}` }));
   }
@@ -197,7 +197,7 @@
     caja.append(el('div', { clase: 'nota', texto: salud ? `Red pública de salud, Subred ${pr.r}` : (Number(pr.o) === 1 ? 'Colegio oficial' : 'Colegio no oficial') }));
     bloqueValor(caja, D.franjaEn(datos.pm25, lon, lat));
     caja.append(B.meta({ tipo: 'de_fuente', licencia: salud ? LIC.salud : LIC.colegios, fuente: salud ? 'SDS, red adscrita de salud' : 'SED, colegios, corte del 30 sep 2026' }));
-    caja.append(B.meta({ tipo: 'inferido', licencia: LIC.pm25, fuente: 'SDA, superficie anual de PM2,5 2025' }));
+    caja.append(B.meta({ tipo: 'de_fuente', licencia: LIC.pm25, fuente: 'SDA, superficie anual de PM2,5 2025' }));
     abrir([lon, lat], caja);
     return true;
   }
@@ -209,7 +209,7 @@
     if (!f) return false;
     const caja = el('div', { clase: 'pm25-pop' });
     bloqueValor(caja, f);
-    caja.append(B.meta({ tipo: 'inferido', licencia: LIC.pm25, fuente: 'SDA, superficie anual de PM2,5 2025' }));
+    caja.append(B.meta({ tipo: 'de_fuente', licencia: LIC.pm25, fuente: 'SDA, superficie anual de PM2,5 2025' }));
     abrir(ev.lngLat, caja);
     return true;
   }

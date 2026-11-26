@@ -420,8 +420,8 @@
       const f = lugar ? aa.franjaEn(pm25, punto.lon, punto.lat) : null;
       if (f) {
         const c = aa.comparar(f.properties.pm25);
-        r.bloques.push([`En todo 2025, el promedio en ${lugar.nombre} fue `, v(`${num(f.properties.pm25)} µg/m³`, 'inferido'), '. ', c.oms, ' ', c.norma]);
-        r.procedencia.push({ tipo: 'inferido', fuente: 'SDA, superficie anual de PM2,5 2025', licencia: LIC.ccby });
+        r.bloques.push([`En todo 2025, el promedio en ${lugar.nombre} fue `, v(`${num(f.properties.pm25)} µg/m³`, 'de_fuente'), '. ', c.oms, ' ', c.norma]);
+        r.procedencia.push({ tipo: 'de_fuente', fuente: 'SDA, superficie anual de PM2,5 2025', licencia: LIC.ccby });
         r.capas.push('#ver-pm25');
       } else if (lugar) {
         r.notas.push(`La superficie anual de la SDA no cubre el centro de ${lugar.nombre}.`);
@@ -450,7 +450,7 @@
     const c = aa.comparar(peor);
     const r = nueva('colegios_aire');
     // Cada punto de la SED es una sede: se cuentan sedes y se agrupan por colegio.
-    r.bloques.push([`De las ${entero(con.length)} sedes de colegios de la SED ${lugar ? 'en ' + lugar.nombre + ' ' : ''}con valor en la superficie de 2025, `, v(entero(top.length), 'de_fuente'), top.length === 1 ? ' queda' : ' quedan', ' en la franja con el promedio más alto de 2025: ', v(`${num(peor)} µg/m³`, 'inferido'), '. ', c.oms]);
+    r.bloques.push([`De las ${entero(con.length)} sedes de colegios de la SED ${lugar ? 'en ' + lugar.nombre + ' ' : ''}con valor en la superficie de 2025, `, v(entero(top.length), 'de_fuente'), top.length === 1 ? ' queda' : ' quedan', ' en la franja con el promedio más alto de 2025: ', v(`${num(peor)} µg/m³`, 'de_fuente'), '. ', c.oms]);
     const nom = aa.nombre || propio;
     const total = new Map();
     for (const f of colegios.features || []) total.set(f.properties.n, (total.get(f.properties.n) || 0) + 1);
@@ -472,7 +472,7 @@
     r.bloques.push([nombres.length > 1 ? `Son: ${lista}.` : (/^Colegio /.test(lista) ? 'Es el ' : 'Es ') + lista + '.']);
     r.notas.push('Todos los colegios de una misma franja comparten el mismo valor: es la superficie que interpoló la SDA con sus estaciones, no una medición en cada colegio.');
     r.procedencia.push({ tipo: 'de_fuente', fuente: 'SED, colegios, corte del 30 sep 2026', licencia: LIC.ccbysa });
-    r.procedencia.push({ tipo: 'inferido', fuente: 'SDA, superficie anual de PM2,5 2025', licencia: LIC.ccby });
+    r.procedencia.push({ tipo: 'de_fuente', fuente: 'SDA, superficie anual de PM2,5 2025', licencia: LIC.ccby });
     r.vuelo = { bbox: cajaDe(top) };
     r.capas.push('#ver-pm25');
     r.sugerencias = otras('¿Qué colegios tienen peor aire?');
