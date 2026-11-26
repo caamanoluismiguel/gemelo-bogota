@@ -6,6 +6,6 @@ Un gemelo digital abierto e independiente de Bogotá, hecho con datos públicos:
 
 Cada capa muestra su fuente, su fecha y si el dato es medido, de fuente, inferido, estimado o supuesto.
 
-Estado: en construcción. Todavía no hay visor publicado. Datos vivos: [gemelo-bogota-vivo](https://github.com/caamanoluismiguel/gemelo-bogota-vivo).
+Estado: en construcción. Visor publicado: https://caamanoluismiguel.github.io/gemelo-bogota/ Datos vivos: [gemelo-bogota-vivo](https://github.com/caamanoluismiguel/gemelo-bogota-vivo).
 
 Código bajo AGPL‑3.0 ([LICENSE](LICENSE)). Seguridad: ver [SECURITY.md](SECURITY.md).
