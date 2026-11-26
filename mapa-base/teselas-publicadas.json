@@ -14,13 +14,13 @@
       "licencia": "CC BY 4.0"
     },
     "catastro-pisos-bogota.pmtiles": {
-      "bytes": 54773293,
-      "sha256": "0e639c4e1254653fa759d1bc03c1f30913caf15eda9870290268a029aba75239",
+      "bytes": 54947728,
+      "sha256": "e2c22f254facfd2dc7071eacd3b177bfb8b5b3d5cda5d944d0f8ba4e4b686469",
       "licencia": "CC BY 4.0"
     },
     "catastro-lejos-bogota.pmtiles": {
-      "bytes": 749994,
-      "sha256": "8d2ace6e7092a8024b0fe68f95f2f5079d17e8304dc13adbbe79f82695f8f1e6",
+      "bytes": 813417,
+      "sha256": "1463dc055a6d0237841254524cc33613a03e477eb405844cd30184bf8664fc51",
       "licencia": "CC BY 4.0"
     },
     "terreno-bogota.pmtiles": {
@@ -107,6 +107,11 @@
       "bytes": 2709603,
       "sha256": "01287a4cea0d0de06e8e7421c93c0fe22318b8654620797c18bc24206c7e1208",
       "licencia": "CC BY 4.0"
+    },
+    "osm-3d-bogota.pmtiles": {
+      "bytes": 406932,
+      "sha256": "391114958e6d730e8f926455b367d7734dd256dd6f28e6cd4ddd4cec6b6b8a3b",
+      "licencia": "ODbL 1.0"
     }
   }
 }

@@ -1,97 +1,84 @@
 'use strict';
-// Cajas de Catastro que se esconden porque otra cosa dibuja ese edificio (un hito 3D, por
-// ejemplo). Cada quien que tapa algo lo pide con su nombre:
+// Cajas escondidas: cuando otra fuente dibuja un edificio mejor (las partes de OSM, un hito 3D
+// modelado a mano), lo que queda debajo se esconde para que no asome ni se vea doble.
 //
-//   Bogotwin.cajasOcultas.agregar('hitos:colpatria', { z14: [], z15: [50212], z16: [610071] })
-//   Bogotwin.cajasOcultas.quitar('hitos:colpatria')
+// Uso, desde cualquier módulo:
+//   const C = window.Bogotwin.cajasOcultas;
+//   C.agregar('osm', { cerca: [604430, ...], lejos: [49069, ...] });   // o agregar('osm', [ids])
+//   C.agregar('hitos:colpatria', { cerca: [...], lejos: [...], osm: ['way/1175248695'] });
+//   C.quitar('hitos:colpatria');                                         // vuelven a verse
 //
-// ids: los ids de tippecanoe de la capa «construcciones» en las teselas de Catastro. Las
-// teselas z14 y z15 traen huellas unidas por manzana con otros ids, por eso van por zoom; una
-// lista sola se toma como z16 (cada construcción). Los ids cambian si se rehacen las teselas.
+// Qué va en cada lista:
+//   cerca: id de la construcción en las teselas z16 de catastro-pisos-bogota.pmtiles (cada
+//          construcción; traen la propiedad «tono»).
+//   lejos: id en las teselas z14 y z15 (huellas unidas por manzana; sin «tono», con su propia
+//          numeración, la misma en los dos zooms porque salen del mismo archivo).
+//   osm:   id_osm de las partes de OSM (capa partes-osm-3d), por ejemplo «way/1175248695». Así
+//          un hito no queda doble con la pieza que la gente de OSM dibujó en el mismo sitio.
+// Las numeraciones de Catastro se pueden cruzar, por eso van aparte. Un arreglo simple cuenta
+// como cerca.
 //
-// Se esconden solo en «construcciones-3d» (la capa de cerca). La luz propia de los edificios
-// (edificios-luz.js) dibuja con los mismos búferes de esa capa, así que también deja el hueco.
-// La ciudad lejana (z12 y z13) no se toca: de lejos el hito no se dibuja.
+// Solo cambia el filtro de construcciones-3d y partes-osm-3d. Las sombras (sombras-capa.js) leen
+// las teselas por su cuenta, así que una caja escondida sigue haciendo sombra. La capa de lejos
+// (construcciones-lejos-3d, z12 y z13, otro archivo) no se toca.
 (function (raiz) {
-  const ZOOMS = ['z14', 'z15', 'z16'];
+  const CAPA = 'construcciones-3d';
+  const CAPA_OSM = 'partes-osm-3d';
+  const origenes = new Map();   // origen → { cerca: Set, lejos: Set, osm: Set }
+  let mapa = null;
 
-  function normalizar(ids) {
-    const o = Array.isArray(ids) ? { z16: ids } : (ids || {});
-    const r = {};
-    for (const z of ZOOMS) r[z] = (Array.isArray(o[z]) ? o[z] : []).filter((v) => Number.isFinite(v));
-    return r;
+  const aLista = (v) => (Array.isArray(v) ? v : []).map(Number).filter(Number.isFinite);
+  const aTextos = (v) => (Array.isArray(v) ? v : []).filter((s) => typeof s === 'string' && s);
+
+  function agregar(origen, ids) {
+    const o = Array.isArray(ids) ? { cerca: ids } : (ids || {});
+    origenes.set(String(origen), { cerca: new Set(aLista(o.cerca)), lejos: new Set(aLista(o.lejos)), osm: new Set(aTextos(o.osm)) });
+    aplicar();
   }
 
-  // Une lo pedido por todos: { z14: [...], z15: [...], z16: [...] } sin repetidos.
-  function unir(pedidos) {
-    const r = {};
-    for (const z of ZOOMS) {
-      const s = new Set();
-      for (const p of pedidos) for (const v of p[z]) s.add(v);
-      r[z] = [...s].sort((a, b) => a - b);
-    }
-    return r;
+  function quitar(origen) {
+    if (origenes.delete(String(origen))) aplicar();
   }
 
-  // Filtro de MapLibre: por zoom de tesela (step arriba del todo, como pide la especificación),
-  // fuera los ids pedidos, y siempre junto con el filtro que la capa ya tenía.
-  function filtro(unidos, previo) {
-    const fuera = (ids) => (ids.length ? ['!', ['in', ['id'], ['literal', ids]]] : true);
-    const conPrevio = (e) => (previo ? (e === true ? previo : ['all', previo, e]) : e);
-    if (!ZOOMS.some((z) => unidos[z].length)) return previo || null;
-    return ['step', ['zoom'], conPrevio(fuera(unidos.z14)), 15, conPrevio(fuera(unidos.z15)), 16, conPrevio(fuera(unidos.z16))];
+  function juntar(k) {
+    const s = new Set();
+    for (const o of origenes.values()) for (const id of o[k]) s.add(id);
+    return k === 'osm' ? [...s].sort() : [...s].sort((a, b) => a - b);
   }
 
-  function crear(capas) {
-    const lista = capas || ['construcciones-3d'];
-    const pedidos = new Map();
-    const previos = new Map();   // capa → filtro que tenía antes de esconder nada
-    let mapa = null, puesto = new Map();
-
-    function aplicar() {
-      if (!mapa) return;
-      const unidos = unir([...pedidos.values()]);
-      for (const id of lista) {
-        if (!mapa.getLayer(id)) continue;
-        if (!previos.has(id)) previos.set(id, mapa.getFilter(id) || null);
-        const f = filtro(unidos, previos.get(id));
-        const clave = JSON.stringify(f);
-        if (puesto.get(id) === clave && JSON.stringify(mapa.getFilter(id) || null) === clave) continue;
-        mapa.setFilter(id, f);
-        puesto.set(id, clave);
-        if (!pedidos.size) previos.delete(id);
-      }
-    }
-    // Si alguien rehace la capa (cambio de estilo), se vuelve a poner.
-    function alEstilo() { if (pedidos.size) aplicar(); }
-
-    return {
-      usar(m) {
-        if (mapa === m) return;
-        if (mapa) mapa.off('styledata', alEstilo);
-        mapa = m; puesto = new Map();
-        if (mapa) { mapa.on('styledata', alEstilo); aplicar(); }
-      },
-      agregar(origen, ids) { pedidos.set(String(origen), normalizar(ids)); aplicar(); },
-      quitar(origen) { if (pedidos.delete(String(origen))) aplicar(); },
-      ocultos() { return unir([...pedidos.values()]); },
-      origenes() { return [...pedidos.keys()]; }
-    };
+  // El filtro para la capa de Catastro, o null si no hay nada que esconder. «match» busca en una
+  // tabla, no recorre la lista: con miles de ids no pesa por construcción.
+  function filtro() {
+    const cerca = juntar('cerca'), lejos = juntar('lejos');
+    if (!cerca.length && !lejos.length) return null;
+    const id = ['to-number', ['id'], -1];
+    const uno = (ids) => (ids.length ? ['match', id, ids, false, true] : true);
+    return ['case', ['has', 'tono'], uno(cerca), uno(lejos)];
   }
 
-  const puro = { normalizar, unir, filtro, crear, ZOOMS };
-  if (typeof module === 'object' && module.exports) { module.exports = puro; return; }
+  // El filtro para las partes de OSM, o null.
+  function filtroOsm() {
+    const osm = juntar('osm');
+    return osm.length ? ['match', ['to-string', ['get', 'id_osm']], osm, false, true] : null;
+  }
 
-  const B = raiz.Bogotwin = raiz.Bogotwin || {};
-  const una = crear();
-  // Con el mapa listo (mapa.js deja B.mapaApi), se engancha sola.
-  const enganchar = () => { if (B.mapaApi && B.mapaApi.mapa) una.usar(B.mapaApi.mapa); };
-  B.cajasOcultas = {
-    agregar(origen, ids) { enganchar(); una.agregar(origen, ids); },
-    quitar(origen) { enganchar(); una.quitar(origen); },
-    ocultos: una.ocultos,
-    origenes: una.origenes,
-    usar: una.usar,
-    filtro, normalizar, unir
-  };
+  // Pone los filtros en las capas que ya existan. mapa.js y partes-osm.js lo llaman después de
+  // crear su capa; agregar y quitar lo llaman con el último mapa conocido.
+  function aplicar(m) {
+    if (m) mapa = m;
+    if (!mapa && raiz && raiz.Bogotwin && raiz.Bogotwin.mapaApi) mapa = raiz.Bogotwin.mapaApi.mapa || null;
+    if (!mapa || !mapa.getLayer) return;
+    if (mapa.getLayer(CAPA)) mapa.setFilter(CAPA, filtro());
+    if (mapa.getLayer(CAPA_OSM)) mapa.setFilter(CAPA_OSM, filtroOsm());
+  }
+
+  function cuantas() { return { cerca: juntar('cerca').length, lejos: juntar('lejos').length, osm: juntar('osm').length, origenes: [...origenes.keys()] }; }
+  function lista() { return [...origenes.keys()]; }
+
+  const api = { agregar, quitar, filtro, filtroOsm, aplicar, cuantas, origenes: lista, CAPA, CAPA_OSM };
+  if (typeof module === 'object' && module.exports) module.exports = api;
+  if (raiz && typeof raiz === 'object' && typeof raiz.document !== 'undefined') {
+    raiz.Bogotwin = raiz.Bogotwin || {};
+    raiz.Bogotwin.cajasOcultas = api;
+  }
 })(typeof window !== 'undefined' ? window : globalThis);

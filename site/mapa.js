@@ -47,21 +47,39 @@
   const NOCHE_MATERIAL = '#1c2230';
   let noche = 0;   // 0 de día, 1 de noche; en medio durante el crepúsculo civil (sol de 0 a −6°)
   const MAX_PISOS = 70;
+  const GRIS_SUPUESTO = '#9a958f';
   const neutro = (campo) => {
     const exp = ['match', ['min', MAX_PISOS, ['max', 1, ['round', ['to-number', ['coalesce', ['get', campo], 1], 1]]]]];
     for (let p = 1; p <= MAX_PISOS; p++) exp.push(p, B.mezclarColor(B.colorFachada(p), NOCHE_MATERIAL, 0.62 * noche));
     exp.push(B.colorFachada(1));
     // Ronda 7: con «tono» en la tesela, un color por edificio (comun.js); sin él, por pisos.
-    return campo === 'pisos' ? B.exprFachada(exp, (c) => B.mezclarColor(c, NOCHE_MATERIAL, 0.62 * noche)) : exp;
+    // Ronda 12: con «techo» (z12 a z15), el color medido en la foto 2025 va primero.
+    const deNoche = (c) => B.mezclarColor(c, NOCHE_MATERIAL, 0.62 * noche);
+    // De lejos (sin «techo» ni «tono») los techos medidos salen grises: el supuesto va apagado
+    // hacia ese gris para que lo no medido no resalte más que lo medido.
+    const apagado = exp.map((v, i) => (i > 1 && typeof v === 'string' ? B.mezclarColor(v, deNoche(GRIS_SUPUESTO), 0.55) : v));
+    if (campo !== 'pisos') return exp;
+    // De lejos (z13 o menos) todos los techos, medidos y supuestos, bajan algo de saturación por
+    // igual: el dato no cambia, pero las tejas no compiten con las estaciones ni con el agua.
+    const deLejos = (c) => B.mezclarColor(deNoche(c), deNoche(GRIS_SUPUESTO), 0.35);
+    const apagadoLejos = exp.map((v, i) => (i > 1 && typeof v === 'string' ? B.mezclarColor(v, deNoche(GRIS_SUPUESTO), 0.7) : v));
+    return ['interpolate', ['linear'], ['zoom'],
+      13, B.exprTecho(B.exprFachada(apagadoLejos, deLejos), deLejos),
+      14, B.exprTecho(B.exprFachada(apagado, deNoche), deNoche)];
   };
   const VERDE_2D = ['match', ['get', 'clase'], 'reserva', '#dde9d3', 'paramo', '#e3e8cf', 'bosque', '#bcd6b0', '#cfe3c4'];
   const VERDE_3D = ['match', ['get', 'clase'], 'reserva', '#9fc287', 'paramo', '#b3bf86', 'bosque', '#76a763', '#93c27c'];
   const leyenda = document.getElementById('leyenda');
   for (const c of PISOS_COLOR) { const s = document.createElement('span'); s.style.background = c; leyenda.append(s); }
+  // Muestras de la leyenda «Color de las construcciones»: grises y tejas medidos, ladrillo supuesto.
+  for (const [id, cs] of [['leyenda-techo-medido', [1, 2, 4, 7, 9].map((i) => B.TECHO_COLOR[i])], ['leyenda-techo-supuesto', ['#b4683f', '#8a4634', '#c28b58', '#e4d9c6', '#b8b2a8']]]) {
+    const n = document.getElementById(id);
+    if (n) for (const c of cs) { const s = document.createElement('span'); s.style.background = c; n.append(s); }
+  }
 
   const OSM = '<a href="https://www.openstreetmap.org/copyright">© colaboradores de OpenStreetMap</a> (ODbL)';
   const LIM = 'Límites: SDP y UAECD, Datos Abiertos Bogotá (CC BY 4.0)';
-  const CAT = 'Pisos: UAECD (Catastro Bogotá), Datos Abiertos Bogotá (CC BY 4.0)';
+  const CAT = 'Pisos: UAECD (Catastro Bogotá), Datos Abiertos Bogotá (CC BY 4.0). Color de techo: Ortoimagen 2025 SDP/IDECA, CC BY 4.0. Modificada: color mediano de techo derivado';
   const TM = 'Estaciones: TransMilenio S.A. (CC BY 4.0)';
   const MET = 'Metro L1: Empresa Metro de Bogotá vía IDECA (CC BY 4.0)';
   const SITP = 'Paraderos: GTFS de TransMilenio, 13 oct 2026 (CC BY‑SA 4.0)';
@@ -254,8 +272,10 @@
   // del servicio de IDECA, se pasaron a WebP y van en PMTiles propios junto a los edificios
   // (mapa-base/scripts/orto.sh): el visor no le pide nada a ningún servidor del Distrito.
   // La urbana tiene z16 a z18 en toda la ciudad y z19 solo en el centro (Chapinero, Teusaquillo
-  // y el centro histórico), en un archivo aparte: fuera de esa caja se estira z18. Aparece de a
-  // poco entre z16 y z17. Si una tesela falla o tarda, debajo sigue el mapa de siempre (ver el
+  // y el centro histórico), en un archivo aparte: fuera de esa caja se estira z18. Aparece desde
+  // z15 (ronda 12): con teselas de 256 px el mapa en z15 ya pide la z16, así que no hay archivo
+  // nuevo; antes, en z15, solo estaba la foto de lejos, más borrosa. Llega del todo en z15,5.
+  // Medido el 25 nov 2026 en un teléfono de 390 px a z15,5: 22 pedidos y 475 KB, con la cabecera y los directorios. Si una tesela falla o tarda, debajo sigue el mapa de siempre (ver el
   // aviso de errores más abajo).
   const MODIFICADA = ' Modificada: reproyectada, recortada en teselas y comprimida.';
   const SDP = '<a href="https://www.sdp.gov.co/">SDP</a>';
@@ -270,7 +290,7 @@
   // Más apagada y menos saturada que la foto cruda, para que quede bajo las fachadas de
   // ladrillo y tome la luz de la hora (el tinte y la bruma la tocan como al resto). De noche
   // baja con NOCHE.orto.
-  const ORTO_PINTURA = { 'raster-opacity': ['interpolate', ['linear'], ['zoom'], 16, 0, 17, 1],
+  const ORTO_PINTURA = { 'raster-opacity': ['interpolate', ['linear'], ['zoom'], 15, 0, 15.5, 1],
     'raster-brightness-max': 0.9, 'raster-contrast': -0.08, 'raster-saturation': -0.22, 'raster-fade-duration': 250 };
   // Ronda 7b: los Cerros Orientales con la Ortoimagen Cerros 2025 (25 cm, 14 feb 2025, CC BY 4.0).
   // Desde la vista de calle los cerros quedan a 2,5 a 4 km y se dibujan con teselas z13 a z15,
@@ -311,7 +331,7 @@
       const capas = mapa.getStyle().layers.map((l) => l.id);
       const encima = capas[capas.indexOf('vias') + 1];
       mapa.addLayer({ id: 'orto-cerros', type: 'raster', source: 'orto-cerros', minzoom: 13, metadata: { grupo: 'orto' }, paint: Object.assign({}, ORTO_CERROS_PINTURA) }, encima);
-      mapa.addLayer({ id: 'orto', type: 'raster', source: 'orto', minzoom: 16, metadata: { grupo: 'orto' }, paint: Object.assign({}, ORTO_PINTURA) }, encima);
+      mapa.addLayer({ id: 'orto', type: 'raster', source: 'orto', minzoom: 15, metadata: { grupo: 'orto' }, paint: Object.assign({}, ORTO_PINTURA) }, encima);
       mapa.addLayer({ id: 'orto-cerca', type: 'raster', source: 'orto-cerca', minzoom: 19, metadata: { grupo: 'orto' }, paint: Object.assign({}, ORTO_PINTURA) }, encima);
       // La foto de lejos y el satélite llegan cuando el mapa queda quieto la primera vez (o a
       // los 12 s): así el arranque baja lo mismo que antes y el fondo lejano se completa después.
@@ -387,7 +407,8 @@
   // Lente del 3D: «como-se-ve» (neutro) o «pisos» (coropleta naranja).
   const lente3d = document.getElementById('lente-3d');
   function lenteActual() { const r = lente3d.querySelector('input[name="lente"]:checked'); return r ? r.value : 'como-se-ve'; }
-  const CONSTRUCCIONES_3D = ['construcciones-3d', 'construcciones-lejos-3d'];
+  // partes-osm-3d: los edificios con forma de OpenStreetMap (partes-osm.js), con el mismo color.
+  const CONSTRUCCIONES_3D = ['construcciones-3d', 'construcciones-lejos-3d', 'partes-osm-3d'];
   function colorPor3d(campo) { return lenteActual() === 'pisos' ? pasos(campo) : neutro(campo); }
 
   // Vista de calle (3D con «Cómo se ve»): la ciudad ocupa la pantalla. Al entrar, el panel se
@@ -426,6 +447,8 @@
       const k = b.dataset.capa;
       let si;
       if (k === 'pisos') si = caja3d.checked ? lenteActual() === 'pisos' : !!(cajaPisos && cajaPisos.checked);
+      // Techos: con «Cómo se ve», solo de lejos (z12 a z15), donde el color sale de «techo».
+      else if (k === 'techos') { const z = mapa.getZoom(); si = caja3d.checked && lenteActual() === 'como-se-ve' && z >= 12 && z < 16; }
       else if (k === 'lluvia') si = !!(cajaLluvia && cajaLluvia.checked);
       else { const c = b.querySelector('.bicis-caja'); si = !!c && !c.hidden; }
       b.hidden = !si;
@@ -434,6 +457,8 @@
     leyMapa.hidden = !alguno && (!avisoCapa || avisoCapa.hidden);
   }
   if (leyMapa) {
+    // La de techos depende del zoom: se revisa al terminar cada movimiento.
+    mapa.on('zoomend', ponerLeyenda);
     const vigia = new MutationObserver(ponerLeyenda);
     for (const c of leyMapa.querySelectorAll('.bicis-caja')) vigia.observe(c, { attributes: true, attributeFilter: ['hidden'] });
   }
@@ -465,6 +490,14 @@
       paint: { 'fill-extrusion-color': colorPor3d('pisos'), 'fill-extrusion-height': alto('pisos'), 'fill-extrusion-opacity': 0.95,
         'fill-extrusion-vertical-gradient': false } }, antes);
   }
+  // Edificios con forma de OSM (partes-osm.js): torres, puntas y cúpulas con su alto y su base.
+  // Se agregan cuando el archivo responde; sin él, quedan las cajas de Catastro.
+  function ponerPartesOsm(antes) {
+    if (!B.partesOsm) return;
+    B.partesOsm.poner(mapa, { pmtiles, protocolo, href: new URL('osm-3d-bogota.pmtiles', base).href, attribution: OSM,
+      color: colorPor3d('pisos'), antes, visible: () => caja3d.checked })
+      .then((ok) => { if (ok) { aplicarLente(); if (vistaCalle) alVistaCalle(true); } });
+  }
   function poner3d(ev) {
     const on = caja3d.checked;
     const alArrancar = ev === 'arranque';
@@ -483,6 +516,9 @@
         paint: { 'fill-extrusion-color': colorPor3d('pisos'), 'fill-extrusion-height': alto('pisos'), 'fill-extrusion-opacity': 0.95,
           'fill-extrusion-vertical-gradient': false } }, antes);
       ponerCiudadLejos(antes);
+      // Las cajas que esconden otras fuentes (cajas-ocultas.js) ya tienen dónde aplicarse.
+      if (B.cajasOcultas) B.cajasOcultas.aplicar(mapa);
+      ponerPartesOsm(antes);
     }
     for (const id of ['sectores-3d', ...CONSTRUCCIONES_3D]) if (mapa.getLayer(id)) mapa.setLayoutProperty(id, 'visibility', on ? 'visible' : 'none');
     for (const id of ['pisos-sector', 'construcciones']) mapa.setLayoutProperty(id, 'visibility', on ? 'none' : (document.querySelector('[data-grupo="pisos"]').checked ? 'visible' : 'none'));
@@ -634,12 +670,19 @@
       s.src = 'edificios-luz.js'; s.onload = ok; s.onerror = () => { bajando = null; mal(new Error('edificios-luz.js')); };
       document.head.append(s);
     }));
+    // Una segunda luz para los edificios de OSM (sin tinte: el de la primera ya cubre la escena).
+    let luzPartes = null;
     alVistaCalle = (si) => {
-      if (!si) { if (luz) luz.apagar(mapa); return; }
+      if (!si) { if (luz) luz.apagar(mapa); if (luzPartes) luzPartes.apagar(mapa); return; }
       bajarLuz().then(() => {
         if (!vistaCalle || !mapa.getLayer('construcciones-3d')) return;
         if (!luz) luz = B.luzEdificios.crear({ alFallar: (m) => console.warn('Luz propia de los edificios apagada:', m) });
         if (!luz.estado.error) luz.prender(mapa);
+        if (B.partesOsm && mapa.getLayer(B.partesOsm.CAPA)) {
+          if (!luzPartes) luzPartes = B.luzEdificios.crear({ capaML: B.partesOsm.CAPA, fuente: B.partesOsm.FUENTE, id: 'luz-partes-osm', tinte: false,
+            alFallar: (m) => console.warn('Luz de los edificios de OSM apagada:', m) });
+          if (!luzPartes.estado.error) luzPartes.prender(mapa);
+        }
       }).catch(() => {});
     };
     B.luzEdificios3d = () => luz;
@@ -853,7 +896,7 @@
   if ((B.panelUi && B.panelUi.estado && B.panelUi.estado.pestana === 'probar') || new URLSearchParams(location.search).has('esc')) bajarEscenarios().catch(() => {});
 
   // Ventana con los datos de lo que se toca.
-  const consultables = ['lluvia', 'metro-estaciones', 'troncal', 'paraderos', 'construcciones', 'pisos-sector', 'construcciones-3d', 'construcciones-lejos-3d', 'sectores-3d'];
+  const consultables = ['lluvia', 'metro-estaciones', 'troncal', 'paraderos', 'construcciones', 'pisos-sector', 'partes-osm-3d', 'construcciones-3d', 'construcciones-lejos-3d', 'sectores-3d'];
   function ventana(lngLat, filas, metaArgs, extra) {
     const caja = B.el('div');
     for (const [k, v] of filas) caja.append(B.el('div', null, B.el('b', { texto: k + ': ' }), B.valorFicha(v)));
@@ -882,7 +925,17 @@
     const p = f.properties;
     const id = ({ 'construcciones-3d': 'construcciones', 'construcciones-lejos-3d': 'construcciones', 'sectores-3d': 'pisos-sector' })[f.layer.id] || f.layer.id;
     const ll = f.geometry.type === 'Point' ? f.geometry.coordinates : e.lngLat;
-    if (id === 'construcciones') {
+    if (id === 'partes-osm-3d') {
+      // Edificio de OSM: cada fila con su marca (de fuente, inferido o supuesto).
+      const caja = B.el('div');
+      for (const [k, v, tipo] of B.partesOsm.filas(p)) {
+        const fila = B.el('div', null, B.el('b', { texto: k + ': ' }), String(v));
+        if (tipo) fila.append(' ', B.marca(tipo));
+        caja.append(fila);
+      }
+      caja.append(B.meta({ tipo: 'de_fuente', fuente: 'OpenStreetMap, ODbL', licencia: B.partesOsm.ODBL }));
+      new maplibregl.Popup({ maxWidth: '270px' }).setLngLat(ll).setDOMContent(caja).addTo(mapa);
+    } else if (id === 'construcciones') {
       // Paso 12: con las sombras prendidas, cuánto mide la sombra a la hora elegida.
       const fila = B.solBarra && B.solBarra.filaPopup(p.pisos);
       let extra = null;

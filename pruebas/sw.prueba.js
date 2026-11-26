@@ -188,12 +188,12 @@ function ctxFalso(extra) {
   const ancla2 = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'mapa-base', 'teselas-publicadas.json'), 'utf8'));
   const ctxReal = { ...CTX, teselas: sello.mapaTeselas(ancla2) };
   const nombres = ['catastro-lejos-bogota.pmtiles', 'catastro-pisos-bogota.pmtiles', 'osm-bogota.pmtiles', 'limites-bogota.pmtiles', 'terreno-bogota.pmtiles', 'arboles-bogota.pmtiles',
-    'orto-cerros-bogota.pmtiles', 'orto-lejos-bogota.pmtiles', 'orto-urbana-cerca-bogota.pmtiles', 'satelite-entorno-bogota.pmtiles', 'horizonte-bogota.hzn.gz'];
+    'orto-cerros-bogota.pmtiles', 'orto-lejos-bogota.pmtiles', 'orto-urbana-cerca-bogota.pmtiles', 'satelite-entorno-bogota.pmtiles', 'horizonte-bogota.hzn.gz', 'osm-3d-bogota.pmtiles'];
   for (let i = 1; i <= 8; i++) nombres.push('orto-urbana-bogota-' + i + '.pmtiles');
   revisar('los PMTiles del sitio son «tesela» para el worker', nombres.every((n) => sw.clasificar('GET', BASE + 'teselas/' + n, ctxReal) === 'tesela'), nombres.filter((n) => sw.clasificar('GET', BASE + 'teselas/' + n, ctxReal) !== 'tesela').join());
   revisar('los PMTiles del sitio son los que usa el código', fs.readdirSync(path.join(__dirname, '..', 'site')).filter((f) => f.endsWith('.js')).every((f) => {
     const t = fs.readFileSync(path.join(__dirname, '..', 'site', f), 'utf8');
-    return (t.match(/[a-z0-9-]+\.pmtiles/g) || []).filter((n) => !/^(op|raiz)\.pmtiles$/.test(n)).every((n) => nombres.includes(n) || n.includes('-N.'));
+    return (t.match(/[a-z0-9-]+\.pmtiles/g) || []).filter((n) => !/^(op|ex|raiz)\.pmtiles$/.test(n)).every((n) => nombres.includes(n) || n.includes('-N.'));
   }));
 
   // unpkg: versionado, primero lo guardado; una respuesta opaca no se guarda.
