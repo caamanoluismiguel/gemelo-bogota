@@ -174,7 +174,10 @@ async function atenderTesela(req, ctx) {
   const huella = ctx.teselas[partesClave(req.url.split('?')[0]).nombre];
   const clave = claveTesela(req.url, huella, rango);
   const cache = await ctx.caches.open(CACHE_TESELAS);
-  const guardada = await cache.match(clave);
+  // Tras un despliegue Pages cambia el ETag aunque el archivo sea igual; pmtiles reintenta con
+  // cache:'reload' y ahí hay que ir a la red y reemplazar la copia (si no, EtagMismatch y mapa vacío).
+  // Solo 'reload': Chrome en Windows manda 'no-store' siempre.
+  const guardada = req.cache === 'reload' ? null : await cache.match(clave);
   if (guardada) {
     if (!rango) return guardada;
     return aRespuesta206(guardada, rango.ini, await guardada.arrayBuffer());

@@ -125,6 +125,18 @@ function ctxFalso(extra) {
   await sw.atender(new Request(u, { headers: { Range: 'bytes=200-299' } }), 'tesela', c); await c.vaciar();
   revisar('otro rango: red de nuevo', c.fetch.llamadas.length === 2);
 
+  // Despliegue nuevo con el mismo sello: Pages cambia el ETag. pmtiles reintenta con cache:'reload';
+  // el worker tiene que ir a la red, devolver lo nuevo y reemplazar la copia vieja.
+  const redE2 = async (req) => { const r = await redFalsa()(req); const h = new Headers(r.headers); h.set('etag', '"e2"'); redE2.n++; return new Response(r.body, { status: r.status, headers: h }); };
+  redE2.n = 0;
+  const cR = ctxFalso({ caches: c.caches, fetch: redE2 });
+  const rR = await sw.atender(new Request(u, { headers: { Range: 'bytes=100-199' }, cache: 'reload' }), 'tesela', cR); await cR.vaciar();
+  revisar('recarga (cache:reload): va a la red aunque haya copia', redE2.n === 1 && rR.headers.get('etag') === '"e2"');
+  const rN = await sw.atender(pedir(), 'tesela', cR); await cR.vaciar();
+  revisar('después de la recarga la copia guardada trae el ETag nuevo', redE2.n === 1 && rN.headers.get('etag') === '"e2"', rN.headers.get('etag'));
+  const rS = await sw.atender(new Request(u, { headers: { Range: 'bytes=100-199' }, cache: 'no-store' }), 'tesela', cR); await cR.vaciar();
+  revisar('no-store (Chrome en Windows) sí usa la copia', redE2.n === 1 && rS.status === 206);
+
   // Release nuevo: misma URL, otra huella en el sello, no sirve lo viejo.
   const c2 = ctxFalso({ caches: c.caches, teselas: { ...CTX.teselas, 'osm-bogota.pmtiles': 'aaaaaaaaaaaa' } });
   await sw.atender(pedir(), 'tesela', c2); await c2.vaciar();
