@@ -62,7 +62,12 @@ for (const h of cat.hitos) {
   if (pr) {
     revisar(`${h.id}: una licencia y no es NC`, pr.licencia && typeof pr.licencia.nombre === 'string' && !/NC/.test(pr.licencia.nombre) && pr.licencia.nombre === h.licencia.nombre);
     revisar(`${h.id}: dice cómo se hizo y de dónde salió`, /supuesto|medido/.test(pr.tipo) && Array.isArray(pr.fuentes) && pr.fuentes.length > 0);
-    revisar(`${h.id}: las fotos son solo referencia, no textura`, /solo para mirar la forma/.test(String(pr.referencias_visuales)) && (h.tipo !== 'modelado' || g.partes.every((p) => !p.imagen)));
+    if (h.tipo === 'fotogrametria') {
+      // La textura es la de la medición de otro autor: crédito, licencia y qué le cambiamos.
+      revisar(`${h.id}: fotogrametría con autor, atribución y cambios`, !!(pr.autor && h.autor && /CC BY/.test(String(pr.atribucion)) && pr.atribucion.includes(h.autor) && pr.cambios && pr.ajuste));
+    } else {
+      revisar(`${h.id}: las fotos son solo referencia, no textura`, /solo para mirar la forma/.test(String(pr.referencias_visuales)) && g.partes.every((p) => !p.imagen));
+    }
   }
   revisar(`${h.id}: tipo modelado o fotogrametría`, h.tipo === 'modelado' || h.tipo === 'fotogrametria');
   revisar(`${h.id}: contorno con 3 puntos o más`, Array.isArray(h.contorno) && h.contorno.length >= 3);
@@ -80,7 +85,10 @@ for (const h of cat.hitos) {
   revisar('Colpatria: esconde las tres partes de OSM de la torre', ['way/1175248694', 'way/1175248695', 'way/767352739'].every((i) => col.ocultar.osm.includes(i)));
   revisar('Colpatria: sombra hasta 196 m', col.sombra.some((p) => p.alto === 196));
   revisar('Colpatria: el alto de 196 m va como de fuente', col.altos.some((a) => a.valor === '196 m' && a.tipo === 'de_fuente'));
-  revisar('Virgilio Barco no está en el catálogo', !JSON.stringify(cat).includes('virgilio'));
+  const vb = cat.hitos.find((h) => h.id === 'virgilio-barco');
+  revisar('Virgilio Barco: fotogrametría de arielbustamanteg con CC BY 4.0', !!vb && vb.tipo === 'fotogrametria' && vb.autor === 'arielbustamanteg' && vb.licencia.nombre === 'CC BY 4.0');
+  const fu = fs.readFileSync(path.join(SITE, 'fuentes.html'), 'utf8');
+  revisar('Virgilio Barco: crédito al autor en fuentes.html', fu.includes('arielbustamanteg') && fu.includes('sketchfab.com/3d-models/biblioteca-virgilio-barco'));
 }
 revisar('los hitos juntos pesan menos de 1 MB', totalBytes < 1024 * 1024, totalBytes + ' bytes');
 revisar('al menos dos hitos en el catálogo', IDS.size >= 2);

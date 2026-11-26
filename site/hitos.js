@@ -1,11 +1,13 @@
 'use strict';
 // Hitos 3D en la vista «Cómo se ve»: la Torre Colpatria, la Catedral Primada, el Capitolio y la
-// Plaza de toros La Santamaría con su forma, en vez de la caja de Catastro.
+// Plaza de toros La Santamaría con su forma, en vez de la caja de Catastro, y la Biblioteca
+// Virgilio Barco.
 //
-// Qué es cada modelo lo dice hitos/catalogo.json y el archivo de procedencia de cada uno. Hoy
-// todos están modelados en código a partir de la huella de Catastro y de un alto con fuente
-// pública (pipelines/hitos/modelar.js): son un supuesto ilustrativo, no una medida. El lector
-// también abre modelos de fotogrametría (GLB con textura) para cuando haya uno libre.
+// Qué es cada modelo lo dice hitos/catalogo.json y el archivo de procedencia de cada uno. Los
+// cuatro primeros están modelados en código a partir de la huella de Catastro y de un alto con
+// fuente pública (pipelines/hitos/modelar.js): son un supuesto ilustrativo, no una medida. La
+// Virgilio Barco es una fotogrametría CC BY 4.0 de arielbustamanteg (GLB con textura), recortada
+// y ubicada por pipelines/hitos/fotogrametria.js.
 //
 // Cómo trabaja: una capa propia de MapLibre en 3D (comparte la profundidad con los edificios).
 // Solo baja el modelo de un hito cuando la cámara está a menos de 2 km y el zoom es 14 o más.

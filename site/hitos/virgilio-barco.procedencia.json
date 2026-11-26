@@ -1,0 +1,53 @@
+{
+ "hito": "Biblioteca Virgilio Barco",
+ "archivo": "virgilio-barco.glb",
+ "fecha": "2026-11-26",
+ "autor": "arielbustamanteg (fotogrametría con dron del 5 nov 2016, publicada en Sketchfab)",
+ "licencia": {
+  "nombre": "CC BY 4.0",
+  "url": "https://creativecommons.org/licenses/by/4.0/deed.es"
+ },
+ "atribucion": "«Biblioteca Virgilio Barco» por arielbustamanteg (https://sketchfab.com/3d-models/biblioteca-virgilio-barco-fd45e98d7166409daf9cbe53baf31fc5), CC BY 4.0. Recortado, reducido y ubicado por Bogotwin",
+ "tipo": "fotogrametría (medido por el autor; la ubicación es un ajuste nuestro a la huella de Catastro)",
+ "fuentes": [
+  {
+   "que": "Modelo 3D con textura (434.700 triángulos, textura de 4096 px)",
+   "de": "arielbustamanteg, Sketchfab, «Biblioteca Virgilio Barco»",
+   "licencia": "CC BY 4.0",
+   "url": "https://sketchfab.com/3d-models/biblioteca-virgilio-barco-fd45e98d7166409daf9cbe53baf31fc5"
+  },
+  {
+   "que": "Huella para ubicar, recortar y esconder las cajas",
+   "de": "UAECD, Catastro Bogotá, construcciones (CONST_V2), fid 2176248, 2177122, 2177123, 2177124, 2177669, 2177670",
+   "licencia": "CC BY 4.0",
+   "url": "https://datosabiertos.bogota.gov.co/"
+  }
+ ],
+ "supuestos": [
+  "El modelo no trae coordenadas: lo ubicamos girándolo, escalándolo y corriéndolo hasta que lo que levanta más de 3 m cae sobre las piezas de Catastro con pisos (ver «ajuste»).",
+  "El suelo (y = 0) es la mediana del modelo en una franja de 4 a 12 m por fuera de la huella; las rampas y patios hundidos quedan bajo cero y el relieve del mapa los tapa.",
+  "Es la biblioteca de noviembre de 2016: lo que cambió después no está."
+ ],
+ "referencias_visuales": "Ninguna foto aparte: la textura es la de la fotogrametría del autor, reducida.",
+ "cambios": "Recortado a la huella de Catastro más 3 m (quedan 207977 de 434337 triángulos; fuera el parque alrededor y una pieza sin textura de 378), reducido con meshoptimizer a 10000 triángulos, sin normales (el visor las calcula), las tres texturas de 4096 px reducidas a 1024 px y unidas en una hoja JPEG; lo que el recorte no usa va de un color plano. Ejes pasados a x este, y arriba, z sur, en metros.",
+ "ajuste": {
+  "giro_grados": 0,
+  "escala": 0.9885,
+  "iou": 0.698,
+  "borde_mediana_m": 2,
+  "borde_p90_m": 4.5,
+  "iou_giro_mas_menos_1": [
+   0.686,
+   0.691
+  ],
+  "iou_escala_1": 0.684
+ },
+ "origen": {
+  "lon": -74.0884951,
+  "lat": 4.6570468,
+  "ejes": "x este, y arriba, z sur, en metros; y = 0 en el suelo"
+ },
+ "triangulos": 10000,
+ "vertices": 8351,
+ "bytes": 355840
+}

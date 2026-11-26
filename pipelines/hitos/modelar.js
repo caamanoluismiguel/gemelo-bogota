@@ -330,12 +330,16 @@ function escribir(h) {
 if (require.main === module) {
   fs.mkdirSync(SALIDA, { recursive: true });
   const hitos = [colpatria(), catedral(), santamaria(), capitolio()].map(escribir);
+  // Los de fotogrametría los escribe fotogrametria.js: se quedan como están.
+  const cf = path.join(SALIDA, 'catalogo.json');
+  const antes = fs.existsSync(cf) ? JSON.parse(fs.readFileSync(cf, 'utf8')).hitos : [];
+  for (const h of antes) if (h.tipo === 'fotogrametria') hitos.push(h);
   const catalogo = {
-    _nota: 'Hitos 3D del mapa (site/hitos.js). Lo escribe pipelines/hitos/modelar.js; los ids de «ocultar» son de las teselas publicadas del release indicado y se rehacen con catastro-ids.js.',
+    _nota: 'Hitos 3D del mapa (site/hitos.js). Los modelados los escribe pipelines/hitos/modelar.js y los de fotogrametría pipelines/hitos/fotogrametria.js; los ids de «ocultar» son de las teselas publicadas del release indicado y se rehacen con catastro-ids.js.',
     teselas: ids.teselas,
     hitos
   };
-  fs.writeFileSync(path.join(SALIDA, 'catalogo.json'), JSON.stringify(catalogo, null, 1) + '\n');
+  fs.writeFileSync(cf, JSON.stringify(catalogo, null, 1) + '\n');
   for (const h of hitos) console.log(h.id.padEnd(18), String(h.triangulos).padStart(6), 'triángulos', String(h.bytes).padStart(8), 'bytes');
 }
 
