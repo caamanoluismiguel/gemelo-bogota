@@ -127,6 +127,13 @@
     pintarSellos();
     if (cambio) anunciar();
   });
+  // ahora.json no llegó: la cifra dice «sin dato» en vez de quedarse en «…».
+  window.addEventListener('bogotwin:cielo-falla', () => {
+    if (valores.temp) return;
+    poner('temp', 'franja-temp', 'sin dato');
+    const n = $('franja-sellos');
+    if (n && !sellos.pron) n.textContent = 'Sin dato del cielo por ahora; lo intentamos de nuevo.';
+  });
   window.addEventListener('bogotwin:pronostico', (ev) => {
     const d = ev.detail || {};
     const cambio = poner('lluvia', 'franja-lluvia', Number.isFinite(d.prob) ? `${d.prob} %` : 'sin dato');

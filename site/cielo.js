@@ -162,8 +162,12 @@
     window.dispatchEvent(new CustomEvent('bogotwin:cielo', { detail: j }));
   }
 
-  let primera = true;
+  // Si ahora.json falla, la franja dice «sin dato» y reintentamos a los 30 s, hasta 5 veces
+  // seguidas; después queda la vuelta normal de cada 10 minutos.
+  const REINTENTOS = 5;
+  let primera = true, fallos = 0, reintento = null;
   async function cargarCielo() {
+    clearTimeout(reintento);
     try {
       const r = await fetch(VIVO + 'ahora.json?t=' + Math.floor(Date.now() / 300000), { cache: 'no-cache' });
       if (!r.ok) throw new Error(String(r.status));
@@ -171,8 +175,15 @@
       if (j.esquema !== 'gemelo-bogota/cielo/1') throw new Error('esquema');
       pintarCielo(j);
       primera = false;
+      fallos = 0;
     } catch {
-      if (primera) estado.textContent = 'No pudimos traer los datos del cielo. Revisa tu conexión; lo intentamos de nuevo en 10 minutos.';
+      fallos++;
+      const pronto = fallos <= REINTENTOS;
+      if (pronto) reintento = setTimeout(cargarCielo, 30000);
+      if (primera) {
+        estado.textContent = `No pudimos traer los datos del cielo. Revisa tu conexión; lo intentamos de nuevo en ${pronto ? '30 segundos' : '10 minutos'}.`;
+        window.dispatchEvent(new CustomEvent('bogotwin:cielo-falla'));
+      }
     }
   }
   cargarCielo();
