@@ -126,8 +126,10 @@
         }
         return conAviso(P.responderEdificio({ sector, edificio, lugar }), texto, lugar);
       }
-      case 'no_se': return P.responderNoSe(texto);
-      default: return P.responderNoSe(texto);
+      default: {
+        const lugar = await intento(lugarDe());
+        return P.soloLugar(texto, lugar) ? P.responderLugar(lugar) : P.responderNoSe(texto);
+      }
     }
   }
   // Si la pregunta nombra un sitio que no está en el índice, se dice en vez de contestar callado.

@@ -249,4 +249,9 @@ revisar('los chips de arranque son las mismas preguntas de la lógica', base && 
 revisar('sin estilos en línea ni innerHTML', !/innerHTML|style=|setAttribute\('style'/.test(ui + leer('site/preguntar-logica.js')));
 revisar('sin claves ni servicios de pago', !/api[_-]?key|anthropic|openai|Authorization/i.test(ui + leer('site/preguntar-logica.js')));
 
+// Un nombre de lugar solo vuela al lugar.
+revisar('«kennedy» solo: vuela a la localidad', P.soloLugar('kennedy', lugar('kennedy')) && (() => { const r = P.responderLugar(lugar('kennedy')); return r.sabe && r.vuelo && r.vuelo.bbox && /Te llevo a la localidad Kennedy\./.test(texto(r)) && r.sugerencias.length === 3; })(), texto(P.responderLugar(lugar('kennedy'))));
+revisar('«llévame a Chapinero» también es solo un lugar', P.soloLugar('llévame a Chapinero', lugar('llévame a Chapinero')));
+revisar('«tráfico en kennedy» no es solo un lugar', !P.soloLugar('tráfico en kennedy', lugar('tráfico en kennedy')));
+revisar('sin lugar no vuela', !P.soloLugar('hola', lugar('hola')));
 cierre('Pregúntale a la ciudad');

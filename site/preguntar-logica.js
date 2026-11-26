@@ -540,6 +540,24 @@
     [/arriendo|precio|cuanto cuesta/, 'precios'],
     [/ruido/, 'ruido']
   ];
+  // Un nombre de lugar solo («kennedy», «llévame a chapinero»): volamos ahí y proponemos preguntas
+  // sobre ese sitio. Si sobra algo más en la pregunta, no es esto.
+  const RELLENO = /\b(ir|ve|vamos|llevame|lleveme|muestrame|mostrar|ver|mira|mirar|a|al|en|el|la|los|las|de|del|por|favor|localidad|barrio|sector|upl)\b/g;
+  function soloLugar(texto, lugar) {
+    if (!lugar) return false;
+    const resto = (' ' + normalizar(texto) + ' ').replace(' ' + lugar.clave + ' ', ' ').replace(RELLENO, ' ').trim();
+    return resto === '';
+  }
+  const NIVEL = { localidad: 'la localidad', upl: 'la UPL', sector: 'el sector catastral', barrio: 'el barrio' };
+  function responderLugar(lugar) {
+    const r = nueva('lugar');
+    const donde = lugar.nivel === 'localidad' || !lugar.localidad ? '' : `, en ${lugar.localidad}`;
+    r.bloques.push([`Te llevo a ${NIVEL[lugar.nivel] || ''} ${lugar.nombre}${donde}.`.replace(/\s+/g, ' ')]);
+    r.vuelo = { bbox: lugar.bbox };
+    r.sugerencias = [`¿Cómo está el aire en ${lugar.nombre}?`, `¿Cuál es el edificio más alto de ${lugar.nombre}?`, `¿Qué colegios de ${lugar.nombre} tienen peor aire?`];
+    return r;
+  }
+
   function responderNoSe(texto) {
     const n = normalizar(texto);
     const t = TEMAS.find(([re]) => re.test(n));
@@ -547,7 +565,7 @@
   }
 
   const api = {
-    SUGERENCIAS, CENTRO, ELDORADO, LIC, normalizar, detectarIntencion, prepararIndice, buscarLugar, lugarNombrado, calleEn, puntoDeCalle,
+    SUGERENCIAS, CENTRO, ELDORADO, LIC, normalizar, detectarIntencion, soloLugar, responderLugar, prepararIndice, buscarLugar, lugarNombrado, calleEn, puntoDeCalle,
     distanciaM, enPoligonos, centroAnillo, cajaDe, teselaALonLat, anillosALonLat, teselasDe, enLugar, nocheDe, inicioDia,
     responderLluvia, responderFrio, responderTemperatura, responderUV, responderSol, responderCanales, responderBicis,
     responderAire, responderColegios, sectorMasAlto, edificioEnSector, responderEdificio, responderNoSe, noSe
