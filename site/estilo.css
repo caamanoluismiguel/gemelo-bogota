@@ -482,6 +482,8 @@ body.en-escenario #mapa::after { content: ""; position: absolute; inset: 0; z-in
 .resp-cerrar:hover { background: var(--papel); }
 .resp-accion { margin: 6px 0 2px; min-height: 36px; padding: 0 12px; border: 1px solid var(--acento); border-radius: 6px; background: var(--papel);
   color: var(--acento); font: inherit; font-weight: 600; cursor: pointer; }
+/* Aro sobre el edificio al que vuela una respuesta («Te llevo hasta ella»). */
+.resp-marca { width: 44px; height: 44px; border: 4px solid var(--acento); border-radius: 50%; background: transparent; box-shadow: 0 0 0 2px #fff, inset 0 0 0 2px #fff; pointer-events: none; }
 .chips { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 6px 14px 8px; border-bottom: 1px solid var(--borde); }
 .chips-titulo { flex-basis: 100%; font-size: 12px; color: var(--tinta-2); }
 .chip { min-height: 32px; padding: 4px 10px; border: 1px solid var(--borde); border-radius: 16px; background: var(--papel); color: var(--acento);
