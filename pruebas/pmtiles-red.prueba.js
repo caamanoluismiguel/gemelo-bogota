@@ -121,7 +121,7 @@ const RAPIDO = { esperas: [1, 2] };
   revisar('sectores-3d solo debajo de z12', /id: 'sectores-3d', [^\n]*maxzoom: 12,/.test(mapa));
   revisar('construcciones-lejos-3d de z12 a z14 con catastro-lejos', /id: 'construcciones-lejos-3d', type: 'fill-extrusion', source: 'catastro-lejos', 'source-layer': 'construcciones', minzoom: 12, maxzoom: 14,/.test(mapa) &&
     /addSource\('catastro-lejos', \{ type: 'vector', url: url\('catastro-lejos-bogota\.pmtiles'\), attribution: CAT \}\)/.test(mapa));
-  revisar('la lente, la visibilidad y el toque alcanzan a la capa nueva', /const CONSTRUCCIONES_3D = \['construcciones-3d', 'construcciones-lejos-3d'\];/.test(mapa) &&
+  revisar('la lente, la visibilidad y el toque alcanzan a la capa nueva', /const CONSTRUCCIONES_3D = \['construcciones-3d', 'construcciones-lejos-3d'(, 'partes-osm-3d')?\];/.test(mapa) &&
     /for \(const id of \['sectores-3d', \.\.\.CONSTRUCCIONES_3D\]\)/.test(mapa) && /'construcciones-lejos-3d': 'construcciones'/.test(mapa));
   const e = ancla['catastro-lejos-bogota.pmtiles'];
   revisar('catastro-lejos está en el ancla, pequeño y con CC BY 4.0', !!e && e.bytes < 2e6 && e.licencia === 'CC BY 4.0' && /^[0-9a-f]{64}$/.test(e.sha256));

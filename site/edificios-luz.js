@@ -218,6 +218,7 @@ in vec4 a_normal_ed;
 in vec2 a_centroid;
 in float a_height;
 in vec2 a_color;
+in float a_base;            // piso donde arranca la pieza (partes de OSM); 0 en Catastro
 uniform mat4 u_matriz;
 uniform float u_con_terreno;
 uniform sampler2D u_terrain;
@@ -266,7 +267,8 @@ void main() {
   // calle en pendiente de verdad. Los muros bajan 10 m bajo el suelo, así que nada flota.
   float suelo = terreno ? ESCALON * floor(elevacion(a_centroid) / ESCALON + 0.5) : 0.0;
   // Como MapLibre: con terreno la base baja 10 m para que no quede flotando en una ladera.
-  float h = arriba > 0.0 ? max(0.0, a_height) : (terreno ? -10.0 : 0.0);
+  // Una pieza que arranca en el aire (la torre sobre el zócalo, en OSM) baja hasta su base.
+  float h = arriba > 0.0 ? max(0.0, a_height) : (a_base > 0.0 ? a_base : (terreno ? -10.0 : 0.0));
   gl_Position = u_matriz * vec4(a_pos, suelo + h, 1.0);
   v_base = vec3(desempacar(a_color.x), desempacar(a_color.y).x) / 255.0;
   v_n = normal / 16384.0;
@@ -473,7 +475,7 @@ out vec4 color;
 void main() { color = texture(u_tex, v_uv) * u_alfa; }`;   // MapLibre la guarda premultiplicada
 
   const TIPOS = { Int8: 0x1400, Uint8: 0x1401, Int16: 0x1402, Uint16: 0x1403, Int32: 0x1404, Uint32: 0x1405, Float32: 0x1406 };
-  const LUGAR = { a_pos: 0, a_normal_ed: 1, a_centroid: 2, a_height: 3, a_color: 4 };
+  const LUGAR = { a_pos: 0, a_normal_ed: 1, a_centroid: 2, a_height: 3, a_color: 4, a_base: 5 };
 
   function compilar(gl, tipo, src) {
     const s = gl.createShader(tipo);
@@ -495,9 +497,11 @@ void main() { color = texture(u_tex, v_uv) * u_alfa; }`;   // MapLibre la guarda
 
   // opciones: { capaML ('construcciones-3d'), fuente ('catastro'), id ('luz-edificios'),
   //   lejos ([250, 5000] m: dónde empieza la bruma y su escala), alFallar(motivo),
-  //   fotos (['orto', 'orto-cerca']: capas raster de la foto del piso, de fuente con el mismo id) }
+  //   fotos (['orto', 'orto-cerca']: capas raster de la foto del piso, de fuente con el mismo id),
+  //   tinte (true: pone también el tinte de la hora; una segunda luz, la de las partes de OSM,
+  //   va con false para no teñir la escena dos veces) }
   function crear(opciones) {
-    const op = Object.assign({ capaML: 'construcciones-3d', fuente: 'catastro', id: 'luz-edificios', lejos: [250, 5000], fotos: ['orto', 'orto-cerca'] }, opciones);
+    const op = Object.assign({ capaML: 'construcciones-3d', fuente: 'catastro', id: 'luz-edificios', lejos: [250, 5000], fotos: ['orto', 'orto-cerca'], tinte: true }, opciones);
     let mapa = null, gl = null, prog = null, vao = null, loc = {}, caida = false;
     const est = { activa: false, sinWebGL2: false, error: null, teselas: 0, segmentos: 0, ms: 0, foto: 'sin foto', fotoTeselas: 0, fotoMs: 0, fotoVeces: 0 };
     const m32 = new Float32Array(16);
@@ -805,10 +809,10 @@ void main() { color = texture(u_tex, v_uv) * u_alfa; }`;   // MapLibre la guarda
         const bucket = tile && tile.getBucket(capaML);
         if (!bucket || !bucket.layoutVertexBuffer || !bucket.indexBuffer) continue;
         const pc = bucket.programConfigurations.get(capaML.id);
-        let alto = null, color = null;
+        let alto = null, color = null, base = null;
         for (const vb of pc.getPaintVertexBuffers()) {
           const n = vb.attributes[0] && vb.attributes[0].name;
-          if (n === 'a_height') alto = vb; else if (n === 'a_color') color = vb;
+          if (n === 'a_height') alto = vb; else if (n === 'a_color') color = vb; else if (n === 'a_base') base = vb;
         }
         if (!alto || !color) throw new Error('el alto o el color no vienen por edificio');
         const pd = mapa.transform.getProjectionData({ overscaledTileID: coord, applyGlobeMatrix: true, applyTerrainMatrix: true });
@@ -845,6 +849,13 @@ void main() { color = texture(u_tex, v_uv) * u_alfa; }`;   // MapLibre la guarda
           apuntar(alto, seg.vertexOffset);
           gl.bindBuffer(gl.ARRAY_BUFFER, color.buffer);
           apuntar(color, seg.vertexOffset);
+          if (base) {
+            gl.bindBuffer(gl.ARRAY_BUFFER, base.buffer);
+            apuntar(base, seg.vertexOffset);
+          } else {
+            gl.disableVertexAttribArray(LUGAR.a_base);
+            gl.vertexAttrib1f(LUGAR.a_base, 0);
+          }
           if (conCentroide) {
             gl.bindBuffer(gl.ARRAY_BUFFER, bucket.centroidVertexBuffer.buffer);
             apuntar(bucket.centroidVertexBuffer, seg.vertexOffset);
@@ -940,7 +951,7 @@ void main() { color = texture(u_tex, v_uv) * u_alfa; }`;   // MapLibre la guarda
         const capas = m.getStyle().layers.map((l) => l.id);
         const sig = capas[capas.indexOf(op.capaML) + 1];
         m.addLayer(capa, sig);
-        if (!m.getLayer(IDT)) m.addLayer(capaTinte, m.getLayer('rotulos') ? 'rotulos' : undefined);
+        if (op.tinte && !m.getLayer(IDT)) m.addLayer(capaTinte, m.getLayer('rotulos') ? 'rotulos' : undefined);
         return est.activa;
       },
       apagar(m) {

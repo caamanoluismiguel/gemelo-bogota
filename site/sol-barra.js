@@ -613,7 +613,10 @@
     if (!barra) armarBarra();
     const elegido = T.leerSol(new URLSearchParams(location.search).get('sol'));
     if (elegido) { S.ahora = false; Object.assign(S, elegido); } else { S.ahora = true; tomarAhora(); }
-    sombras = B.sombrasCapa.crear({ pmtiles: api.pmCat, alActualizar });
+    // Las partes de OSM (partes-osm.js) también hacen sombra, con su alto en metros.
+    // Se pregunta en cada tesela: el archivo se abre recién cuando sus metadatos llegaron bien.
+    const extra = () => (B.partesOsm ? B.partesOsm.paraSombras() : null);
+    sombras = B.sombrasCapa.crear({ pmtiles: api.pmCat, alActualizar, extra });
     B.recibirCatastro = sombras.recibir;
     // Orden de abajo arriba: calles, sombra, construcciones. Así la construcción tapa la
     // sombra sobre su propio techo y la sombra sí cae sobre la calle.
