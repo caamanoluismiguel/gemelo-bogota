@@ -12,12 +12,13 @@
 
   const dos = (n) => String(n).padStart(2, '0');
 
-  // Hora del día en minutos a «9:40 a. m.»; las 12:00 en punto son «12 m.».
+  // Hora del día en minutos a «9:40 a. m.»; las 12:00 en punto son «12 m.». Con espacios duros
+  // para que la hora nunca se parta entre dos renglones.
   function horaTexto(min) {
     const m = ((Math.round(min) % 1440) + 1440) % 1440;
-    if (m === 720) return '12 m.';
+    if (m === 720) return '12\u00a0m.';
     const h = Math.floor(m / 60), mm = m % 60;
-    return `${h % 12 || 12}:${dos(mm)} ${h < 12 ? 'a. m.' : 'p. m.'}`;
+    return `${h % 12 || 12}:${dos(mm)}\u00a0${h < 12 ? 'a.\u00a0m.' : 'p.\u00a0m.'}`;
   }
 
   // «lunes, 23 nov»

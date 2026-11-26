@@ -23,17 +23,17 @@ revisar('seis colores sólidos #rrggbb', D.COLORES.length === 6 && D.COLORES.eve
 const luz = (h) => { const n = parseInt(h.slice(1), 16); return 0.2126 * (n >> 16) + 0.7152 * ((n >> 8) & 255) + 0.0722 * (n & 255); };
 revisar('la paleta va de claro a oscuro (se lee en grises)', D.COLORES.every((c, i) => i === 0 || luz(c) < luz(D.COLORES[i - 1])));
 revisar('5 cumple la guía; 5,01 ya no', D.clase(5) === 0 && D.clase(5.01) === 1);
-revisar('25 cumple la norma; 25,1 la pasa', D.clase(25) === 4 && D.clase(25.1) === 5);
+revisar('25 queda bajo el valor de la norma; 25,1 sobre él', D.clase(25) === 4 && D.clase(25.1) === 5);
 revisar('11,04 cae en 10 a 15 y 29,82 en más de 25', D.clase(11.04) === 2 && D.clase(29.82) === 5);
 revisar('una etiqueta por color', D.ETIQUETAS.length === D.COLORES.length);
 
 // 2. Frases de comparación, con coma decimal.
 const c30 = D.comparar(29.82);
-revisar('29,82: 6,0 veces la OMS y pasa la norma', /6,0 veces/.test(c30.oms) && /Pasa la norma anual colombiana/.test(c30.norma), c30.oms + ' ' + c30.norma);
+revisar('29,82: 6,0 veces la OMS y su valor supera el de la norma', /6,0 veces/.test(c30.oms) && /Su valor supera los 25 µg\/m³ de la norma anual colombiana; la norma se revisa en cada estación, no por zona\./.test(c30.norma), c30.oms + ' ' + c30.norma);
 const c18 = D.comparar(18.84);
-revisar('18,84: bajo la norma de hoy pero pasa la de 2030', /bajo la norma anual colombiana de hoy/.test(c18.norma) && /pasa la de 2030/.test(c18.norma));
+revisar('18,84: bajo el valor de la norma y sobre la meta de 2030', /queda bajo los 25/.test(c18.norma) && /sobre los 15 de la meta de 2030/.test(c18.norma));
 const c11 = D.comparar(11.04);
-revisar('11,04: bajo las dos normas', /y bajo la de 2030/.test(c11.norma) && /2,2 veces/.test(c11.oms));
+revisar('11,04: bajo los dos valores', /y bajo los 15 de la meta de 2030/.test(c11.norma) && /2,2 veces/.test(c11.oms));
 revisar('4: dentro de la guía', /dentro de la guía/.test(D.comparar(4).oms));
 revisar('sin punto decimal en las frases', ![c30, c18, c11].some((c) => /\d\.\d/.test(c.oms + c.norma)));
 
@@ -109,12 +109,12 @@ revisar('index.html tiene la casilla y su caja', /id="ver-pm25"[^>]*data-pestana
 const mapa = leer('site/mapa.js');
 revisar('mapa.js baja aire-anual-datos.js y aire-anual.js al prender', /\['aire-anual-datos\.js', 'aire-anual\.js'\]/.test(mapa) && /cajaPm25\.addEventListener\('change'/.test(mapa));
 revisar('mapa.js mira los puntos antes que la ciudad y la franja al final', /B\.aireAnual\.tocarPunto\(e\)/.test(mapa) && /B\.aireAnual\.tocarFranja\(e\)/.test(mapa));
-revisar('aire-anual.js marca el valor como inferido', /B\.valor\(`[^`]*`, 'inferido'/.test(js) && /No se midió en este punto/.test(js));
+revisar('aire-anual.js marca el valor de la SDA como de fuente', /B\.valor\(`[^`]*`, 'de_fuente'/.test(js) && /No se midió en este punto/.test(js));
 revisar('sin degradados en la capa', !/gradient|interpolate-hcl|interpolate-lab/.test(js.replace(/'fill-extrusion-vertical-gradient'/g, '')) && !/\['interpolate', \['linear'\], \['get', 'pm25'\]/.test(js));
 
 // 8. fuentes.html: las tres filas con su licencia.
 const fu = leer('site/fuentes.html');
-revisar('fuentes.html: fila de la superficie, CC BY 4.0, inferido', /PM2,5 promedio de todo 2025 <span class="marca" data-marca="inferido">/.test(fu) && /pm-25-promedio-anual-bogota-d-c/.test(fu));
+revisar('fuentes.html: fila de la superficie, CC BY 4.0, de fuente', /PM2,5 promedio de todo 2025 <span class="marca" data-marca="de_fuente">/.test(fu) && /pm-25-promedio-anual-bogota-d-c/.test(fu));
 revisar('fuentes.html: colegios con CC BY‑SA', /colegios-bogota-d-c[\s\S]{0,400}CC BY‑SA 4\.0/.test(fu));
 revisar('fuentes.html: red de salud con CC BY', /red-adscrita-de-salud-para-bogota[\s\S]{0,400}CC BY 4\.0/.test(fu));
 

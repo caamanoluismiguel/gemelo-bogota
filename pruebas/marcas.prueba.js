@@ -46,6 +46,8 @@ revisar('marcaDe("pronostico") = estimado (JSON viejo)', B && B.marcaDe('pronost
 revisar('marcaDe("estimado") = estimado (JSON nuevo)', B && B.marcaDe('estimado', 'medido') === 'estimado');
 revisar('marcaDe("simulado") cae en la marca por defecto', B && B.marcaDe('simulado', 'estimado') === 'estimado');
 revisar('marcaDe(nada) = de_fuente', B && B.marcaDe(undefined) === 'de_fuente');
+revisar('rango con el mismo formato: 10,3 a 24,0', B && B.numPar(10.3, 24).join(' a ') === '10,3 a 24,0' && B.numPar(10, 24).join(' a ') === '10 a 24', B && B.numPar(10.3, 24).join(' a '));
+revisar('la hora va con espacios duros', B && !/ /.test(B.horaLocal('2026-11-25T02:32:00Z')), B && B.horaLocal('2026-11-25T02:32:00Z'));
 revisar('la lista de marcas ya no tiene simulado', B && !('simulado' in B.MARCAS) && 'inferido' in B.MARCAS);
 
 // 5. Los scripts del pipeline escriben el vocabulario nuevo.

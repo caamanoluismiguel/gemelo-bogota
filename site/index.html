@@ -8,6 +8,17 @@
 <script async src="registrar-sw.js"></script>
 <title>Bogotwin</title>
 <meta name="description" content="Bogotwin, un gemelo digital abierto e independiente de Bogotá: el cielo de hoy, las noches frías, la ciudad por pisos y las estaciones, con la fuente y la fecha de cada dato.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Bogotwin">
+<meta property="og:title" content="Bogotwin, gemelo digital abierto de Bogotá">
+<meta property="og:description" content="El cielo de hoy, la lluvia, el aire, la ciudad por pisos y las estaciones, con la fuente y la fecha de cada dato.">
+<meta property="og:url" content="https://caamanoluismiguel.github.io/gemelo-bogota/">
+<meta property="og:locale" content="es_CO">
+<meta property="og:image" content="https://caamanoluismiguel.github.io/gemelo-bogota/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Edificios de Chapinero en 3D con los cerros orientales de fondo, de día">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.1/dist/maplibre-gl.css" media="print"
   integrity="sha384-uTttxo/aOKbdE5RlD/SPzSDoDmNvGlUYPjONi2MN/b7c9HPSvW07OIuyP7uL6jxK" crossorigin="anonymous">
 <link rel="icon" href="icono.svg" type="image/svg+xml">
@@ -40,8 +51,8 @@
   </header>
 
   <form class="preguntar" id="preguntar" role="search" autocomplete="off">
-    <label for="pregunta" class="oculto">Pregúntale a la ciudad</label>
-    <input id="pregunta" type="search" enterkeyhint="search" maxlength="140" spellcheck="false" placeholder="Pregúntale a la ciudad: ¿va a llover hoy?">
+    <label for="pregunta" class="oculto">Pregúntale a Bogotá</label>
+    <input id="pregunta" type="search" enterkeyhint="search" maxlength="140" spellcheck="false" placeholder="Pregúntale a Bogotá">
     <button type="submit">Preguntar</button>
   </form>
   <div class="respuesta" id="respuesta" aria-live="polite" hidden></div>
@@ -49,9 +60,9 @@
 
   <div class="franja" id="ahora-franja">
     <div class="franja-cifras">
-      <button type="button" class="franja-dato" id="franja-temp" data-ir="ahora" data-tarjeta="cielo"><span class="franja-valor" data-marca="medido">…</span><span class="franja-que">El Dorado</span></button>
-      <button type="button" class="franja-dato" id="franja-lluvia" data-ir="dias" data-tarjeta="pronostico"><span class="franja-valor" data-marca="estimado">…</span><span class="franja-que">lluvia en 24 h</span></button>
-      <button type="button" class="franja-dato" id="franja-aire" data-ir="dias" data-tarjeta="aire"><span class="franja-valor" data-marca="estimado">…</span><span class="franja-que">PM2,5 µg/m³</span></button>
+      <button type="button" class="franja-dato" id="franja-temp" data-ir="ahora" data-tarjeta="cielo" title="Temperatura medida en el aeropuerto El Dorado"><span class="franja-valor" data-marca="medido">…</span><span class="franja-que">El Dorado</span></button>
+      <button type="button" class="franja-dato" id="franja-lluvia" data-ir="dias" data-tarjeta="pronostico" title="Probabilidad máxima de lluvia en las próximas 24 horas"><span class="franja-valor" data-marca="estimado">…</span><span class="franja-que">máx. lluvia 24 h</span></button>
+      <button type="button" class="franja-dato" id="franja-aire" data-ir="dias" data-tarjeta="aire" title="PM2,5 de esta hora, pronóstico de CAMS para toda la ciudad"><span class="franja-valor" data-marca="estimado">…</span><span class="franja-que">PM2,5 µg/m³</span></button>
     </div>
     <p class="franja-sello"><span id="franja-sellos">Trayendo el cielo de ahora…</span>
       <button type="button" id="ayuda-marcas" class="ayuda" aria-expanded="false" aria-controls="marcas-ayuda" aria-label="Cómo leer cada dato">?</button></p>
@@ -188,7 +199,7 @@
     <p class="ley-titulo">Pisos de cada construcción</p>
     <div class="leyenda" id="leyenda" aria-hidden="true"></div>
     <div class="escala" aria-hidden="true"><span>0 a 1</span><span>2</span><span>3</span><span>4 y 5</span><span>6 a 9</span><span>10 a 19</span><span>20+</span></div>
-    <p class="nota">Pisos según Catastro, no altura en metros. De lejos, el promedio de cada sector.</p>
+    <p class="nota">Pisos según Catastro, no altura en metros. De lejos, las construcciones de cada manzana con los mismos pisos van unidas; con la ciudad entera, el promedio del sector.</p>
     <div class="meta"><span class="marca sello" data-marca="de_fuente">de fuente</span><a href="https://creativecommons.org/licenses/by/4.0/deed.es" rel="noopener noreferrer" target="_blank">CC BY 4.0</a><span>UAECD, Catastro Bogotá</span></div>
   </div>
   <div class="ley-bloque" data-capa="techos" hidden>

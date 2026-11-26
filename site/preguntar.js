@@ -126,8 +126,10 @@
         }
         return conAviso(P.responderEdificio({ sector, edificio, lugar }), texto, lugar);
       }
-      case 'no_se': return P.responderNoSe(texto);
-      default: return P.responderNoSe(texto);
+      default: {
+        const lugar = await intento(lugarDe());
+        return P.soloLugar(texto, lugar) ? P.responderLugar(lugar) : P.responderNoSe(texto);
+      }
     }
   }
   // Si la pregunta nombra un sitio que no está en el índice, se dice en vez de contestar callado.
@@ -194,27 +196,59 @@
     ck.dispatchEvent(new Event('change', { bubbles: true }));
     return true;
   }
+  // Una capa de color de una respuesta apaga la de la persona (mapa.js deja una sola de color).
+  // Se guarda cuál apagó para devolverla cuando ya ninguna respuesta tenga una capa de color
+  // prendida; si no, tras dos preguntas el mapa quedaba vacío, sin pisos.
+  const SEL_COLOR = '[data-tipo="color"] > input[type="checkbox"], input[type="checkbox"][data-tipo="color"]';
+  const desplazadas = new Set();
   function prenderSolo(capas) {
+    const nuestras = new Set([...prendidas].map((s) => document.querySelector(s)));
+    const antes = [...document.querySelectorAll(SEL_COLOR)].filter((c) => c.checked && !nuestras.has(c));
     for (const s of [...prendidas]) {
       if (capas.includes(s)) continue;
       prendidas.delete(s);
       poner(s, false);
     }
     for (const s of capas) if (poner(s, true)) prendidas.add(s);
+    for (const c of antes) if (!c.checked) desplazadas.add(c);
+    const quedaColor = [...prendidas].some((s) => { const c = document.querySelector(s); return c && c.matches(SEL_COLOR) && c.checked; });
+    if (quedaColor) return;
+    for (const c of desplazadas) {
+      if (c.checked || c.disabled) continue;
+      c.checked = true;
+      c.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+    desplazadas.clear();
+  }
+  // «Te llevo hasta ella»: un aro sobre el edificio hasta el siguiente vuelo o por 12 s.
+  let marca = null, tMarca = null;
+  function quitarMarca() {
+    clearTimeout(tMarca);
+    if (marca) { marca.remove(); marca = null; }
+  }
+  function marcar(mapa, c) {
+    quitarMarca();
+    if (!c || typeof maplibregl === 'undefined') return;
+    const aro = el('div', { clase: 'resp-marca', 'aria-hidden': 'true' });
+    marca = new maplibregl.Marker({ element: aro, pitchAlignment: 'map', rotationAlignment: 'map' }).setLngLat([c.lon, c.lat]).addTo(mapa);
+    tMarca = setTimeout(quitarMarca, 12000);
   }
   function volar(v) {
     const api = B.mapaApi;
+    quitarMarca();
     if (!v || !api || !api.mapa) return;
     const panel = $('panel');
     const pad = movil.matches
-      ? { top: 24, left: 24, right: 24, bottom: (panel ? panel.offsetHeight : 200) + 24 }
-      : { top: 40, bottom: 40, right: 40, left: (panel ? panel.offsetWidth : 360) + 40 };
+      ? { top: 48, left: 32, right: 32, bottom: (panel ? panel.offsetHeight : 200) + 32 }
+      : { top: 60, bottom: 60, right: 60, left: (panel ? panel.offsetWidth : 360) + 60 };
     try {
       // Una zona entera con la cámara muy inclinada queda casi toda cielo en la franja que deja
       // la hoja: se baja la inclinación, sin subirla si la persona la tenía más plana.
       const pitch = Math.min(api.mapa.getPitch(), movil.matches ? 35 : 50);
-      if (v.bbox) api.mapa.fitBounds([[v.bbox[0], v.bbox[1]], [v.bbox[2], v.bbox[3]]], { padding: pad, maxZoom: 16.5, pitch, freezeElevation: true });
-      else if (v.centro) api.mapa.flyTo({ center: [v.centro.lon, v.centro.lat], zoom: v.zoom || 14, padding: pad, freezeElevation: true });
+      // Hasta z15: una caja chica (dos sedes vecinas) no debe acabar a 50 m de escala.
+      if (v.bbox) api.mapa.fitBounds([[v.bbox[0], v.bbox[1]], [v.bbox[2], v.bbox[3]]], { padding: pad, maxZoom: 15, pitch, freezeElevation: true });
+      else if (v.centro) api.mapa.flyTo({ center: [v.centro.lon, v.centro.lat], zoom: v.zoom || 14, pitch, padding: pad, freezeElevation: true });
+      if (v.marca && v.centro) marcar(api.mapa, v.centro);
     } catch { /* el mapa sin WebGL no vuela; la respuesta igual queda */ }
   }
 

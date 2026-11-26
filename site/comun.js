@@ -104,6 +104,9 @@
 
   const fmt1 = new Intl.NumberFormat('es-CO', { maximumFractionDigits: 1 });
   const num = (x) => fmt1.format(x);
+  // Un rango con los dos extremos en el mismo formato: «10,3 a 24,0», no «10,3 a 24».
+  const fmtFijo1 = new Intl.NumberFormat('es-CO', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  const numPar = (a, b) => (Number.isInteger(Math.round(a * 10) / 10) && Number.isInteger(Math.round(b * 10) / 10) ? [num(a), num(b)] : [fmtFijo1.format(a), fmtFijo1.format(b)]);
   // Lo que va en una fila de ficha: los decimales con coma (3,4 y no 3.4) y lo vacío dice «sin
   // dato». Los enteros quedan tal cual, para no meterle puntos de miles a un código.
   function valorFicha(v) {
@@ -112,12 +115,14 @@
     // Un texto como «3.4» también; «1.624» no, que puede ser un mil con punto.
     return /^-?\d+\.\d{1,2}$/.test(String(v)) ? num(Number(v)) : String(v);
   }
-  const horaLocal = (iso) => new Date(iso).toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit', timeZone: 'America/Bogota' });
+  // Con espacios duros: «9:32 p. m.» nunca se parte entre dos renglones.
+  const horaLocal = (iso) => new Date(iso).toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit', timeZone: 'America/Bogota' }).replace(/\s/g, '\u00a0');
   const fechaLocal = (iso) => new Date(iso).toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'short', timeZone: 'America/Bogota' });
 
   const sinTildes = (s) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
   // Los datos traen las localidades sin tilde; las ponemos con su nombre oficial.
-  const TILDES = { Usaquen: 'Usaquén', Bolivar: 'Bolívar', Engativa: 'Engativá', Fontibon: 'Fontibón', Cristobal: 'Cristóbal', Martires: 'Mártires', Narino: 'Nariño' };
+  const TILDES = { Usaquen: 'Usaquén', Bolivar: 'Bolívar', Engativa: 'Engativá', Fontibon: 'Fontibón', Cristobal: 'Cristóbal', Martires: 'Mártires', Narino: 'Nariño',
+    Maria: 'María', Jose: 'José', Republica: 'República', America: 'América', Panama: 'Panamá', Simon: 'Simón', Fatima: 'Fátima', Belen: 'Belén', Lucia: 'Lucía', Garces: 'Garcés', Galan: 'Galán', Rincon: 'Rincón', Colon: 'Colón', Jardin: 'Jardín', Union: 'Unión', Mexico: 'México', Peru: 'Perú', Japon: 'Japón', Bogota: 'Bogotá' };
   // Los números romanos de los sectores («Tibabuyes II») quedan en mayúscula.
   const ROMANO = /^(?:i{1,3}|iv|vi{0,3}|ix|xi{0,3})$/i;
   const nombrePropio = (s) => s.toLowerCase().replace(/(^|[\s(\-/.])(\p{L})/gu, (_, a, b) => a + b.toUpperCase())
@@ -224,5 +229,5 @@
   }
 
   // Se suma a lo que ya haya (sol.js y sombra-geom.js cuelgan sus piezas aquí también).
-  window.Bogotwin = Object.assign(window.Bogotwin || {}, { el, enlace, marca, marcaDe, sello, meta, valor, edad, edadTexto, minutosDesde, num, valorFicha, horaLocal, fechaLocal, sinTildes, nombrePropio, frase, MARCAS, mezclarColor, mezclarValor, cieloArranque, colorFachada, exprFachada, PALETA_FACHADA, TECHO_COLOR, exprTecho });
+  window.Bogotwin = Object.assign(window.Bogotwin || {}, { el, enlace, marca, marcaDe, sello, meta, valor, edad, edadTexto, minutosDesde, num, numPar, valorFicha, horaLocal, fechaLocal, sinTildes, nombrePropio, frase, MARCAS, mezclarColor, mezclarValor, cieloArranque, colorFachada, exprFachada, PALETA_FACHADA, TECHO_COLOR, exprTecho });
 })();

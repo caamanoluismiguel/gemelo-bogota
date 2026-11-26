@@ -5,10 +5,11 @@ const { revisar, cierre } = require('./util');
 const T = require(path.join(__dirname, '..', 'site', 'sol-texto.js'));
 const G = require(path.join(__dirname, '..', 'site', 'sombra-geom.js'));
 
-revisar('hora 9:40 a. m.', T.horaTexto(580) === '9:40 a. m.', T.horaTexto(580));
-revisar('hora 12 m.', T.horaTexto(720) === '12 m.');
-revisar('hora 6:30 p. m.', T.horaTexto(1110) === '6:30 p. m.');
-revisar('hora 12:05 p. m.', T.horaTexto(725) === '12:05 p. m.');
+revisar('hora 9:40 a. m., con espacios duros', T.horaTexto(580) === '9:40\u00a0a.\u00a0m.', T.horaTexto(580));
+revisar('la hora no se parte: sin espacios normales', ![580, 720, 1110].some((m) => / /.test(T.horaTexto(m))));
+revisar('hora 12 m.', T.horaTexto(720) === '12\u00a0m.');
+revisar('hora 6:30 p. m.', T.horaTexto(1110) === '6:30\u00a0p.\u00a0m.');
+revisar('hora 12:05 p. m.', T.horaTexto(725) === '12:05\u00a0p.\u00a0m.');
 revisar('fecha corta', T.fechaTexto(2026, 11, 23) === 'lunes, 23 nov', T.fechaTexto(2026, 11, 23));
 revisar('día del año y vuelta', [1, 59, 60, 172, 355, 365].every((n) => {
   const f = T.fechaDeDia(2028, n); return T.diaDelAnio(f.anio, f.mes, f.dia) === n;

@@ -44,12 +44,19 @@
   const fmt1 = new Intl.NumberFormat('es-CO', { maximumFractionDigits: 1 });
   const fmt0 = new Intl.NumberFormat('es-CO', { maximumFractionDigits: 0 });
   const num = (x) => fmt1.format(x);
+  // Un rango con los dos extremos en el mismo formato: «10,3 a 24,0», no «10,3 a 24».
+  const fmtFijo1 = new Intl.NumberFormat('es-CO', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  const numPar = (a, b) => (Number.isInteger(Math.round(a * 10) / 10) && Number.isInteger(Math.round(b * 10) / 10) ? [num(a), num(b)] : [fmtFijo1.format(a), fmtFijo1.format(b)]);
   const entero = (x) => fmt0.format(x);
-  const hora = (ms) => new Date(ms).toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit', timeZone: ZONA });
+  const hora = (ms) => new Date(ms).toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit', timeZone: ZONA }).replace(/\s/g, '\u00a0');
   const fecha = (ms) => new Date(ms).toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'short', timeZone: ZONA });
-  const TILDES = { Usaquen: 'Usaquén', Bolivar: 'Bolívar', Engativa: 'Engativá', Fontibon: 'Fontibón', Cristobal: 'Cristóbal', Martires: 'Mártires', Narino: 'Nariño' };
+  const TILDES = { Usaquen: 'Usaquén', Bolivar: 'Bolívar', Engativa: 'Engativá', Fontibon: 'Fontibón', Cristobal: 'Cristóbal', Martires: 'Mártires', Narino: 'Nariño',
+    Maria: 'María', Jose: 'José', Republica: 'República', America: 'América', Panama: 'Panamá', Simon: 'Simón', Fatima: 'Fátima', Belen: 'Belén', Lucia: 'Lucía', Garces: 'Garcés', Galan: 'Galán', Rincon: 'Rincón', Colon: 'Colón', Jardin: 'Jardín', Union: 'Unión', Mexico: 'México', Peru: 'Perú', Japon: 'Japón', Bogota: 'Bogotá' };
   const ROMANO = /^(?:i{1,3}|iv|vi{0,3}|ix|xi{0,3})$/i;
-  const propio = (s) => String(s || '').toLowerCase().replace(/(^|[\s(\-/.])(\p{L})/gu, (_, a, b) => a + b.toUpperCase())
+  // Siglas que llegan en mayúscula y se quedan así: «(IED)», no «(Ied)».
+  const SIGLAS = /^(?:IED|SED|IPS|USS|CAPS|UPA|CAMI|CDI|ESE|SAB|UPZ|UPL|IDIGER|RMCAB)$/;
+  const propio = (s) => String(s || '').replace(/\p{L}+/gu, (w) => (SIGLAS.test(w) ? w : w.toLowerCase()))
+    .replace(/(^|[\s(\-/.])(\p{L})/gu, (_, a, b) => a + b.toUpperCase())
     .replace(/\p{L}+/gu, (w) => TILDES[w] || (ROMANO.test(w) ? w.toUpperCase() : w));
   const v = (texto, marca) => ({ v: texto, m: marca });
 
@@ -210,13 +217,21 @@
     const fin = inicioDia(ahora) + 24 * 3600000;
     const horas = j && Array.isArray(j.horas) ? j.horas.map((h) => ({ t: Date.parse(h.t), prob: h.prob_lluvia_pct, mm: h.lluvia_mm })).filter((h) => h.t >= ahora - 3600000 && h.t < fin && Number.isFinite(h.prob)) : [];
     const tarde = horaBogota(ahora) >= 21;
+    // El mismo número de la franja: la probabilidad más alta de las próximas 24 horas.
+    const prox = j && Array.isArray(j.horas) ? j.horas.map((h) => ({ t: Date.parse(h.t), prob: h.prob_lluvia_pct })).filter((h) => h.t >= ahora && h.t <= ahora + 24 * 3600000 && Number.isFinite(h.prob)) : [];
+    const max24 = prox.length ? prox.reduce((a, h) => (h.prob > a.prob ? h : a)) : null;
+    const cuando = (t) => (inicioDia(t) === inicioDia(ahora) ? 'hoy' : 'mañana') + ' a las ' + hora(t);
     if (horas.length) {
       const max = horas.reduce((a, h) => (h.prob > a.prob ? h : a));
       const mm = horas.reduce((a, h) => a + (Number(h.mm) || 0), 0);
       const juicio = max.prob >= 60 ? 'Es probable que llueva.' : max.prob >= 30 ? 'Puede llover.' : 'No se ve mucha lluvia.';
       r.bloques.push([`Lo que queda de hoy, el pronóstico para El Dorado da hasta `, v(`${max.prob} %`, 'estimado'), ` de probabilidad de lluvia, a las ${hora(max.t)}`, mm > 0 ? ', y en total ' : '.', ...(mm > 0 ? [v(`${num(mm)} mm`, 'estimado'), '.'] : []), ' ', juicio]);
       r.procedencia.push({ tipo: 'estimado', hora: j.generado, viejoMin: 2 * (j.cadencia_min || 60), fuente: 'Open‑Meteo, pronóstico para El Dorado', licencia: LIC.openmeteo });
+      if (max24 && (max24.prob > max.prob || inicioDia(max24.t) !== inicioDia(ahora))) r.bloques.push(['En las próximas 24 horas lo más alto es ', v(`${max24.prob} %`, 'estimado'), `, ${cuando(max24.t)}.`]);
       if (viejo(j.generado, j.cadencia_min, ahora)) r.notas.push('Ojo: el pronóstico no se ha renovado a tiempo.');
+    } else if (max24) {
+      r.bloques.push(['Ya casi termina el día. En las próximas 24 horas, el pronóstico para El Dorado da hasta ', v(`${max24.prob} %`, 'estimado'), ` de probabilidad de lluvia, ${cuando(max24.t)}.`]);
+      r.procedencia.push({ tipo: 'estimado', hora: j.generado, viejoMin: 2 * (j.cadencia_min || 60), fuente: 'Open‑Meteo, pronóstico para El Dorado', licencia: LIC.openmeteo });
     } else {
       r.bloques.push([tarde ? 'Ya casi termina el día y no quedan horas de pronóstico para hoy.' : 'El pronóstico no llegó, así que no te digo una probabilidad.']);
     }
@@ -263,7 +278,7 @@
     }
     if (noches && noches.esquema === 'noches-frias/1') {
       const pr = (noches.pronostico || []).filter((p) => p.noche_que_termina === n.termina && p.rango_c && Number.isFinite(p.rango_c.bajo));
-      for (const p of pr) r.bloques.push([`Siete modelos esperan en ${p.nombre} entre `, v(`${num(p.rango_c.bajo)} y ${num(p.rango_c.alto)} °C`, 'estimado'), ' de mínima.']);
+      for (const p of pr) r.bloques.push([`Siete modelos esperan en ${p.nombre} entre `, v(`${numPar(p.rango_c.bajo, p.rango_c.alto).join(' y ')} °C`, 'estimado'), ' de mínima.']);
       if (pr.length) r.procedencia.push({ tipo: 'estimado', hora: noches.consultado_utc, viejoMin: 30 * 60, fuente: 'rango entre 7 modelos, Open‑Meteo', licencia: LIC.openmeteo });
       const m = (noches.medido || []).find((x) => Number.isFinite(x.minima_c));
       if (m) {
@@ -409,8 +424,8 @@
       const f = lugar ? aa.franjaEn(pm25, punto.lon, punto.lat) : null;
       if (f) {
         const c = aa.comparar(f.properties.pm25);
-        r.bloques.push([`En todo 2025, el promedio en ${lugar.nombre} fue `, v(`${num(f.properties.pm25)} µg/m³`, 'inferido'), '. ', c.oms, ' ', c.norma]);
-        r.procedencia.push({ tipo: 'inferido', fuente: 'SDA, superficie anual de PM2,5 2025', licencia: LIC.ccby });
+        r.bloques.push([`En todo 2025, el promedio en ${lugar.nombre} fue `, v(`${num(f.properties.pm25)} µg/m³`, 'de_fuente'), '. ', c.oms, ' ', c.norma]);
+        r.procedencia.push({ tipo: 'de_fuente', fuente: 'SDA, superficie anual de PM2,5 2025', licencia: LIC.ccby });
         r.capas.push('#ver-pm25');
       } else if (lugar) {
         r.notas.push(`La superficie anual de la SDA no cubre el centro de ${lugar.nombre}.`);
@@ -438,14 +453,30 @@
     const top = con.filter((c) => c.pm === peor).sort((a, b) => (b.f.properties.o || 0) - (a.f.properties.o || 0) || a.f.properties.n.localeCompare(b.f.properties.n, 'es'));
     const c = aa.comparar(peor);
     const r = nueva('colegios_aire');
-    r.bloques.push([`De los ${entero(con.length)} colegios ${lugar ? 'de ' + lugar.nombre : 'de la SED en el mapa'}, `, v(entero(top.length), 'de_fuente'), top.length === 1 ? ' queda' : ' quedan', ' en la franja con el promedio más alto de 2025: ', v(`${num(peor)} µg/m³`, 'inferido'), '. ', c.oms]);
-    // Dos sedes del mismo colegio se distinguen por la sede; un nombre repetido no se dice dos veces.
+    // Cada punto de la SED es una sede: se cuentan sedes y se agrupan por colegio.
+    r.bloques.push([`De las ${entero(con.length)} sedes de colegios de la SED ${lugar ? 'en ' + lugar.nombre + ' ' : ''}con valor en la superficie de 2025, `, v(entero(top.length), 'de_fuente'), top.length === 1 ? ' queda' : ' quedan', ' en la franja con el promedio más alto de 2025: ', v(`${num(peor)} µg/m³`, 'de_fuente'), '. ', c.oms]);
     const nom = aa.nombre || propio;
-    const nombres = [...new Set(top.map((x) => nom(x.f.properties.n) + (x.f.properties.s ? ', ' + nom(x.f.properties.s) : '')))];
-    r.bloques.push([`${top.length === 1 ? 'Es' : 'Son'}: ${nombres.slice(0, 3).join('; ')}${nombres.length > 3 ? ' y ' + entero(nombres.length - 3) + ' más' : ''}.`]);
+    const total = new Map();
+    for (const f of colegios.features || []) total.set(f.properties.n, (total.get(f.properties.n) || 0) + 1);
+    const grupos = new Map();
+    for (const x of top) {
+      const g = grupos.get(x.f.properties.n) || [];
+      g.push(x.f.properties.s);
+      grupos.set(x.f.properties.n, g);
+    }
+    const PAL = ['', 'una', 'dos', 'tres', 'cuatro', 'cinco'];
+    const cuenta = (k) => PAL[k] || entero(k);
+    const nombres = [...grupos].map(([n, sedes]) => {
+      const t = total.get(n) || sedes.length;
+      if (sedes.length === 1) return nom(n) + (sedes[0] && t > 1 ? ', ' + nom(sedes[0]) : '');
+      return nom(n) + (sedes.length === t ? `, en sus ${cuenta(t)} sedes` : `, en ${cuenta(sedes.length)} de sus ${cuenta(t)} sedes`);
+    });
+    const lista = nombres.length === 1 ? nombres[0]
+      : nombres.slice(0, 3).join('; ') + (nombres.length > 3 ? ' y ' + entero(nombres.length - 3) + ' colegios más' : '');
+    r.bloques.push([nombres.length > 1 ? `Son: ${lista}.` : (/^Colegio /.test(lista) ? 'Es el ' : 'Es ') + lista + '.']);
     r.notas.push('Todos los colegios de una misma franja comparten el mismo valor: es la superficie que interpoló la SDA con sus estaciones, no una medición en cada colegio.');
     r.procedencia.push({ tipo: 'de_fuente', fuente: 'SED, colegios, corte del 30 sep 2026', licencia: LIC.ccbysa });
-    r.procedencia.push({ tipo: 'inferido', fuente: 'SDA, superficie anual de PM2,5 2025', licencia: LIC.ccby });
+    r.procedencia.push({ tipo: 'de_fuente', fuente: 'SDA, superficie anual de PM2,5 2025', licencia: LIC.ccby });
     r.vuelo = { bbox: cajaDe(top) };
     r.capas.push('#ver-pm25');
     r.sugerencias = otras('¿Qué colegios tienen peor aire?');
@@ -489,7 +520,7 @@
     const donde = lugar ? `En ${lugar.nombre}` : 'En toda Bogotá';
     r.bloques.push([`${donde}, la construcción con más pisos según Catastro tiene `, v(`${entero(sector.pisos_max)} pisos`, 'de_fuente'), ` y queda en el sector ${propio(sector.nombre)}.`]);
     if (edificio && edificio.pisos === sector.pisos_max) {
-      r.vuelo = { centro: edificio.centro, zoom: 17 };
+      r.vuelo = { centro: edificio.centro, zoom: 17, marca: true };
       r.bloques.push(['Te llevo hasta ella en el mapa.']);
     } else {
       r.vuelo = { bbox: cajaDe(sector.anillos[0].map((p) => ({ lon: p[0], lat: p[1] }))) };
@@ -510,6 +541,24 @@
     [/arriendo|precio|cuanto cuesta/, 'precios'],
     [/ruido/, 'ruido']
   ];
+  // Un nombre de lugar solo («kennedy», «llévame a chapinero»): volamos ahí y proponemos preguntas
+  // sobre ese sitio. Si sobra algo más en la pregunta, no es esto.
+  const RELLENO = /\b(ir|ve|vamos|llevame|lleveme|muestrame|mostrar|ver|mira|mirar|a|al|en|el|la|los|las|de|del|por|favor|localidad|barrio|sector|upl)\b/g;
+  function soloLugar(texto, lugar) {
+    if (!lugar) return false;
+    const resto = (' ' + normalizar(texto) + ' ').replace(' ' + lugar.clave + ' ', ' ').replace(RELLENO, ' ').trim();
+    return resto === '';
+  }
+  const NIVEL = { localidad: 'la localidad', upl: 'la UPL', sector: 'el sector catastral', barrio: 'el barrio' };
+  function responderLugar(lugar) {
+    const r = nueva('lugar');
+    const donde = lugar.nivel === 'localidad' || !lugar.localidad ? '' : `, en ${lugar.localidad}`;
+    r.bloques.push([`Te llevo a ${NIVEL[lugar.nivel] || ''} ${lugar.nombre}${donde}.`.replace(/\s+/g, ' ')]);
+    r.vuelo = { bbox: lugar.bbox };
+    r.sugerencias = [`¿Cómo está el aire en ${lugar.nombre}?`, `¿Cuál es el edificio más alto de ${lugar.nombre}?`, `¿Qué colegios de ${lugar.nombre} tienen peor aire?`];
+    return r;
+  }
+
   function responderNoSe(texto) {
     const n = normalizar(texto);
     const t = TEMAS.find(([re]) => re.test(n));
@@ -517,7 +566,7 @@
   }
 
   const api = {
-    SUGERENCIAS, CENTRO, ELDORADO, LIC, normalizar, detectarIntencion, prepararIndice, buscarLugar, lugarNombrado, calleEn, puntoDeCalle,
+    SUGERENCIAS, CENTRO, ELDORADO, LIC, normalizar, detectarIntencion, soloLugar, responderLugar, prepararIndice, buscarLugar, lugarNombrado, calleEn, puntoDeCalle,
     distanciaM, enPoligonos, centroAnillo, cajaDe, teselaALonLat, anillosALonLat, teselasDe, enLugar, nocheDe, inicioDia,
     responderLluvia, responderFrio, responderTemperatura, responderUV, responderSol, responderCanales, responderBicis,
     responderAire, responderColegios, sectorMasAlto, edificioEnSector, responderEdificio, responderNoSe, noSe

@@ -91,6 +91,11 @@ revisar('lluvia: la probabilidad más alta de lo que queda de hoy (62 %)', cifra
 revisar('lluvia: lo medido por el SAB va como medido', cifras(rl).some((x) => x.v === '3,4 mm' && x.m === 'medido'));
 revisar('lluvia: cuenta solo los pluviómetros con dato de hoy', /1 de 2 pluviómetros/.test(texto(rl).replace(/\s+/g, ' ')), texto(rl));
 revisar('lluvia: prende la capa de lluvia', rl.capas.includes('[data-grupo="lluvia"]'));
+revisar('lluvia: si el máximo de hoy es el de las 24 h, no lo repite', !/próximas 24 horas/.test(texto(rl)), texto(rl));
+// El máximo de las próximas 24 h cae mañana de madrugada: la respuesta lo dice, igual que la franja.
+const pron24 = Object.assign({}, pron, { horas: horasPron.map((h, i) => Object.assign({}, h, { prob_lluvia_pct: i === 2 + 18 ? 88 : h.prob_lluvia_pct })) });
+const rl24 = P.responderLluvia({ pronostico: pron24, cielo, ahora: AHORA });
+revisar('lluvia: dice también el máximo de las próximas 24 h, con su hora', cifras(rl24).some((x) => x.v === '62 %') && cifras(rl24).some((x) => x.v === '88 %') && /próximas 24 horas[^.]*mañana a las 4:00\sa\.\sm\./.test(texto(rl24)), texto(rl24));
 const rl0 = P.responderLluvia({ pronostico: null, cielo: null, ahora: AHORA });
 revisar('lluvia sin datos: «Eso no lo sé todavía», sin cifras', !rl0.sabe && /^Eso no lo sé todavía/.test(texto(rl0)) && cifras(rl0).length === 0);
 revisar('sin datos ofrece las preguntas que sí sabe', rl0.sugerencias.length === P.SUGERENCIAS.length);
@@ -161,7 +166,7 @@ const ra = P.responderAire({ aire: aireJ, ahora: AHORA, lugar: k, pm25: fc, aa: 
 bienFormada('aire', ra);
 revisar('aire: el PM2,5 de esta hora es estimado y para toda la ciudad', cifras(ra).some((x) => x.v === '21,4 µg/m³' && x.m === 'estimado') && /no distingue Kennedy/.test(texto(ra)), texto(ra));
 const fK = AA.franjaEn(fc, k.centro.lon, k.centro.lat);
-revisar('aire: el promedio de 2025 en Kennedy es el de su franja', fK && cifras(ra).some((x) => x.m === 'inferido' && x.v.startsWith(AA.coma ? AA.coma(fK.properties.pm25) : '')), texto(ra));
+revisar('aire: el promedio de 2025 en Kennedy es el de su franja', fK && cifras(ra).some((x) => x.m === 'de_fuente' && x.v.startsWith(AA.coma ? AA.coma(fK.properties.pm25) : '')), texto(ra));
 revisar('aire: compara con la OMS', /guía anual de la OMS/.test(texto(ra)));
 const raV = P.responderAire({ aire: Object.assign({}, aireJ, { generado: '2026-11-25T08:00:00Z' }), ahora: AHORA, lugar: null, pm25: fc, aa: AA });
 revisar('aire con el pronóstico viejo y sin lugar: no lo sé', !raV.sabe);
@@ -171,8 +176,10 @@ const col = json('site/datos/aire/colegios-sed.geojson');
 const rco = P.responderColegios({ colegios: col, pm25: fc, aa: AA, lugar: null });
 bienFormada('colegios', rco);
 const maxFranja = Math.max(...col.features.map((f) => AA.franjaEn(fc, ...f.geometry.coordinates)).filter(Boolean).map((f) => f.properties.pm25));
-revisar('colegios: usa la franja más alta que toca algún colegio', cifras(rco).some((x) => x.m === 'inferido' && x.v === AA.coma(maxFranja) + ' µg/m³'), texto(rco));
-revisar('colegios: nombra hasta tres, sin repetir', /Son: [^.]+/.test(texto(rco)) && (() => { const l = texto(rco).split('Son: ')[1].replace(/\.$/, '').split(/; | y \d/); return new Set(l).size === l.length; })(), texto(rco));
+revisar('colegios: usa la franja más alta que toca algún colegio', cifras(rco).some((x) => x.m === 'de_fuente' && x.v === AA.coma(maxFranja) + ' µg/m³'), texto(rco));
+revisar('colegios: nombra hasta tres, sin repetir', /(Son: |Es el )[^.]+/.test(texto(rco)) && (() => { const l = texto(rco).split(/Son: |Es el /).pop().replace(/\.$/, '').split(/; | y \d/); return l.length <= 3 && new Set(l).size === l.length; })(), texto(rco));
+revisar('colegios: cuenta sedes y junta las sedes de un mismo colegio', /De las [\d.]+ sedes de colegios/.test(texto(rco)) && !/Torres \(IED\)[^.]*Torres \(IED\)/.test(texto(rco)), texto(rco));
+revisar('colegios: siglas y tildes en los nombres', AA.nombre('COLEGIO REPUBLICA DE PANAMA (IED)') === 'Colegio República de Panamá (IED)' && AA.nombre('SEDE A - MARIA CRISTINA') === 'Sede A - María Cristina' && !/\(Ied\)/.test(texto(rco)));
 revisar('colegios: aclara que no es una medición en el colegio', rco.notas.some((n) => /no una medición en cada colegio/.test(n)));
 const rcoK = P.responderColegios({ colegios: col, pm25: fc, aa: AA, lugar: k });
 revisar('colegios en Kennedy: solo de Kennedy (caja)', rcoK.sabe && rcoK.vuelo.bbox[0] >= k.bbox[0] - 1e-9 && rcoK.vuelo.bbox[2] <= k.bbox[2] + 1e-9);
@@ -242,4 +249,10 @@ revisar('los chips de arranque son las mismas preguntas de la lógica', base && 
 revisar('sin estilos en línea ni innerHTML', !/innerHTML|style=|setAttribute\('style'/.test(ui + leer('site/preguntar-logica.js')));
 revisar('sin claves ni servicios de pago', !/api[_-]?key|anthropic|openai|Authorization/i.test(ui + leer('site/preguntar-logica.js')));
 
+revisar('tildes en nombres de lugar: María Cristina', (lugar('maria cristina') || {}).nombre === 'María Cristina', (lugar('maria cristina') || {}).nombre);
+// Un nombre de lugar solo vuela al lugar.
+revisar('«kennedy» solo: vuela a la localidad', P.soloLugar('kennedy', lugar('kennedy')) && (() => { const r = P.responderLugar(lugar('kennedy')); return r.sabe && r.vuelo && r.vuelo.bbox && /Te llevo a la localidad Kennedy\./.test(texto(r)) && r.sugerencias.length === 3; })(), texto(P.responderLugar(lugar('kennedy'))));
+revisar('«llévame a Chapinero» también es solo un lugar', P.soloLugar('llévame a Chapinero', lugar('llévame a Chapinero')));
+revisar('«tráfico en kennedy» no es solo un lugar', !P.soloLugar('tráfico en kennedy', lugar('tráfico en kennedy')));
+revisar('sin lugar no vuela', !P.soloLugar('hola', lugar('hola')));
 cierre('Pregúntale a la ciudad');
