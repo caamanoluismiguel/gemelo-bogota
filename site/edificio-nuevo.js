@@ -355,10 +355,15 @@
     E.modo = nuevo;
     ui.aviso.hidden = nuevo === 'nada';
     mapa.getCanvas().style.cursor = nuevo === 'nada' ? '' : 'crosshair';
-    if (nuevo === 'lote') ui.avisoTexto.textContent = 'Paso 1 de 3: toca una construcción o un punto del mapa. Esa será el lote del edificio nuevo.';
+    if (nuevo === 'lote') ui.avisoTexto.textContent = 'Toca una construcción o un punto del mapa. Esa será el lote del edificio nuevo.';
     if (nuevo === 'patio') ui.avisoTexto.textContent = 'Toca el patio que quieres revisar: el de un colegio, una casa o un parque, fuera del lote.';
     if (nuevo !== 'nada' && api.movil.matches) api.plegar(true);
     ponerTirador();
+  }
+  function cancelarModo() {
+    if (E.modo === 'nada') return;
+    modo('nada');
+    if (!E.esc) pintarPanel();
   }
   function salirModo() {
     modo('nada');
@@ -774,6 +779,12 @@
       armarAviso();
       ponerCapas();
       raiz.addEventListener('bogotwin:sol', () => pedirDibujo(performance.now()));
+      // Elegir el lote o el patio es solo de «Probar»: al irse a otra pestaña o al preguntarle
+      // a la ciudad se cancela, para que el siguiente toque abra la ficha y no un lote.
+      raiz.addEventListener('bogotwin:pestana', (ev) => { if (ev.detail && ev.detail.p !== 'probar') cancelarModo(); });
+      const forma = doc.getElementById('preguntar'), chips = doc.getElementById('preguntas-chips');
+      if (forma) forma.addEventListener('submit', cancelarModo);
+      if (chips) chips.addEventListener('click', (ev) => { if (ev.target.closest('button')) cancelarModo(); });
     }
     if (!mapa.getSource('edn-volumen')) ponerCapas();
     const q = new URLSearchParams(location.search).get('edificio');
@@ -799,8 +810,15 @@
     modo('nada');
     for (const id of FUENTES) poner(id, fc([]));
     escribirUrl();
-    ui.cuerpo.replaceChildren(boton('Probar un edificio', () => { armarPanel(); abrir(); }));
+    ui.cuerpo.replaceChildren(boton('Probar un edificio', () => {
+      // Si al quitarlo se apagaron las sombras, se prenden de nuevo antes de volver a abrir.
+      if (B.sombrasAntesDelEdificio == null) B.sombrasAntesDelEdificio = !!(B.solBarra && B.solBarra.estado.activo);
+      (B.prenderSombras ? B.prenderSombras() : Promise.resolve()).then(() => { armarPanel(); abrir(); }).catch(() => {});
+    }));
     ponerTirador();
+    // Las sombras se prendieron para el edificio: si antes estaban apagadas, se apagan otra vez.
+    if (B.sombrasAntesDelEdificio === false && B.quitarSombras) B.quitarSombras();
+    B.sombrasAntesDelEdificio = null;
   }
 
   B.edificioNuevo = { abrir, cerrar, tomaClic, estado: E, quitarCapas };

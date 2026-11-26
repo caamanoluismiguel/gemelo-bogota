@@ -841,6 +841,8 @@
       const botonEdificio = document.getElementById('edificio-abrir');
       let bajandoEdificio = null;
       const abrirEdificio = () => {
+        // Se anota si las sombras ya estaban: al quitar el edificio vuelven a como estaban.
+        if (!(B.edificioNuevo && B.edificioNuevo.estado.esc) && B.sombrasAntesDelEdificio == null) B.sombrasAntesDelEdificio = cajaSombras.checked;
         if (!bajandoEdificio) {
           bajandoEdificio = B.prenderSombras()
             .then(() => ['edificio-calculo.js', 'edificio-nuevo.js'].reduce((p, f) => p.then(() => new Promise((ok, mal) => {
