@@ -99,7 +99,9 @@ void main() {
 
   // opciones: { pmtiles (instancia de pmtiles.PMTiles del archivo de Catastro), capaFuente
   //   ('construcciones'), id, margen (teselas, 1), maxTeselas (64), dedup (true),
-  //   alActualizar(estado) }
+  //   alActualizar(estado), extra ({ pmtiles, capa }, o una función que lo devuelve o null:
+  //   otro archivo z16 con piezas que también hacen sombra, las partes de OSM; cada pieza trae
+  //   «alto» en metros) }
   function crear(opciones) {
     const op = Object.assign({ id: 'sombras', capaFuente: 'construcciones', margen: 1, maxTeselas: 64, dedup: true, zoomTerreno: 16,
       alzarProfundidad: 3, desfase: [-8, -16], nucleo: 2.5, borde: 4.0, color: '#3b3a36', alfaNucleo: 0.28, alfaBorde: 0.12,
@@ -108,6 +110,7 @@ void main() {
     let sombra = null;            // [m al oriente, m al norte] por m de alto, o null (sol bajo)
     const teselas = new Map();    // "x/y" → { x, y, vao, bufs, n, tipoIdx, unidadesM, listo }
     const crudas = new Map();     // "x/y" → bytes recibidos del protocolo, por procesar
+    const extras = new Map();     // "x/y" → piezas del archivo extra ({ anillos, pisos }), o null mientras baja
     const pedidas = new Set();
     const cola = [];
     let procesando = false;
@@ -174,6 +177,18 @@ void main() {
           }).catch(() => { pedidas.delete(k); });
           continue;
         }
+        // Con archivo extra (partes de OSM), primero sus piezas de esta tesela; luego se arma todo junto.
+        const ex = typeof op.extra === 'function' ? op.extra() : op.extra;
+        if (ex && !extras.has(k)) {
+          extras.set(k, null);
+          const [x, y] = k.split('/').map(Number);
+          const listo = (lista) => { extras.set(k, lista); if (necesarias().has(k)) encolar(k); };
+          ex.pmtiles.getZxy(Z, x, y)
+            .then((r) => listo(piezasExtra(r && r.data ? new Uint8Array(r.data) : null, ex.capa, G.EXTENSION)))
+            .catch(() => listo([]));
+          continue;
+        }
+        if (ex && extras.get(k) === null) continue;
         crudas.delete(k);
         armarTesela(k, bytes);
       }
@@ -186,7 +201,9 @@ void main() {
     function armarTesela(k, bytes) {
       const capa = bytes.length ? B.mvt.leerCapa(bytes, op.capaFuente) : null;
       const ext = capa ? capa.extension : G.EXTENSION;
-      const lista = capa ? capa.objetos.map((o) => ({ anillos: o.anillos, pisos: o.propiedades.pisos })) : [];
+      let lista = capa ? capa.objetos.map((o) => ({ anillos: o.anillos, pisos: o.propiedades.pisos })) : [];
+      const extra = extras.get(k);
+      if (extra && extra.length) lista = lista.concat(ext === G.EXTENSION ? extra : extra.map((c) => escalar(c, ext / G.EXTENSION)));
       armarLista(k, lista, ext);
     }
 
@@ -292,7 +309,7 @@ void main() {
       }
       for (const k of nec) encolar(k);
       if (teselas.size > op.maxTeselas) {
-        for (const k of [...teselas.keys()]) if (!nec.has(k)) { soltar(k); rearmar.delete(k); }
+        for (const k of [...teselas.keys()]) if (!nec.has(k)) { soltar(k); rearmar.delete(k); extras.delete(k); }
       }
       for (const k of [...crudas.keys()]) if (!nec.has(k)) crudas.delete(k);
       contar();
@@ -549,5 +566,26 @@ void main() {
     };
   }
 
-  B.sombrasCapa = { crear, matrizTesela };
+  // Piezas de un archivo extra (partes de OSM) como construcciones para la sombra: el alto en
+  // metros pasa a «pisos» de 3 m (la sombra mide pisos × u_m_piso) y los anillos a la
+  // extensión de las teselas de Catastro. Una pieza que arranca en el aire (base) hace sombra
+  // desde el suelo: más larga no queda, porque la sombra de un piso alto cae más lejos igual.
+  function piezasExtra(bytes, capa, extDestino) {
+    const c = bytes && bytes.length ? B.mvt.leerCapa(bytes, capa) : null;
+    if (!c) return [];
+    const k = (extDestino || G.EXTENSION) / c.extension;
+    const salida = [];
+    for (const o of c.objetos) {
+      const alto = Number(o.propiedades.alto);
+      if (!(alto > 0)) continue;
+      salida.push(escalar({ anillos: o.anillos, pisos: Math.max(1, alto / 3) }, k));
+    }
+    return salida;
+  }
+  function escalar(c, k) {
+    if (k === 1) return c;
+    return { anillos: c.anillos.map((r) => r.map((p) => [p[0] * k, p[1] * k])), pisos: c.pisos };
+  }
+
+  B.sombrasCapa = { crear, matrizTesela, piezasExtra };
 })(window);

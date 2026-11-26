@@ -387,7 +387,8 @@
   // Lente del 3D: «como-se-ve» (neutro) o «pisos» (coropleta naranja).
   const lente3d = document.getElementById('lente-3d');
   function lenteActual() { const r = lente3d.querySelector('input[name="lente"]:checked'); return r ? r.value : 'como-se-ve'; }
-  const CONSTRUCCIONES_3D = ['construcciones-3d', 'construcciones-lejos-3d'];
+  // partes-osm-3d: los edificios con forma de OpenStreetMap (partes-osm.js), con el mismo color.
+  const CONSTRUCCIONES_3D = ['construcciones-3d', 'construcciones-lejos-3d', 'partes-osm-3d'];
   function colorPor3d(campo) { return lenteActual() === 'pisos' ? pasos(campo) : neutro(campo); }
 
   // Vista de calle (3D con «Cómo se ve»): la ciudad ocupa la pantalla. Al entrar, el panel se
@@ -465,6 +466,14 @@
       paint: { 'fill-extrusion-color': colorPor3d('pisos'), 'fill-extrusion-height': alto('pisos'), 'fill-extrusion-opacity': 0.95,
         'fill-extrusion-vertical-gradient': false } }, antes);
   }
+  // Edificios con forma de OSM (partes-osm.js): torres, puntas y cúpulas con su alto y su base.
+  // Se agregan cuando el archivo responde; sin él, quedan las cajas de Catastro.
+  function ponerPartesOsm(antes) {
+    if (!B.partesOsm) return;
+    B.partesOsm.poner(mapa, { pmtiles, protocolo, href: new URL('osm-3d-bogota.pmtiles', base).href, attribution: OSM,
+      color: colorPor3d('pisos'), antes, visible: () => caja3d.checked })
+      .then((ok) => { if (ok) { aplicarLente(); if (vistaCalle) alVistaCalle(true); } });
+  }
   function poner3d(ev) {
     const on = caja3d.checked;
     const alArrancar = ev === 'arranque';
@@ -483,6 +492,9 @@
         paint: { 'fill-extrusion-color': colorPor3d('pisos'), 'fill-extrusion-height': alto('pisos'), 'fill-extrusion-opacity': 0.95,
           'fill-extrusion-vertical-gradient': false } }, antes);
       ponerCiudadLejos(antes);
+      // Las cajas que esconden otras fuentes (cajas-ocultas.js) ya tienen dónde aplicarse.
+      if (B.cajasOcultas) B.cajasOcultas.aplicar(mapa);
+      ponerPartesOsm(antes);
     }
     for (const id of ['sectores-3d', ...CONSTRUCCIONES_3D]) if (mapa.getLayer(id)) mapa.setLayoutProperty(id, 'visibility', on ? 'visible' : 'none');
     for (const id of ['pisos-sector', 'construcciones']) mapa.setLayoutProperty(id, 'visibility', on ? 'none' : (document.querySelector('[data-grupo="pisos"]').checked ? 'visible' : 'none'));
@@ -634,12 +646,19 @@
       s.src = 'edificios-luz.js'; s.onload = ok; s.onerror = () => { bajando = null; mal(new Error('edificios-luz.js')); };
       document.head.append(s);
     }));
+    // Una segunda luz para los edificios de OSM (sin tinte: el de la primera ya cubre la escena).
+    let luzPartes = null;
     alVistaCalle = (si) => {
-      if (!si) { if (luz) luz.apagar(mapa); return; }
+      if (!si) { if (luz) luz.apagar(mapa); if (luzPartes) luzPartes.apagar(mapa); return; }
       bajarLuz().then(() => {
         if (!vistaCalle || !mapa.getLayer('construcciones-3d')) return;
         if (!luz) luz = B.luzEdificios.crear({ alFallar: (m) => console.warn('Luz propia de los edificios apagada:', m) });
         if (!luz.estado.error) luz.prender(mapa);
+        if (B.partesOsm && mapa.getLayer(B.partesOsm.CAPA)) {
+          if (!luzPartes) luzPartes = B.luzEdificios.crear({ capaML: B.partesOsm.CAPA, fuente: B.partesOsm.FUENTE, id: 'luz-partes-osm', tinte: false,
+            alFallar: (m) => console.warn('Luz de los edificios de OSM apagada:', m) });
+          if (!luzPartes.estado.error) luzPartes.prender(mapa);
+        }
       }).catch(() => {});
     };
     B.luzEdificios3d = () => luz;
@@ -828,7 +847,7 @@
   if ((B.panelUi && B.panelUi.estado && B.panelUi.estado.pestana === 'probar') || new URLSearchParams(location.search).has('esc')) bajarEscenarios().catch(() => {});
 
   // Ventana con los datos de lo que se toca.
-  const consultables = ['lluvia', 'metro-estaciones', 'troncal', 'paraderos', 'construcciones', 'pisos-sector', 'construcciones-3d', 'construcciones-lejos-3d', 'sectores-3d'];
+  const consultables = ['lluvia', 'metro-estaciones', 'troncal', 'paraderos', 'construcciones', 'pisos-sector', 'partes-osm-3d', 'construcciones-3d', 'construcciones-lejos-3d', 'sectores-3d'];
   function ventana(lngLat, filas, metaArgs, extra) {
     const caja = B.el('div');
     for (const [k, v] of filas) caja.append(B.el('div', null, B.el('b', { texto: k + ': ' }), B.valorFicha(v)));
@@ -851,7 +870,17 @@
     const p = f.properties;
     const id = ({ 'construcciones-3d': 'construcciones', 'construcciones-lejos-3d': 'construcciones', 'sectores-3d': 'pisos-sector' })[f.layer.id] || f.layer.id;
     const ll = f.geometry.type === 'Point' ? f.geometry.coordinates : e.lngLat;
-    if (id === 'construcciones') {
+    if (id === 'partes-osm-3d') {
+      // Edificio de OSM: cada fila con su marca (de fuente, inferido o supuesto).
+      const caja = B.el('div');
+      for (const [k, v, tipo] of B.partesOsm.filas(p)) {
+        const fila = B.el('div', null, B.el('b', { texto: k + ': ' }), String(v));
+        if (tipo) fila.append(' ', B.marca(tipo));
+        caja.append(fila);
+      }
+      caja.append(B.meta({ tipo: 'de_fuente', fuente: 'OpenStreetMap, ODbL', licencia: B.partesOsm.ODBL }));
+      new maplibregl.Popup({ maxWidth: '270px' }).setLngLat(ll).setDOMContent(caja).addTo(mapa);
+    } else if (id === 'construcciones') {
       // Paso 12: con las sombras prendidas, cuánto mide la sombra a la hora elegida.
       const fila = B.solBarra && B.solBarra.filaPopup(p.pisos);
       let extra = null;

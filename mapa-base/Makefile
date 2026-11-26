@@ -2,9 +2,9 @@
 # Uso desde mapa-base/:  make todo   |  make bajar  |  make limites  |  make osm  |  make catastro
 # Herramientas: brew install tippecanoe pmtiles osmium-tool duckdb
 .NOTPARALLEL:
-.PHONY: todo bajar limites osm catastro arboles orto orto-bajar buscador medir manifiesto servir
+.PHONY: todo bajar limites osm osm3d catastro arboles orto orto-bajar buscador medir manifiesto servir
 
-todo: bajar limites osm catastro arboles buscador medir manifiesto
+todo: bajar limites osm catastro osm3d arboles buscador medir manifiesto
 
 bajar:
 	sh scripts/bajar.sh
@@ -18,6 +18,11 @@ osm: limites
 
 catastro:
 	nice -n 10 sh scripts/catastro.sh
+
+# Edificios con forma (partes de OSM con alto, base y techo). Lee el extracto de osm y el archivo
+# de catastro para comparar alturas y saber qué cajas tapar; sale un archivo aparte, ODbL.
+osm3d:
+	sh scripts/osm3d.sh
 
 arboles:
 	nice -n 10 sh scripts/arboles.sh
