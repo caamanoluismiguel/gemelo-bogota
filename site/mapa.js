@@ -670,6 +670,31 @@
     if (vistaCalle) alArboles(true);
   }
 
+  // Hitos 3D (hitos.js): la Colpatria, la Catedral Primada, el Capitolio y la Santamaría con su
+  // forma, solo en la vista de calle, con WebGL2 y a menos de 2 km. Esconden su caja de
+  // Catastro (cajas-ocultas.js) mientras se dibujan; si algo falla, vuelven las cajas.
+  if (conWebGL2) {
+    let hitos = null, bajandoHit = null;
+    const bajarUno = (f) => new Promise((ok, mal) => {
+      const s = document.createElement('script');
+      s.src = f; s.onload = ok; s.onerror = () => mal(new Error(f));
+      document.head.append(s);
+    });
+    const bajarHitos = () => bajandoHit || (bajandoHit = (B.cajasOcultas ? Promise.resolve() : bajarUno('cajas-ocultas.js'))
+      .then(() => bajarUno('hitos.js')).catch((e) => { bajandoHit = null; throw e; }));
+    const alHitos = (si) => {
+      if (!si) { if (hitos) hitos.apagar(mapa); return; }
+      bajarHitos().then(() => {
+        if (!vistaCalle) return;
+        if (!hitos) hitos = B.hitos3d.crear({ catalogo: 'hitos/catalogo.json', alFallar: (m) => console.warn('Hitos 3D apagados:', m) });
+        hitos.prender(mapa);
+      }).catch(() => {});
+    };
+    window.addEventListener('bogotwin:vista-calle', (e) => alHitos(e.detail.on));
+    B.hitosCapa = () => hitos;
+    if (vistaCalle) alHitos(true);
+  }
+
   if (cajaSombras) {
     if (!conWebGL2) {
       // Sin WebGL2 no hay sombras ni escenario; la pestaña «Probar» (.solo-sombras) se va con ellos.
@@ -843,6 +868,12 @@
     if (B.aireAnual && B.aireAnual.tocarPunto(e)) return;
     if (B.canales && B.canales.tocar(e)) return;
     if (B.frecuencia && B.frecuencia.tocar(e)) return;
+    // Un hito 3D no sale en queryRenderedFeatures (es una capa propia): se mira su silueta.
+    const hito = B.hitosCapa && B.hitosCapa() && B.hitosCapa().tocar(e);
+    if (hito) {
+      ventana(e.lngLat, hito.filas, hito.meta, hito.procedencia ? B.el('div', null, B.enlace(hito.procedencia, 'Cómo se hizo este modelo')) : null);
+      return;
+    }
     const capas = consultables.filter(id => mapa.getLayer(id) && mapa.getLayoutProperty(id, 'visibility') !== 'none');
     const caja = [[e.point.x - 6, e.point.y - 6], [e.point.x + 6, e.point.y + 6]];
     const f = mapa.queryRenderedFeatures(caja, { layers: capas })[0];
