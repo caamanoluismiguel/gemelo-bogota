@@ -1,8 +1,8 @@
 # Mapa base de Bogotá. Cada paso pesado corre en serie (make no paraleliza aquí).
-# Uso desde mapa-base/:  make todo   |  make bajar  |  make limites  |  make osm  |  make catastro
+# Uso desde mapa-base/:  make todo   |  make bajar  |  make limites  |  make osm  |  make catastro  |  make techos
 # Herramientas: brew install tippecanoe pmtiles osmium-tool duckdb
 .NOTPARALLEL:
-.PHONY: todo bajar limites osm catastro arboles orto orto-bajar buscador medir manifiesto servir
+.PHONY: todo bajar limites osm techos catastro arboles orto orto-bajar buscador medir manifiesto servir
 
 todo: bajar limites osm catastro arboles buscador medir manifiesto
 
@@ -15,6 +15,9 @@ limites:
 # osm recorta con salida/trabajo/bogota-dc.geojson, que sale de limites
 osm: limites
 	nice -n 10 sh scripts/osm.sh
+
+techos:
+	nice -n 10 sh scripts/techos.sh
 
 catastro:
 	nice -n 10 sh scripts/catastro.sh

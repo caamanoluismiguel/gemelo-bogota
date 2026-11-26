@@ -18,16 +18,33 @@ COPY (
   FROM ST_Read('salida/trabajo/catastro/CONST.gpkg')
 ) TO 'salida/trabajo/catastro/construcciones.fgb' WITH (FORMAT GDAL, DRIVER 'FlatGeobuf', SRS 'EPSG:4326');
 
--- Construcciones lejanas (z14 y z15, solo para el fondo de la vista inclinada): las de una
+-- Construcciones lejanas (z12 a z15, solo para el fondo de la vista inclinada): las de una
 -- misma manzana y el mismo número de pisos se unen en una sola huella y se simplifican a
 -- ~1 m. Los pisos siguen siendo los de Catastro, sin promedios. Manzana = 9 primeros
 -- dígitos del código de lote; sin lote, cada construcción va sola.
-COPY (
-  SELECT CONNPISOS::INTEGER AS pisos,
-         ST_SimplifyPreserveTopology(ST_Union_Agg(ST_MakeValid(geom)), 0.00001) AS geom
+-- techo: color de techo medido en la Ortoimagen 2025 (SDP/IDECA, CC BY 4.0) por
+-- scripts/techos.sh, índice de la paleta corta TECHO_COLOR de site/comun.js. Por grupo va
+-- el color que cubre más área; si menos de la mitad del área del grupo tiene color medido,
+-- el grupo queda sin techo y el visor usa su paleta supuesta. Medido el 25 nov 2026: partir
+-- los grupos por color sumaba 62 KB por vista en z15; con un solo color por grupo, nada.
+CREATE TEMP TABLE k AS
+  SELECT coalesce(left(LOTECODIGO, 9), CONCODIGO) AS manzana, CONNPISOS::INTEGER AS pisos,
+         SHAPE_AREA AS a, t.techo, geom
   FROM ST_Read('salida/trabajo/catastro/CONST.gpkg')
-  GROUP BY coalesce(left(LOTECODIGO, 9), CONCODIGO), CONNPISOS
+  LEFT JOIN read_csv('salida/trabajo/catastro/techos.csv',
+                     types = {'fid': 'BIGINT', 'techo': 'INTEGER', 'techo_q': 'INTEGER'}) t USING (fid);
+CREATE TEMP TABLE kt AS
+  SELECT manzana, pisos, arg_max(techo, area) AS techo, sum(area) AS a_medida
+  FROM (SELECT manzana, pisos, techo, sum(a) AS area FROM k WHERE techo IS NOT NULL GROUP BY ALL)
+  GROUP BY ALL;
+COPY (
+  SELECT g.pisos, CASE WHEN kt.a_medida >= 0.5 * g.a THEN kt.techo END AS techo, g.geom
+  FROM (SELECT manzana, pisos, sum(a) AS a,
+               ST_SimplifyPreserveTopology(ST_Union_Agg(ST_MakeValid(geom)), 0.00001) AS geom
+        FROM k GROUP BY manzana, pisos) g
+  LEFT JOIN kt USING (manzana, pisos)
 ) TO 'salida/trabajo/catastro/construcciones_lejos.fgb' WITH (FORMAT GDAL, DRIVER 'FlatGeobuf', SRS 'EPSG:4326');
+DROP TABLE k;
 
 -- Resumen por sector catastral para la vista de ciudad (z11 a z13): pisos promedio
 -- ponderado por área construida en planta y conteo. Sale de los mismos datos CC BY.

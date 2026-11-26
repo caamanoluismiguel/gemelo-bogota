@@ -8,6 +8,8 @@ export TMPDIR="$T"
 N="nice -n 10"
 [ -f "$K/CONST.gpkg" ] || $N unzip -o -q salida/crudos/construcciones.gpkg.zip -d "$K"
 [ -f "$T/sector/SECTOR.gpkg" ] || unzip -o -q salida/crudos/sector-catastral.gpkg.zip -d "$T/sector"
+# Sin techos.csv (make techos no ha corrido) se arma igual, todo con la paleta supuesta.
+[ -f "$K/techos.csv" ] || echo "fid,techo,techo_q" > "$K/techos.csv"
 rm -f "$K/construcciones.fgb" "$K/construcciones_lejos.fgb" "$K/pisos_por_sector.geojsonseq"
 $N duckdb -no-agent -csv < scripts/catastro.sql
 
@@ -25,21 +27,24 @@ $TC -o "$K/construcciones.pmtiles" -l construcciones -Z16 -z16 --read-parallel -
 # Construcciones lejanas: z14 y z15 con las huellas unidas por manzana y pisos, a poca
 # resolución (-d8, -D7: unos 5 m en z15). Con la cámara inclinada el fondo llega en estas
 # teselas; sin ellas el fondo queda vacío. Medido el 24 nov 2026: +4,6 MB al archivo,
-# tesela z15 más pesada 31 KB. Sin tono: de lejos el visor colorea por pisos.
-$TC -o "$K/construcciones_lejos.pmtiles" -l construcciones -Z14 -z15 --read-parallel -y pisos -T pisos:int \
+# tesela z15 más pesada 31 KB. Sin tono: de lejos el visor colorea por pisos, o por techo
+# donde hay color medido en la foto 2025 (scripts/techos.sh).
+$TC -o "$K/construcciones_lejos.pmtiles" -l construcciones -Z14 -z15 --read-parallel \
+  -y pisos -y techo -T pisos:int -T techo:int \
   --simplification=4 -d8 -D7 "$K/construcciones_lejos.fgb"
 $N tile-join --force --no-tile-size-limit -o salida/catastro-pisos-bogota.pmtiles \
   -n "Construcciones de Catastro con pisos" \
   -N "Huella de cada construcción con número de pisos y sótanos (no es altura en metros)" \
-  -A 'UAECD (Catastro Bogotá), Datos Abiertos Bogotá, CC BY 4.0' \
+  -A 'UAECD (Catastro Bogotá), Datos Abiertos Bogotá, CC BY 4.0. Color de techo: Ortoimagen 2025 SDP/IDECA, CC BY 4.0, modificada' \
   "$K/sectores_pisos.pmtiles" "$K/construcciones_lejos.pmtiles" "$K/construcciones.pmtiles"
 # La ciudad entera en 3D (z12 y z13): las mismas huellas unidas, más gruesas, en un archivo
 # aparte para no volver a subir el grande. Medido el 24 nov 2026: 0,75 MB para todo el
 # Distrito, tesela más pesada 50 KB. Antes de z14 solo había bloques por sector. -D8 y no -D7:
 # con -D7 la z12 perdía teselas enteras y se veía a cuadros.
-$TC -o salida/catastro-lejos-bogota.pmtiles -l construcciones -Z12 -z13 --read-parallel -y pisos -T pisos:int \
+$TC -o salida/catastro-lejos-bogota.pmtiles -l construcciones -Z12 -z13 --read-parallel \
+  -y pisos -y techo -T pisos:int -T techo:int \
   --simplification=4 -d8 -D8 \
   -n "Construcciones de Catastro con pisos, vista de ciudad" \
   -N "Huellas unidas por manzana y número de pisos, z12 y z13 (no es altura en metros)" \
-  -A 'UAECD (Catastro Bogotá), Datos Abiertos Bogotá, CC BY 4.0' \
+  -A 'UAECD (Catastro Bogotá), Datos Abiertos Bogotá, CC BY 4.0. Color de techo: Ortoimagen 2025 SDP/IDECA, CC BY 4.0, modificada' \
   "$K/construcciones_lejos.fgb"
