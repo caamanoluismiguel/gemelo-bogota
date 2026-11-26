@@ -34,7 +34,7 @@ if (typeof B.exprTecho === 'function') {
 }
 const mapa = leer('site', 'mapa.js');
 revisar('«Cómo se ve» envuelve la fachada con el techo y la misma mezcla de noche',
-  /const deNoche = \(c\) => B\.mezclarColor\(c, NOCHE_MATERIAL, 0\.62 \* noche\);\s*return campo === 'pisos' \? B\.exprTecho\(B\.exprFachada\(exp, deNoche\), deNoche\) : exp;/.test(mapa));
+  /const deNoche = \(c\) => B\.mezclarColor\(c, NOCHE_MATERIAL, 0\.62 \* noche\);[\s\S]{0,400}?return campo === 'pisos' \? B\.exprTecho\(B\.exprFachada\(apagado, deNoche\), deNoche\) : exp;/.test(mapa));
 revisar('la lente de pisos no usa el techo', /const pasos = \(campo\) => \['step'/.test(mapa) && !/pasos[^\n]*techo/.test(sinComentarios(mapa)));
 
 // Crédito en el mapa y en fuentes.html, sin decir que el Distrito lo respalda.

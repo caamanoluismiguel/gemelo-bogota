@@ -47,6 +47,7 @@
   const NOCHE_MATERIAL = '#1c2230';
   let noche = 0;   // 0 de día, 1 de noche; en medio durante el crepúsculo civil (sol de 0 a −6°)
   const MAX_PISOS = 70;
+  const GRIS_SUPUESTO = '#9a958f';
   const neutro = (campo) => {
     const exp = ['match', ['min', MAX_PISOS, ['max', 1, ['round', ['to-number', ['coalesce', ['get', campo], 1], 1]]]]];
     for (let p = 1; p <= MAX_PISOS; p++) exp.push(p, B.mezclarColor(B.colorFachada(p), NOCHE_MATERIAL, 0.62 * noche));
@@ -54,7 +55,10 @@
     // Ronda 7: con «tono» en la tesela, un color por edificio (comun.js); sin él, por pisos.
     // Ronda 12: con «techo» (z12 a z15), el color medido en la foto 2025 va primero.
     const deNoche = (c) => B.mezclarColor(c, NOCHE_MATERIAL, 0.62 * noche);
-    return campo === 'pisos' ? B.exprTecho(B.exprFachada(exp, deNoche), deNoche) : exp;
+    // De lejos (sin «techo» ni «tono») los techos medidos salen grises: el supuesto va apagado
+    // hacia ese gris para que lo no medido no resalte más que lo medido.
+    const apagado = exp.map((v, i) => (i > 1 && typeof v === 'string' ? B.mezclarColor(v, deNoche(GRIS_SUPUESTO), 0.55) : v));
+    return campo === 'pisos' ? B.exprTecho(B.exprFachada(apagado, deNoche), deNoche) : exp;
   };
   const VERDE_2D = ['match', ['get', 'clase'], 'reserva', '#dde9d3', 'paramo', '#e3e8cf', 'bosque', '#bcd6b0', '#cfe3c4'];
   const VERDE_3D = ['match', ['get', 'clase'], 'reserva', '#9fc287', 'paramo', '#b3bf86', 'bosque', '#76a763', '#93c27c'];
