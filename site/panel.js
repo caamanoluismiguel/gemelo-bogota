@@ -107,7 +107,7 @@
     return antes !== '';
   }
   function anunciar() {
-    if (voz) voz.textContent = `Ahora: ${valores.temp || 'sin dato'} en El Dorado, lluvia en 24 horas ${valores.lluvia || 'sin dato'}, PM2,5 ${valores.aire || 'sin dato'}.`;
+    if (voz) voz.textContent = `Ahora: ${valores.temp || 'sin dato'} en el aeropuerto El Dorado, probabilidad máxima de lluvia en 24 horas ${valores.lluvia || 'sin dato'}, PM2,5 de esta hora ${valores.aire || 'sin dato'}.`;
   }
   function pintarSellos() {
     const n = $('franja-sellos');
@@ -121,7 +121,8 @@
     const e = est.find((x) => /dorado/i.test(x.nombre || '')) || est[0];
     const cambio = poner('temp', 'franja-temp', e ? `${B.num(e.temperatura_c)} °C` : 'sin dato');
     const q = $('franja-temp');
-    if (q) q.querySelector('.franja-que').textContent = e && !/dorado/i.test(e.nombre || '') ? B.nombrePropio(String(e.nombre || '')) : 'El Dorado';
+    const lugar = e && !/dorado/i.test(e.nombre || '') ? B.nombrePropio(String(e.nombre || '')) : 'El Dorado';
+    if (q) { q.querySelector('.franja-que').textContent = lugar; q.title = lugar === 'El Dorado' ? 'Temperatura medida en el aeropuerto El Dorado' : `Temperatura medida en ${lugar}`; }
     sellos.metar = e ? B.sello({ tipo: 'medido', hora: e.hora_dato, viejoMin: 90 }) : null;
     pintarSellos();
     if (cambio) anunciar();
