@@ -134,9 +134,14 @@
       { id: 'paraderos', type: 'circle', source: 'paraderos', minzoom: 13, metadata: { grupo: 'paraderos' }, layout: { visibility: 'none' },
         paint: { 'circle-radius': ['interpolate', ['linear'], ['zoom'], 13, 2, 17, 5], 'circle-color': '#ffffff',
           'circle-stroke-color': '#3d5a80', 'circle-stroke-width': 1.4 } },
-      { id: 'troncal', type: 'circle', source: 'troncal', metadata: { grupo: 'troncal' },
-        paint: { 'circle-radius': ['interpolate', ['linear'], ['zoom'], 10, 2.5, 16, 7], 'circle-color': '#b8312f',
-          'circle-stroke-color': '#ffffff', 'circle-stroke-width': 1.2 } },
+      // Estación de TransMilenio: punto blanco con borde rojo, plano sobre el suelo (el rojo
+      // lleno chocaba con los pisos altos). Gris si el GTFS no le programa buses en día hábil
+      // (estaciones.js pone sin_servicio cuando bajan los buses programados).
+      { id: 'troncal', type: 'circle', source: 'troncal', minzoom: 11, metadata: { grupo: 'troncal' },
+        paint: { 'circle-radius': ['interpolate', ['linear'], ['zoom'], 11, 1.5, 16, 5], 'circle-pitch-alignment': 'map',
+          'circle-color': ['case', ['==', ['get', 'sin_servicio'], true], '#d9d5ce', '#ffffff'],
+          'circle-stroke-color': ['case', ['==', ['get', 'sin_servicio'], true], '#8a857c', '#b8312f'],
+          'circle-stroke-width': ['interpolate', ['linear'], ['zoom'], 11, 1, 14, 2] } },
       { id: 'metro-estaciones', type: 'circle', source: 'metro', filter: ['==', ['get', 'tipo'], 'estacion'], metadata: { grupo: 'metro' },
         paint: { 'circle-radius': ['interpolate', ['linear'], ['zoom'], 10, 3.5, 16, 8], 'circle-color': '#ffffff',
           'circle-stroke-color': '#1d6a7a', 'circle-stroke-width': 2.5 } },
@@ -152,8 +157,9 @@
           'text-size': ['match', ['get', 'nivel'], 'localidad', 13, 11.5],
           'text-transform': ['match', ['get', 'nivel'], 'localidad', 'uppercase', 'none'], 'text-max-width': 8 },
         paint: { 'text-color': '#222', 'text-halo-color': '#fff', 'text-halo-width': 1.4 } },
-      { id: 'estaciones-rotulo', type: 'symbol', source: 'troncal', minzoom: 14, metadata: { grupo: 'troncal' },
-        layout: { 'text-field': ['get', 'nombre'], 'text-font': ['Noto Sans Medium'], 'text-size': 11, 'text-offset': [0, 1.1],
+      { id: 'estaciones-rotulo', type: 'symbol', source: 'troncal', minzoom: 15, metadata: { grupo: 'troncal' },
+        layout: { 'text-field': ['coalesce', ['get', 'corto'], ['get', 'nombre']], 'text-font': ['Noto Sans Medium'],
+          'text-size': ['interpolate', ['linear'], ['zoom'], 15, 10, 17, 12], 'text-offset': [0, 1.1],
           'text-anchor': 'top', 'text-max-width': 9, 'text-optional': true },
         paint: { 'text-color': '#7a1f1d', 'text-halo-color': '#fff', 'text-halo-width': 1.4 } }
     ]
@@ -207,6 +213,17 @@
   let mapaCargado = false;
   mapa.once('load', () => { mapaCargado = true; });
   const trasCarga = (fn) => { if (mapaCargado || mapa.loaded()) fn(); else mapa.once('load', fn); };
+  // Estaciones de TransMilenio y del Metro justo debajo de los rótulos: el 3D, los árboles y
+  // las capas que llegan después se ponen antes de 'rotulos' y taparían los puntos.
+  function subirEstaciones() {
+    const orden = mapa.getLayersOrder ? mapa.getLayersOrder() : [];
+    const i = orden.indexOf('rotulos');
+    if (i < 2 || (orden[i - 2] === 'troncal' && orden[i - 1] === 'metro-estaciones')) return;
+    mapa.moveLayer('troncal', 'rotulos');
+    mapa.moveLayer('metro-estaciones', 'rotulos');
+  }
+  mapa.on('idle', subirEstaciones);
+  if (B.estaciones) trasCarga(() => B.estaciones.poner(mapa));
 
   // Panel: la hoja y las pestañas viven en panel.js; aquí solo se mide lo que tapa del mapa.
   const panel = document.getElementById('panel');
@@ -679,7 +696,6 @@
         fallos.add(t ? t.z + '/' + t.x + '/' + t.y : fallos.size);
         if (fallos.size < 3) return;
       }
-      console.warn('relieve', e.tile ? 'tesela' : 'encabezado', e.error && e.error.message);
       caido = true;
       mapa.off('error', alFallar3d); mapa.on('error', sinOrto);
       console.warn('El 3D no cargó; queda el mapa en 2D.');
@@ -972,9 +988,20 @@
       ventana(ll, [['Sector', B.nombrePropio(String(p.nombre || ''))], ['Pisos promedio', p.pisos_prom], ['Pisos máximo', p.pisos_max], ['Construcciones', p.construcciones]],
         { tipo: 'inferido', fuente: 'promedio ponderado por área, calculado aquí con datos de UAECD, Catastro Bogotá', licencia: { nombre: 'CC BY 4.0', url: 'https://creativecommons.org/licenses/by/4.0/deed.es' } });
     } else if (id === 'troncal') {
-      ventana(ll, [['Estación de TransMilenio', p.nombre]], { tipo: 'de_fuente', fuente: 'TransMilenio S.A.', licencia: { nombre: 'CC BY 4.0', url: 'https://creativecommons.org/licenses/by/4.0/deed.es' } });
+      // Sin estaciones.js (no debería pasar), la ficha simple de siempre.
+      if (!B.estaciones) {
+        ventana(ll, [['Estación de TransMilenio', p.nombre]], { tipo: 'de_fuente', fuente: 'TransMilenio S.A.', licencia: { nombre: 'CC BY 4.0', url: 'https://creativecommons.org/licenses/by/4.0/deed.es' } });
+        return;
+      }
+      const pop = new maplibregl.Popup({ maxWidth: '270px' }).setLngLat(ll);
+      pop.setDOMContent(B.estaciones.ventana(p, ll, () => {
+        // «Ver buses por hora» prende la capa de frecuencia como si se tocara su casilla.
+        const c = document.getElementById('ver-frecuencia');
+        pop.remove();
+        if (c && !c.checked) { c.checked = true; c.dispatchEvent(new Event('change', { bubbles: true })); }
+      })).addTo(mapa);
     } else if (id === 'metro-estaciones') {
-      ventana(ll, [['Metro línea 1', p.nombre], ['Estado', p.estado]], { tipo: 'de_fuente', fuente: 'Empresa Metro de Bogotá vía IDECA', licencia: { nombre: 'CC BY 4.0', url: 'https://creativecommons.org/licenses/by/4.0/deed.es' } });
+      ventana(ll, [['Metro línea 1', B.estaciones ? B.estaciones.nombreMetro(p.nombre) : p.nombre], ['Estado', p.estado]], { tipo: 'de_fuente', fuente: 'Empresa Metro de Bogotá vía IDECA', licencia: { nombre: 'CC BY 4.0', url: 'https://creativecommons.org/licenses/by/4.0/deed.es' } });
     } else if (id === 'paraderos') {
       ventana(ll, [['Paradero', p.nombre], ['Código', p.codigo]], { tipo: 'de_fuente', fuente: 'GTFS del 13 oct 2026', licencia: { nombre: 'CC BY‑SA 4.0', url: 'https://creativecommons.org/licenses/by-sa/4.0/deed.es' } });
     } else if (id === 'lluvia') {

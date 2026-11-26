@@ -43,6 +43,10 @@ a { color: var(--acento); }
 .estado { color: var(--tinta-2); margin: 4px 0; }
 .nota { color: var(--tinta-2); font-size: 12.5px; margin: 4px 0; }
 .nota-inline { color: var(--tinta-2); font-size: 12px; }
+/* Muestra del punto de cada estación junto a su casilla: hace de leyenda sin abrir otra caja sobre el mapa. */
+.sw-estacion { display: inline-block; width: 10px; height: 10px; margin-right: 6px; border-radius: 50%; background: #fff; flex: none; vertical-align: -1px; }
+.sw-tm { border: 2px solid #b8312f; }
+.sw-metro { border: 2.5px solid #1d6a7a; }
 
 .dato { margin: 6px 0 8px; }
 .dato .valor { font-size: 28px; font-weight: 650; font-variant-numeric: tabular-nums; }
