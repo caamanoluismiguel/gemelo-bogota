@@ -630,6 +630,10 @@
     relojInicio = setTimeout(() => { cadaMinuto(); reloj = setInterval(cadaMinuto, 60000); }, espera);
     mapa.on('zoomend', pintar);
     mapa.on('moveend', pintar);
+    // La luz del sol se pone otra vez al final y al primer reposo del mapa: si la barra llega
+    // antes que el 3D (o el 3D se reintenta), no queda la luz fija de 2D sobre las fachadas.
+    ponerLuz();
+    mapa.once('idle', () => { if (S.activo) ponerLuz(); });
   }
 
   function apagar() {
@@ -661,6 +665,7 @@
     fijarAlfa();
     sombras.fijarIntensidad(S.ahora ? S.cielo.intensidad : 1);
     ponerLuz();
+    mapa.once('idle', () => { if (S.activo) ponerLuz(); });
     medirAire();
     ponerCielo();
     V.sucio = true;
