@@ -480,6 +480,9 @@
   const avisoCapa = document.getElementById('capa-aviso');
   const cajaPisos = document.querySelector('[data-grupo="pisos"]');
   const cajaLluvia = document.querySelector('[data-grupo="lluvia"]');
+  // En el teléfono la leyenda de pisos arranca plegada, como la de techos: tapa menos mapa.
+  const leyPisos = document.getElementById('ley-pisos');
+  if (leyPisos && movil.matches) leyPisos.open = false;
   function ponerLeyenda() {
     if (!leyMapa) return;
     let alguno = false;
@@ -488,7 +491,8 @@
       let si;
       if (k === 'pisos') si = caja3d.checked ? lenteActual() === 'pisos' : !!(cajaPisos && cajaPisos.checked);
       // Techos: con «Cómo se ve», solo de lejos (z12 a z15), donde el color sale de «techo».
-      else if (k === 'techos') { const z = mapa.getZoom(); si = caja3d.checked && lenteActual() === 'como-se-ve' && z >= 12 && z < 16; }
+      // De noche (más de la mitad del crepúsculo) los colores de la foto ya no se ven: sin leyenda.
+      else if (k === 'techos') { const z = mapa.getZoom(); si = caja3d.checked && lenteActual() === 'como-se-ve' && z >= 12 && z < 16 && !(noche > 0.5); }
       else if (k === 'lluvia') si = !!(cajaLluvia && cajaLluvia.checked);
       else { const c = b.querySelector('.bicis-caja'); si = !!c && !c.hidden; }
       b.hidden = !si;
