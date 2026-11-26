@@ -90,6 +90,8 @@ details.mas summary { cursor: pointer; font-weight: 600; margin-top: 10px; min-h
 .maplibregl-popup-content { font: 13px/1.4 system-ui, sans-serif; color: var(--tinta); padding: 10px 12px; }
 .maplibregl-popup-content b { font-weight: 600; }
 .maplibregl-popup-content .meta { margin-top: 6px; }
+/* «Cómo se hizo» en la ficha de un hito: enlace subrayado con área de toque de 44 px. */
+.maplibregl-popup-content .enlace-ficha { display: flex; align-items: center; min-height: 44px; margin-top: 4px; color: var(--tinta); text-decoration: underline; text-underline-offset: 3px; font-weight: 600; }
 
 @media (max-width: 600px) {
   #panel { top: auto; left: 0; right: 0; bottom: 0; width: auto; max-height: 62vh; border-radius: 12px 12px 0 0; border-bottom: 0; }

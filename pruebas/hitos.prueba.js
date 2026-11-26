@@ -67,11 +67,23 @@ for (const h of cat.hitos) {
   revisar(`${h.id}: tipo modelado o fotogrametría`, h.tipo === 'modelado' || h.tipo === 'fotogrametria');
   revisar(`${h.id}: contorno con 3 puntos o más`, Array.isArray(h.contorno) && h.contorno.length >= 3);
   revisar(`${h.id}: dentro de Bogotá`, h.lon > -74.3 && h.lon < -73.9 && h.lat > 4.4 && h.lat < 4.9);
-  revisar(`${h.id}: esconde al menos una caja en z16`, h.ocultar && h.ocultar.z16.length > 0);
+  revisar(`${h.id}: esconde su caja de cerca (z16) y la de lejos (z14 y z15)`, h.ocultar && h.ocultar.cerca.length > 0 && h.ocultar.lejos.length > 0 && Array.isArray(h.ocultar.osm));
+  // Sombra: piezas del propio modelo, en metros desde lon/lat, ninguna más alta que el hito.
+  const sb = Array.isArray(h.sombra) ? h.sombra : [];
+  revisar(`${h.id}: trae piezas de sombra de su modelo`, sb.length > 0 && sb.every((p) => p.anillo.length >= 3 && p.alto > 0 && p.alto <= h.alto + 1));
+  revisar(`${h.id}: la sombra más alta es la del hito`, Math.abs(Math.max(...sb.map((p) => p.alto)) - h.alto) <= 7, String(Math.max(...sb.map((p) => p.alto))));
+  // Alto por fuente: cada alto dice si es de fuente o supuesto, y si es de fuente, cuál.
+  revisar(`${h.id}: cada alto dice de dónde sale`, Array.isArray(h.altos) && h.altos.length > 0 && h.altos.every((a) => a.valor && (a.tipo === 'supuesto' || (a.tipo === 'de_fuente' && a.de))));
+}
+{
+  const col = cat.hitos.find((h) => h.id === 'colpatria');
+  revisar('Colpatria: esconde las tres partes de OSM de la torre', ['way/1175248694', 'way/1175248695', 'way/767352739'].every((i) => col.ocultar.osm.includes(i)));
+  revisar('Colpatria: sombra hasta 196 m', col.sombra.some((p) => p.alto === 196));
+  revisar('Colpatria: el alto de 196 m va como de fuente', col.altos.some((a) => a.valor === '196 m' && a.tipo === 'de_fuente'));
+  revisar('Virgilio Barco no está en el catálogo', !JSON.stringify(cat).includes('virgilio'));
 }
 revisar('los hitos juntos pesan menos de 1 MB', totalBytes < 1024 * 1024, totalBytes + ' bytes');
 revisar('al menos dos hitos en el catálogo', IDS.size >= 2);
-for (const p of cat.pendientes || []) revisar(`pendiente ${p.id}: licencia sin NC y dice qué falta`, !/NC/.test(p.licencia.nombre) && p.falta && p.url.startsWith('https://'));
 
 // Los ids de Catastro son de unas teselas concretas: si se publican otras, hay que rehacerlos.
 {
@@ -79,7 +91,7 @@ for (const p of cat.pendientes || []) revisar(`pendiente ${p.id}: licencia sin N
   for (const [f, sha] of Object.entries(cat.teselas || {})) {
     revisar(`ids de cajas sacados de la ${f} publicada (si falla: node pipelines/hitos/catastro-ids.js y modelar.js)`, pub[f] && pub[f].sha256 === sha);
   }
-  revisar('el catálogo dice de qué teselas salen los ids', cat.teselas && cat.teselas['catastro-pisos-bogota.pmtiles']);
+  revisar('el catálogo dice de qué teselas salen los ids', cat.teselas && cat.teselas['catastro-pisos-bogota.pmtiles'] && cat.teselas['osm-3d-bogota.pmtiles']);
 }
 
 // ── Cercanía, matriz y toque ──
@@ -107,42 +119,48 @@ for (const h of cat.hitos) {
   const texto = f.filas.map((r) => r.join(' ')).join(' | ');
   revisar(`${h.id}: la ventana dice nombre, cómo se hizo, fuente y licencia`, texto.includes(h.nombre) && /huella y altura|fotogrametría/.test(texto) && f.meta.licencia && f.meta.licencia.nombre === h.licencia.nombre && texto.includes(h.fuente));
   revisar(`${h.id}: modelado va como supuesto, fotogrametría como medido`, f.meta.tipo === (h.tipo === 'fotogrametria' ? 'medido' : 'supuesto'));
+  const altos = f.filas.filter((r) => h.altos.some((a) => a.que === r[0]));
+  revisar(`${h.id}: cada alto sale en la ventana con su marca`, altos.length === h.altos.length && altos.every((r) => r[2] === 'de_fuente' || r[2] === 'supuesto'));
+  revisar(`${h.id}: el alto de fuente dice cuál fuente`, h.altos.filter((a) => a.tipo === 'de_fuente').every((a) => f.filas.some((r) => r[1].includes(a.de) && r[2] === 'de_fuente')));
 }
 {
   const f = H.ficha({ nombre: 'X', tipo: 'fotogrametria', licencia: { nombre: 'CC BY 4.0' }, fuente: 'y' });
-  revisar('fotogrametría dice «medido»', /fotogrametría \(medido\)/.test(f.filas[1][1]));
+  revisar('fotogrametría va como «medido»', f.filas[1][1] === 'fotogrametría' && f.filas[1][2] === 'medido');
+  const g = H.ficha({ nombre: 'X', tipo: 'modelado', licencia: { nombre: 'CC BY 4.0' }, fuente: 'y', alto: 20 });
+  revisar('sin «altos» el alto va como supuesto', g.filas.some((r) => r[0] === 'Alto' && r[1] === '20 m' && r[2] === 'supuesto'));
 }
 
-// ── Filtro de cajas ──
+// ── Lugar de la ventana: nunca encima del hito ──
 {
-  const u = C.unir([C.normalizar({ z15: [3], z16: [1, 2] }), C.normalizar([2, 5])]);
-  revisar('unir sin repetidos', JSON.stringify(u) === JSON.stringify({ z14: [], z15: [3], z16: [1, 2, 5] }));
-  const f = C.filtro(u, null);
-  revisar('filtro por zoom de tesela (step)', f[0] === 'step' && f[2] === true && f[3] === 15 && f[5] === 16 && JSON.stringify(f[6]) === JSON.stringify(['!', ['in', ['id'], ['literal', [1, 2, 5]]]]));
-  const previo = ['>', ['get', 'pisos'], 0];
-  const f2 = C.filtro(u, previo);
-  revisar('respeta el filtro que ya tenía la capa', JSON.stringify(f2[2]) === JSON.stringify(previo) && f2[4][0] === 'all' && JSON.stringify(f2[4][1]) === JSON.stringify(previo));
-  revisar('sin nada que esconder vuelve el filtro de antes', C.filtro(C.unir([]), previo) === previo && C.filtro(C.unir([]), null) === null);
+  const sil = [[150, 300], [250, 300], [250, 500], [150, 500]];
+  const corta = (l, tam) => l.anchor === 'top' ? l.y - l.correr >= 500 : l.y + tam - l.correr <= 300;
+  const a = H.lugarVentana(sil, 390, 700, 150);
+  revisar('cabe debajo: la ventana va debajo de la silueta', a.anchor === 'top' && a.y >= 500 && a.correr === 0);
+  const b = H.lugarVentana([[150, 300], [250, 300], [250, 620], [150, 620]], 390, 700, 150);
+  revisar('no cabe debajo pero sí encima: va encima', b.anchor === 'bottom' && b.y <= 300 && b.correr === 0);
+  const c = H.lugarVentana([[100, 120], [300, 120], [300, 600], [100, 600]], 390, 700, 200);
+  // Sin lugar: se corre el mapa; ya corrido, la ventana empieza justo debajo de la silueta.
+  revisar('sin lugar: el mapa se corre y la ventana no tapa la silueta', c.correr !== 0 && (c.anchor === 'top' ? c.y >= 600 - c.correr : c.y <= 120 - c.correr), JSON.stringify(c));
+  revisar('sin silueta no hay lugar', H.lugarVentana([], 390, 700, 100) === null);
+  revisar('la ventana queda dentro del ancho', a.x >= 8 && a.x <= 382 && corta(a, 150));
+}
 
-  // Con un mapa de mentiras: agregar, quitar y volver al filtro original.
-  const filtros = { 'construcciones-3d': previo };
-  const oyentes = {};
-  const mapa = {
-    getLayer: (id) => id in filtros, getFilter: (id) => filtros[id], setFilter: (id, v) => { filtros[id] = v; },
-    on: (e, f) => { oyentes[e] = f; }, off: () => {}
-  };
-  const c = C.crear();
-  c.usar(mapa);
-  c.agregar('hitos:colpatria', { z16: [7] });
-  c.agregar('hitos:catedral', [9]);
-  revisar('dos hitos esconden sus dos cajas', JSON.stringify(c.ocultos().z16) === '[7,9]' && JSON.stringify(filtros['construcciones-3d'][6][2]) === JSON.stringify(['!', ['in', ['id'], ['literal', [7, 9]]]]));
-  // Si el estilo rehace la capa con su filtro original, se vuelve a esconder.
-  filtros['construcciones-3d'] = previo;
-  oyentes.styledata();
-  revisar('después de un cambio de estilo siguen escondidas', filtros['construcciones-3d'][0] === 'step');
-  c.quitar('hitos:colpatria');
-  c.quitar('hitos:catedral');
-  revisar('al quitar todo vuelve el filtro original', filtros['construcciones-3d'] === previo);
+// ── Cajas escondidas: Catastro de cerca y de lejos, y partes de OSM ──
+{
+  C.agregar('hitos:colpatria', { cerca: [7], lejos: [50213], osm: ['way/1'] });
+  C.agregar('hitos:catedral', { cerca: [9], lejos: [48706] });
+  const f = C.filtro();
+  revisar('filtro de Catastro: cerca por «tono» y lejos aparte', f[0] === 'case' && JSON.stringify(f[2][2]) === '[7,9]' && JSON.stringify(f[3][2]) === '[48706,50213]');
+  revisar('filtro de OSM por id_osm', JSON.stringify(C.filtroOsm()) === JSON.stringify(['match', ['to-string', ['get', 'id_osm']], ['way/1'], false, true]));
+  revisar('origenes lista los hitos', C.origenes().includes('hitos:colpatria') && C.origenes().includes('hitos:catedral'));
+  // Con un mapa de mentiras: aplicar pone los dos filtros y quitar los devuelve.
+  const filtros = {};
+  const mapa = { getLayer: () => true, setFilter: (id, v) => { filtros[id] = v; } };
+  C.aplicar(mapa);
+  revisar('aplicar pone el filtro en Catastro y en OSM', filtros[C.CAPA][0] === 'case' && filtros[C.CAPA_OSM][0] === 'match');
+  C.quitar('hitos:colpatria');
+  C.quitar('hitos:catedral');
+  revisar('al quitar todo no queda filtro', filtros[C.CAPA] === null && filtros[C.CAPA_OSM] === null && C.cuantas().cerca === 0);
 }
 
 // ── Lo que mapa.js y el sitio deben tener ──
@@ -152,6 +170,13 @@ for (const h of cat.hitos) {
   revisar('el toque mira el hito antes de queryRenderedFeatures', mapa.indexOf('B.hitosCapa().tocar(e)') > 0 && mapa.indexOf('B.hitosCapa().tocar(e)') < mapa.indexOf('mapa.queryRenderedFeatures(caja'));
   const src = fs.readFileSync(path.join(SITE, 'hitos.js'), 'utf8');
   revisar('hitos.js usa el relieve con queryTerrainElevation', /queryTerrainElevation/.test(src));
+  revisar('hitos.js da la sombra de los hitos que se dibujan y avisa', /sombras, estado/.test(src) && /bogotwin:hitos-sombra/.test(src));
+  const sol = fs.readFileSync(path.join(SITE, 'sol-barra.js'), 'utf8');
+  const capa = fs.readFileSync(path.join(SITE, 'sombras-capa.js'), 'utf8');
+  revisar('las sombras suman las de los hitos (fijas) y se rearman al cambiar', /fijas \}\)/.test(sol) && /bogotwin:hitos-sombra/.test(sol) && /function piezasFijas/.test(capa) && /lista: base/.test(capa));
+  revisar('la ventana del hito marca cada fila y se pone fuera de la silueta', /ventanaHito\(e, hito\)/.test(mapa) && /B\.marca\(tipo\)/.test(mapa) && /lugarVentana/.test(mapa));
+  const css = fs.readFileSync(path.join(SITE, 'estilo.css'), 'utf8');
+  revisar('«Cómo se hizo» subrayado y de 44 px para el dedo', /\.enlace-ficha \{[^}]*min-height: 44px[^}]*text-decoration: underline/.test(css) && /enlace-ficha/.test(mapa));
   revisar('hitos.js usa la paleta de edificios-luz.js', /B\.luzEdificios/.test(src) && /paleta\(/.test(src));
   revisar('hitos.js no trae nada de fuera (CSP)', !/https?:\/\/(?!creativecommons)/.test(src.replace(/\/\/.*$/gm, '')) && !/import\(|eval\(|new Function/.test(src));
   const fuentes = fs.readFileSync(path.join(SITE, 'fuentes.html'), 'utf8');
@@ -166,11 +191,11 @@ for (const h of cat.hitos) {
     const { abrir } = require('./pmtiles-leer');
     const ids = require('../pipelines/hitos/catastro-ids.js');
     const pm = abrir(salida);
+    const enTesela = (z, h) => { const [x, y] = ids.teselaDe(h.lon, h.lat, z); const b = pm.tesela(z, x, y); return new Set(b ? ids.objetosConId(b, 'construcciones').map((o) => o.id) : []); };
     for (const h of cat.hitos) {
-      const [x, y] = ids.teselaDe(h.lon, h.lat, 16);
-      const b = pm.tesela(16, x, y);
-      const hay = new Set(b ? ids.objetosConId(b, 'construcciones').map((o) => o.id) : []);
-      revisar(`${h.id}: sus ids z16 están en la tesela`, h.ocultar.z16.some((i) => hay.has(i)));
+      revisar(`${h.id}: sus ids de cerca están en la tesela z16`, h.ocultar.cerca.some((i) => enTesela(16, h).has(i)));
+      // El hueco de la Colpatria en z14: la caja de lejos tiene que estar en z14 y en z15.
+      for (const z of [14, 15]) revisar(`${h.id}: sus ids de lejos están en la tesela z${z}`, h.ocultar.lejos.some((i) => enTesela(z, h).has(i)));
     }
   }
 }
@@ -206,7 +231,9 @@ for (const h of cat.hitos) {
 
 // ── Suelo en un piso plano (sueloEn): puntos dentro del hito y muros que bajan lo bastante ──
 for (const h of cat.hitos.filter((x) => x.sueloEn)) {
-  revisar(`${h.id}: sueloEn con puntos [este, norte] dentro del contorno`, h.sueloEn.length >= 3 && h.sueloEn.every((q) => H.dentro(q, h.contorno)));
+  // [este, norte] dentro del contorno; [este, norte, d] en el contorno con d ≤ 0 (no sube el piso por encima del relieve del borde).
+  const casi = ([e, n]) => [e * 0.98, n * 0.98];
+  revisar(`${h.id}: sueloEn con puntos dentro del contorno`, h.sueloEn.length >= 3 && h.sueloEn.every((q) => H.dentro(q.length > 2 ? casi(q) : q, h.contorno) && !(q[2] > 0)));
 }
 
 cierre('Hitos 3D');

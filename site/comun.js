@@ -33,11 +33,12 @@
     return n;
   }
 
-  // Solo enlaces https: un dato nunca puede meter javascript: ni otro esquema.
+  // Solo enlaces https o del mismo sitio: un dato nunca puede meter javascript: ni otro esquema.
   function enlace(url, texto) {
     try {
       const u = new URL(url);
-      if (u.protocol !== 'https:') return el('span', { texto });
+      const mismo = typeof location === 'object' && /^https?:$/.test(u.protocol) && u.origin === location.origin;
+      if (u.protocol !== 'https:' && !mismo) return el('span', { texto });
       return el('a', { href: u.href, texto, rel: 'noopener noreferrer', target: '_blank' });
     } catch { return el('span', { texto }); }
   }

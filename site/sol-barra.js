@@ -616,7 +616,9 @@
     // Las partes de OSM (partes-osm.js) también hacen sombra, con su alto en metros.
     // Se pregunta en cada tesela: el archivo se abre recién cuando sus metadatos llegaron bien.
     const extra = () => (B.partesOsm ? B.partesOsm.paraSombras() : null);
-    sombras = B.sombrasCapa.crear({ pmtiles: api.pmCat, alActualizar, extra });
+    // Los hitos 3D que se dibujan suman la sombra de su propio modelo (catálogo, «sombra»).
+    const fijas = () => (B.hitosCapa && B.hitosCapa() ? B.hitosCapa().sombras() : []);
+    sombras = B.sombrasCapa.crear({ pmtiles: api.pmCat, alActualizar, extra, fijas });
     B.recibirCatastro = sombras.recibir;
     // Orden de abajo arriba: calles, sombra, construcciones. Así la construcción tapa la
     // sombra sobre su propio techo y la sombra sí cae sobre la calle.
@@ -655,6 +657,7 @@
   addEventListener('bogotwin:cielo', () => { if (S.activo && S.ahora) todo(); });
   addEventListener('bogotwin:aire', () => { if (S.activo && medirAire()) { ponerCielo(); pintar(); } });
   addEventListener('bogotwin:panel', () => { if (S.activo) mostrarBarra(); });
+  addEventListener('bogotwin:hitos-sombra', () => { if (sombras) sombras.rearmarTodo(); });
   addEventListener('bogotwin:3d', () => {
     if (!S.activo) return;
     sombras.rearmarTodo();

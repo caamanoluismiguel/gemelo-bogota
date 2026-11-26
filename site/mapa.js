@@ -904,6 +904,32 @@
     if (extra) caja.append(extra);
     new maplibregl.Popup({ maxWidth: '270px' }).setLngLat(lngLat).setDOMContent(caja).addTo(mapa);
   }
+  // Ventana de un hito 3D: cada alto con su marca (de fuente o supuesto) y la ventana debajo o
+  // encima de la silueta, nunca sobre ella; si no cabe, el mapa se corre lo que falte.
+  function ventanaHito(e, hito) {
+    const caja = B.el('div', { clase: 'ficha-hito' });
+    for (const [k, v, tipo] of hito.filas) {
+      if (v == null || v === '') continue;
+      const fila = B.el('div', null, B.el('b', { texto: k + ': ' }), B.valorFicha(v));
+      if (tipo) fila.append(' ', B.marca(tipo));
+      caja.append(fila);
+    }
+    caja.append(B.meta(hito.meta));
+    if (hito.procedencia) {
+      const a = B.enlace(hito.procedencia, 'Cómo se hizo este modelo');
+      a.classList.add('enlace-ficha');
+      caja.append(a);
+    }
+    const pop = new maplibregl.Popup({ maxWidth: '270px', anchor: 'top' }).setLngLat(e.lngLat).setDOMContent(caja).addTo(mapa);
+    const lienzo = mapa.getCanvas(), W = lienzo.clientWidth, H = lienzo.clientHeight;
+    const tapa = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--alto-panel')) || 0;
+    const tam = pop.getElement().getBoundingClientRect().height + 12;
+    const l = B.hitos3d.lugarVentana(hito.silueta, W, Math.max(tam, H - tapa), tam);
+    if (!l) return;
+    if (l.correr) mapa.panBy([0, l.correr], { duration: 0 });
+    pop.options.anchor = l.anchor;
+    pop.setLngLat(mapa.unproject([l.x, l.y]));
+  }
   mapa.on('click', (e) => {
     if (B.edificioNuevo && B.edificioNuevo.tomaClic(e)) return;
     if (B.escenarios && B.escenarios.tomaClic(e)) return;
@@ -913,10 +939,7 @@
     if (B.frecuencia && B.frecuencia.tocar(e)) return;
     // Un hito 3D no sale en queryRenderedFeatures (es una capa propia): se mira su silueta.
     const hito = B.hitosCapa && B.hitosCapa() && B.hitosCapa().tocar(e);
-    if (hito) {
-      ventana(e.lngLat, hito.filas, hito.meta, hito.procedencia ? B.el('div', null, B.enlace(hito.procedencia, 'Cómo se hizo este modelo')) : null);
-      return;
-    }
+    if (hito) { ventanaHito(e, hito); return; }
     const capas = consultables.filter(id => mapa.getLayer(id) && mapa.getLayoutProperty(id, 'visibility') !== 'none');
     const caja = [[e.point.x - 6, e.point.y - 6], [e.point.x + 6, e.point.y + 6]];
     const f = mapa.queryRenderedFeatures(caja, { layers: capas })[0];

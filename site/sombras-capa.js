@@ -101,7 +101,8 @@ void main() {
   //   ('construcciones'), id, margen (teselas, 1), maxTeselas (64), dedup (true),
   //   alActualizar(estado), extra ({ pmtiles, capa }, o una función que lo devuelve o null:
   //   otro archivo z16 con piezas que también hacen sombra, las partes de OSM; cada pieza trae
-  //   «alto» en metros) }
+  //   «alto» en metros), fijas (función que devuelve [{ lon, lat, piezas: [{ anillo, alto }] }]:
+  //   piezas en metros este y norte desde lon/lat, las de los hitos 3D) }
   function crear(opciones) {
     const op = Object.assign({ id: 'sombras', capaFuente: 'construcciones', margen: 1, maxTeselas: 64, dedup: true, zoomTerreno: 16,
       alzarProfundidad: 3, desfase: [-8, -16], nucleo: 2.5, borde: 4.0, color: '#3b3a36', alfaNucleo: 0.28, alfaBorde: 0.12,
@@ -226,9 +227,32 @@ void main() {
       return { conTerreno: !!ter, pendiente };
     }
 
-    function armarLista(k, lista, ext) {
+    // Piezas fijas (hitos 3D) cuyo centro cae en esta tesela, en sus unidades. No se guardan en
+    // t.lista: al volver a armar se piden de nuevo, así un hito que se suelta no deja sombra.
+    function piezasFijas(x, y, ext) {
+      const f = typeof op.fijas === 'function' ? op.fijas() : null;
+      if (!f || !f.length) return [];
+      const n = 2 ** Z, sal = [];
+      const ux = (lon) => ((lon + 180) / 360 * n - x) * ext;
+      const uy = (lat) => ((1 - Math.log(Math.tan(Math.PI / 4 + lat * RAD / 2)) / Math.PI) / 2 * n - y) * ext;
+      for (const h of f) {
+        const kLat = 6378137 * RAD, kLon = kLat * Math.cos(h.lat * RAD);
+        for (const p of h.piezas || []) {
+          if (!p || !(p.alto > 0) || !p.anillo || p.anillo.length < 3) continue;
+          const anillo = p.anillo.map(([e, nn]) => [ux(h.lon + e / kLon), uy(h.lat + nn / kLat)]);
+          const [cx, cy] = G.centroide([anillo]);
+          if (cx < 0 || cx >= ext || cy < 0 || cy >= ext) continue;
+          sal.push({ anillos: [anillo], pisos: Math.max(1, p.alto / 3) });
+        }
+      }
+      return sal;
+    }
+
+    function armarLista(k, base, ext) {
       const [x, y] = k.split('/').map(Number);
       const t0 = performance.now();
+      const fijas = piezasFijas(x, y, ext);
+      const lista = fijas.length ? base.concat(fijas) : base;
       const ter = ponerElevacion(lista, x, y, ext);
       const geom = G.armar(lista, { extension: ext, borde: BORDE * ext / 4096 });
       est.msArmado += performance.now() - t0;
@@ -236,7 +260,7 @@ void main() {
       const previa = teselas.get(k);
       const intentos = previa && previa.pendiente && ter.pendiente ? (previa.intentos || 0) + 1 : 0;
       soltar(k);
-      const t = { x, y, ext, n: geom.indices.length, vao: null, bufs: [], tipoIdx: 0, lista,
+      const t = { x, y, ext, n: geom.indices.length, vao: null, bufs: [], tipoIdx: 0, lista: base,
         conTerreno: ter.conTerreno, pendiente: ter.pendiente, intentos,
         unidadesM: G.unidadesPorMetro(Z, G.latitudTesela(Z, y), ext),
         zMerc: 1 / (CIRC * Math.cos(G.latitudTesela(Z, y) * RAD)), bytes: geom.vertices.byteLength + geom.indices.byteLength,

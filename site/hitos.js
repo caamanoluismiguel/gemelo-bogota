@@ -182,20 +182,41 @@
   }
 
   // Lo que dice la ventana al tocar el hito.
+  // Filas de la ventana: [rótulo, valor, tipo], con tipo «de_fuente», «medido» o «supuesto»
+  // (B.marca) o null. Cada alto dice de dónde sale: «altos» del catálogo, uno por parte.
   function ficha(h) {
     const medido = h.tipo === 'fotogrametria';
-    return {
-      filas: [
-        ['Hito', h.nombre],
-        ['Modelo', medido ? 'fotogrametría (medido)' : 'modelado a partir de huella y altura (supuesto ilustrativo)'],
-        ['Alto', h.altoTexto || (h.alto ? h.alto + ' m' : null)],
-        ['Fuente', h.fuente]
-      ],
-      meta: { tipo: medido ? 'medido' : 'supuesto', fuente: h.autor || 'Bogotwin', licencia: h.licencia }
-    };
+    const filas = [['Hito', h.nombre, null],
+      ['Modelo', medido ? 'fotogrametría' : 'modelado a partir de huella y altura, ilustrativo', medido ? 'medido' : 'supuesto']];
+    const altos = Array.isArray(h.altos) && h.altos.length ? h.altos
+      : [{ que: 'Alto', valor: h.altoTexto || (h.alto ? h.alto + ' m' : null), tipo: 'supuesto' }];
+    for (const a of altos) if (a && a.valor) filas.push([a.que || 'Alto', a.de ? a.valor + ' (' + a.de + ')' : a.valor, a.tipo || 'supuesto']);
+    filas.push(['Fuente', h.fuente, null]);
+    return { filas, meta: { tipo: medido ? 'medido' : 'supuesto', fuente: h.autor || 'Bogotwin', licencia: h.licencia } };
   }
 
-  const puro = { leerGlb, normales, triangulos, distanciaM, cercanos, matrizModelo, mercPorMetro, aPantalla, envolvente, dentro, silueta, ficha };
+  // Dónde poner la ventana para que no tape el hito: debajo de su silueta en pantalla si cabe,
+  // si no encima, y si no cabe en ninguno, del lado con más espacio y se corre el mapa lo que
+  // falte. sil: polígono en píxeles; ancho y alto de la pantalla; tam: alto de la ventana.
+  // Devuelve { x, y, anchor ('top' o 'bottom'), correr (px para mapa.panBy en y) }.
+  function lugarVentana(sil, ancho, alto, tam, margen) {
+    const m = margen == null ? 8 : margen;
+    let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+    for (const [x, y] of sil || []) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); }
+    if (!Number.isFinite(x0)) return null;
+    const cx = Math.min(ancho - m, Math.max(m, (x0 + x1) / 2));
+    const abajo = alto - m - Math.min(alto, y1 + m), arriba = Math.max(0, y0 - m) - m;
+    if (abajo >= tam) return { x: cx, y: y1 + m, anchor: 'top', correr: 0 };
+    if (arriba >= tam) return { x: cx, y: y0 - m, anchor: 'bottom', correr: 0 };
+    if (abajo >= arriba) {
+      const falta = tam - Math.max(0, abajo);
+      return { x: cx, y: y1 + m - falta, anchor: 'top', correr: falta };
+    }
+    const falta = tam - Math.max(0, arriba);
+    return { x: cx, y: y0 - m + falta, anchor: 'bottom', correr: -falta };
+  }
+
+  const puro = { leerGlb, normales, triangulos, distanciaM, cercanos, matrizModelo, mercPorMetro, aPantalla, envolvente, dentro, silueta, ficha, lugarVentana };
   if (typeof module === 'object' && module.exports) { module.exports = puro; return; }
 
   const B = raiz.Bogotwin = raiz.Bogotwin || {};
@@ -348,17 +369,18 @@ void main() {
 
     // Suelo del hito: el más bajo del relieve en el centro y en el contorno. Si el catálogo trae
     // «sueloEn» (un piso plano del hito, como el ruedo de la plaza), el más alto de esos puntos:
-    // así ese piso queda encima del relieve y los muros de abajo cubren la ladera. null si el
-    // relieve de ese lugar todavía no llegó (se vuelve a intentar).
+    // así ese piso queda encima del relieve y los muros de abajo cubren la ladera. Un punto
+    // [e, n, d] suma d metros al relieve de ese punto. null si el relieve de ese lugar todavía no
+    // llegó (se vuelve a intentar).
     function suelo(h) {
       if (!mapa.terrain) return 0;
       const k = R_TIERRA * RAD, kx = k * Math.cos(h.lat * RAD);
       const alto = Array.isArray(h.sueloEn) && h.sueloEn.length > 0;
       let r = alto ? -Infinity : Infinity;
-      for (const [e, n] of alto ? h.sueloEn : [[0, 0]].concat(h.contorno || [])) {
+      for (const [e, n, d] of alto ? h.sueloEn : [[0, 0]].concat(h.contorno || [])) {
         const v = mapa.queryTerrainElevation([h.lon + e / kx, h.lat + n / k]);
         if (v == null || !Number.isFinite(v) || v === 0) return null;
-        r = alto ? Math.max(r, v) : Math.min(r, v);
+        r = alto ? Math.max(r, v + (d || 0)) : Math.min(r, v);
       }
       return r;
     }
@@ -391,8 +413,19 @@ void main() {
       if (s === null) { x.intentos++; return; }
       x.suelo = s;
       x.conTerreno = !!mapa.terrain;
-      // Desde aquí el modelo se dibuja: la caja de Catastro se esconde.
+      // Desde aquí el modelo se dibuja: la caja de Catastro se esconde y su sombra entra.
       if (B.cajasOcultas && x.h.ocultar) B.cajasOcultas.agregar(origen(x.h), x.h.ocultar);
+      if (!x.conSombra) { x.conSombra = true; avisarSombra(); }
+    }
+
+    // Piezas de sombra de los hitos que se dibujan (sombras-capa.js las suma a las de Catastro).
+    function sombras() {
+      const r = [];
+      for (const x of hitos.values()) if (x.conSombra && Array.isArray(x.h.sombra)) r.push({ id: x.h.id, lon: x.h.lon, lat: x.h.lat, piezas: x.h.sombra });
+      return r;
+    }
+    function avisarSombra() {
+      try { raiz.dispatchEvent(new raiz.CustomEvent('bogotwin:hitos-sombra')); } catch (e) { /* sin ventana */ }
     }
 
     function subir(p) {
@@ -447,6 +480,7 @@ void main() {
       }
       if (B.cajasOcultas) B.cajasOcultas.quitar(origen(x.h));
       hitos.delete(id);
+      if (x.conSombra) avisarSombra();
     }
 
     function contar() {
@@ -565,11 +599,11 @@ void main() {
         const sil = silueta(x.F, x.h.contorno || [[0, 0]], x.h.alto || 10, W, H);
         if (!sil || !dentro([e.point.x, e.point.y], sil)) continue;
         const w = x.F[15];   // distancia del pie del hito a la cámara (w del origen)
-        if (!mejor || w < mejor.w) mejor = { x, w };
+        if (!mejor || w < mejor.w) mejor = { x, w, sil };
       }
       if (!mejor) return null;
       const h = mejor.x.h;
-      return Object.assign(ficha(h), { hito: h, procedencia: h.procedencia ? new URL(h.procedencia, base).href : null });
+      return Object.assign(ficha(h), { hito: h, silueta: mejor.sil, procedencia: h.procedencia ? new URL(h.procedencia, base).href : null });
     }
 
     function ponerCredito(m) {
@@ -615,10 +649,13 @@ void main() {
       } catch (e) { /* el mapa ya no está */ }
       // Por si la capa nunca llegó a quitarse: ninguna caja queda escondida.
       if (B.cajasOcultas) for (const o of B.cajasOcultas.origenes()) if (o.startsWith('hitos:')) B.cajasOcultas.quitar(o);
+      let habia = false;
+      for (const x of hitos.values()) if (x.conSombra) { x.conSombra = false; habia = true; }
+      if (habia) avisarSombra();
       contar();
     }
 
-    return { prender, apagar, tocar, estado: est, catalogo: () => catalogo };
+    return { prender, apagar, tocar, sombras, estado: est, catalogo: () => catalogo };
   }
 
   B.hitos3d = Object.assign({ crear }, puro);
