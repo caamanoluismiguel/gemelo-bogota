@@ -198,11 +198,12 @@
   <p class="capa-aviso" id="capa-aviso" aria-live="polite" hidden></p>
   <p class="capa-aviso" id="aviso-3d" role="status" hidden>El 3D no cargó y quedó el mapa en 2D. <button type="button" class="aviso-boton">Reintentar 3D</button></p>
   <div class="ley-bloque" data-capa="pisos" hidden>
-    <p class="ley-titulo">Pisos de cada construcción</p>
+    <details class="ley-plegable" id="ley-pisos" open><summary class="ley-titulo"><span>Pisos de cada construcción<small class="ley-sub">Más rojo, más pisos; según Catastro</small></span></summary>
     <div class="leyenda" id="leyenda" aria-hidden="true"></div>
     <div class="escala" aria-hidden="true"><span>0 a 1</span><span>2</span><span>3</span><span>4 y 5</span><span>6 a 9</span><span>10 a 19</span><span>20+</span></div>
     <p class="nota">Pisos según Catastro, no altura en metros. De lejos, las construcciones de cada manzana con los mismos pisos van unidas; con la ciudad entera, el promedio del sector.</p>
     <div class="meta"><span class="marca sello" data-marca="de_fuente">de fuente</span><a href="https://creativecommons.org/licenses/by/4.0/deed.es" rel="noopener noreferrer" target="_blank">CC BY 4.0</a><span>UAECD, Catastro Bogotá</span></div>
+    </details>
   </div>
   <div class="ley-bloque" data-capa="techos" hidden>
     <details class="ley-plegable"><summary class="ley-titulo"><span>Color de las construcciones<small class="ley-sub">Color de la foto 2025; el gris es supuesto</small></span></summary>

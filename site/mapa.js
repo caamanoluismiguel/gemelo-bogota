@@ -208,6 +208,15 @@
   mapa.addControl(new maplibregl.NavigationControl({ visualizePitch: false }), 'top-right');
   mapa.addControl(new maplibregl.ScaleControl({ unit: 'metric' }), 'bottom-right');
   window.BogotwinMapa = mapa;
+  // Muy cerca y muy inclinada, la cámara se mete en los edificios. Hasta z17,5 deja 85° (la
+  // vista de arranque usa 79-80 a z17-17,3); de ahí baja suave hasta 72° en z18.
+  const pitchMax = (z) => z <= 17.5 ? 85 : z >= 18 ? 72 : 85 - (z - 17.5) * 26;
+  const ajustarPitchMax = () => {
+    const m = Math.round(pitchMax(mapa.getZoom()) * 10) / 10;
+    if (m !== mapa.getMaxPitch()) mapa.setMaxPitch(m);
+  };
+  mapa.on('zoom', ajustarPitchMax);
+  ajustarPitchMax();
   // 'load' sale una sola vez. Si algo llega después, isStyleLoaded() puede dar falso un rato
   // (una fuente nueva cargando) y esperar otro 'load' lo dejaba colgado para siempre.
   let mapaCargado = false;
@@ -415,6 +424,10 @@
   // colores se mezclan en línea recta. Se redondea a pasos de 1/20 para no repintar el estilo
   // en cada minuto de la barra. También acepta true o false.
   const DIA = {};
+  // Fondo de día: en 3D, lo que aún no carga sale en el tono de sabana del velo del relieve
+  // y no en blanco (los cerros sin cargar parecían nevados). En 2D, el claro de siempre.
+  const FONDO_2D = '#f4f2ee', FONDO_3D = '#a3a594';
+  const fondoDia = () => (caja3d.checked ? FONDO_3D : FONDO_2D);
   function fijarNoche(t) {
     t = Math.round(Math.min(1, Math.max(0, Number(t) || 0)) * 20) / 20;
     if (t === noche) return;
@@ -424,7 +437,8 @@
       for (const k of Object.keys(NOCHE[id])) {
         const clave = id + '|' + k;
         if (!(clave in DIA)) DIA[clave] = mapa.getPaintProperty(id, k);
-        mapa.setPaintProperty(id, k, t === 0 ? DIA[clave] : t === 1 ? NOCHE[id][k] : B.mezclarValor(DIA[clave], NOCHE[id][k], t));
+        const dia = clave === 'fondo|background-color' ? fondoDia() : DIA[clave];
+        mapa.setPaintProperty(id, k, t === 0 ? dia : t === 1 ? NOCHE[id][k] : B.mezclarValor(dia, NOCHE[id][k], t));
       }
     }
     aplicarLente();
@@ -466,6 +480,9 @@
   const avisoCapa = document.getElementById('capa-aviso');
   const cajaPisos = document.querySelector('[data-grupo="pisos"]');
   const cajaLluvia = document.querySelector('[data-grupo="lluvia"]');
+  // En el teléfono la leyenda de pisos arranca plegada, como la de techos: tapa menos mapa.
+  const leyPisos = document.getElementById('ley-pisos');
+  if (leyPisos && movil.matches) leyPisos.open = false;
   function ponerLeyenda() {
     if (!leyMapa) return;
     let alguno = false;
@@ -474,7 +491,8 @@
       let si;
       if (k === 'pisos') si = caja3d.checked ? lenteActual() === 'pisos' : !!(cajaPisos && cajaPisos.checked);
       // Techos: con «Cómo se ve», solo de lejos (z12 a z15), donde el color sale de «techo».
-      else if (k === 'techos') { const z = mapa.getZoom(); si = caja3d.checked && lenteActual() === 'como-se-ve' && z >= 12 && z < 16; }
+      // De noche (más de la mitad del crepúsculo) los colores de la foto ya no se ven: sin leyenda.
+      else if (k === 'techos') { const z = mapa.getZoom(); si = caja3d.checked && lenteActual() === 'como-se-ve' && z >= 12 && z < 16 && !(noche > 0.5); }
       else if (k === 'lluvia') si = !!(cajaLluvia && cajaLluvia.checked);
       else { const c = b.querySelector('.bicis-caja'); si = !!c && !c.hidden; }
       b.hidden = !si;
@@ -551,6 +569,7 @@
     for (const id of ['pisos-sector', 'construcciones']) mapa.setLayoutProperty(id, 'visibility', on ? 'none' : (document.querySelector('[data-grupo="pisos"]').checked ? 'visible' : 'none'));
     // Cielo y atmósfera: con 3D el cielo estático de día; sol-barra.js lo anima si hay sombras.
     if (on) { mapa.setSky(CIELO_DIA); } else { mapa.setSky({}); }
+    if (noche === 0) mapa.setPaintProperty('fondo', 'background-color', fondoDia());
     // De noche, el primer cuadro ya es de noche; la barra del sol sigue cuando llega.
     const arranqueNoche = alArrancar && on && cajaSombras.checked && !q0.has('sol') && B.cieloArranque(Date.now());
     if (arranqueNoche) { mapa.setSky(arranqueNoche.cielo); fijarNoche(arranqueNoche.noche); B.solArranque = arranqueNoche.sol; }
@@ -1057,7 +1076,9 @@
         if (c && !c.checked) { c.checked = true; c.dispatchEvent(new Event('change', { bubbles: true })); }
       })).addTo(mapa);
     } else if (id === 'metro-estaciones') {
-      ventana(ll, [['Metro línea 1', B.estaciones ? B.estaciones.nombreMetro(p.nombre) : p.nombre], ['Estado', p.estado]], { tipo: 'de_fuente', fuente: 'Empresa Metro de Bogotá vía IDECA', licencia: { nombre: 'CC BY 4.0', url: 'https://creativecommons.org/licenses/by/4.0/deed.es' } });
+      // Nombre de presentación; el de la fuente queda a la vista si cambia, como en TransMilenio.
+      const nombreM = B.estaciones ? B.estaciones.nombreMetro(p.nombre) : p.nombre;
+      ventana(ll, [['Metro línea 1', nombreM], ['Estado', p.estado]].concat(nombreM !== p.nombre ? [['En la fuente', p.nombre]] : []), { tipo: 'de_fuente', fuente: 'Empresa Metro de Bogotá vía IDECA', licencia: { nombre: 'CC BY 4.0', url: 'https://creativecommons.org/licenses/by/4.0/deed.es' } });
     } else if (id === 'paraderos') {
       ventana(ll, [['Paradero', p.nombre], ['Código', p.codigo]], { tipo: 'de_fuente', fuente: 'GTFS del 13 oct 2026', licencia: { nombre: 'CC BY‑SA 4.0', url: 'https://creativecommons.org/licenses/by-sa/4.0/deed.es' } });
     } else if (id === 'lluvia') {

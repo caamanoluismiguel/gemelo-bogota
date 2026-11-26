@@ -50,8 +50,8 @@ const index = leer('site', 'index.html');
 const ley = (index.match(/<div class="ley-bloque" data-capa="techos" hidden>[\s\S]*?\n {2}<\/div>/) || [''])[0];
 revisar('leyenda: bloque de techos', ley.length > 0);
 revisar('leyenda: «medido en la foto 2025» y «supuesto» con su marca', /Medido en la foto 2025/.test(ley) && /Sin medir <span class="marca" data-marca="supuesto">supuesto<\/span>/.test(ley));
-revisar('leyenda: se ve en 3D con «Cómo se ve» de z12 a z15 y se revisa al cambiar el zoom',
-  /k === 'techos'\) \{ const z = mapa\.getZoom\(\); si = caja3d\.checked && lenteActual\(\) === 'como-se-ve' && z >= 12 && z < 16; \}/.test(mapa) && /mapa\.on\('zoomend', ponerLeyenda\);/.test(mapa));
+revisar('leyenda: se ve en 3D con «Cómo se ve» de z12 a z15, no de noche, y se revisa al cambiar el zoom',
+  /k === 'techos'\) \{ const z = mapa\.getZoom\(\); si = caja3d\.checked && lenteActual\(\) === 'como-se-ve' && z >= 12 && z < 16 && !\(noche > 0\.5\); \}/.test(mapa) && /mapa\.on\('zoomend', ponerLeyenda\);/.test(mapa));
 revisar('leyenda: sin degradados', !/gradient/i.test(leer('site', 'estilo.css').split('.techo-ley')[1] || ''));
 
 // Tubería: el color va en los archivos de Catastro y nunca en el de OSM.
