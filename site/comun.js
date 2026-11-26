@@ -120,7 +120,8 @@
 
   const sinTildes = (s) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
   // Los datos traen las localidades sin tilde; las ponemos con su nombre oficial.
-  const TILDES = { Usaquen: 'Usaquén', Bolivar: 'Bolívar', Engativa: 'Engativá', Fontibon: 'Fontibón', Cristobal: 'Cristóbal', Martires: 'Mártires', Narino: 'Nariño' };
+  const TILDES = { Usaquen: 'Usaquén', Bolivar: 'Bolívar', Engativa: 'Engativá', Fontibon: 'Fontibón', Cristobal: 'Cristóbal', Martires: 'Mártires', Narino: 'Nariño',
+    Maria: 'María', Jose: 'José', Republica: 'República', America: 'América', Panama: 'Panamá', Simon: 'Simón', Fatima: 'Fátima', Belen: 'Belén', Lucia: 'Lucía', Garces: 'Garcés', Galan: 'Galán', Rincon: 'Rincón', Colon: 'Colón', Jardin: 'Jardín', Union: 'Unión', Mexico: 'México', Peru: 'Perú', Japon: 'Japón', Bogota: 'Bogotá' };
   // Los números romanos de los sectores («Tibabuyes II») quedan en mayúscula.
   const ROMANO = /^(?:i{1,3}|iv|vi{0,3}|ix|xi{0,3})$/i;
   const nombrePropio = (s) => s.toLowerCase().replace(/(^|[\s(\-/.])(\p{L})/gu, (_, a, b) => a + b.toUpperCase())

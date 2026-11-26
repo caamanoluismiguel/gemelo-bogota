@@ -50,7 +50,8 @@
   const entero = (x) => fmt0.format(x);
   const hora = (ms) => new Date(ms).toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit', timeZone: ZONA }).replace(/\s/g, '\u00a0');
   const fecha = (ms) => new Date(ms).toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'short', timeZone: ZONA });
-  const TILDES = { Usaquen: 'Usaquén', Bolivar: 'Bolívar', Engativa: 'Engativá', Fontibon: 'Fontibón', Cristobal: 'Cristóbal', Martires: 'Mártires', Narino: 'Nariño' };
+  const TILDES = { Usaquen: 'Usaquén', Bolivar: 'Bolívar', Engativa: 'Engativá', Fontibon: 'Fontibón', Cristobal: 'Cristóbal', Martires: 'Mártires', Narino: 'Nariño',
+    Maria: 'María', Jose: 'José', Republica: 'República', America: 'América', Panama: 'Panamá', Simon: 'Simón', Fatima: 'Fátima', Belen: 'Belén', Lucia: 'Lucía', Garces: 'Garcés', Galan: 'Galán', Rincon: 'Rincón', Colon: 'Colón', Jardin: 'Jardín', Union: 'Unión', Mexico: 'México', Peru: 'Perú', Japon: 'Japón', Bogota: 'Bogotá' };
   const ROMANO = /^(?:i{1,3}|iv|vi{0,3}|ix|xi{0,3})$/i;
   // Siglas que llegan en mayúscula y se quedan así: «(IED)», no «(Ied)».
   const SIGLAS = /^(?:IED|SED|IPS|USS|CAPS|UPA|CAMI|CDI|ESE|SAB|UPZ|UPL|IDIGER|RMCAB)$/;

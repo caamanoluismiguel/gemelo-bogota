@@ -249,6 +249,7 @@ revisar('los chips de arranque son las mismas preguntas de la lógica', base && 
 revisar('sin estilos en línea ni innerHTML', !/innerHTML|style=|setAttribute\('style'/.test(ui + leer('site/preguntar-logica.js')));
 revisar('sin claves ni servicios de pago', !/api[_-]?key|anthropic|openai|Authorization/i.test(ui + leer('site/preguntar-logica.js')));
 
+revisar('tildes en nombres de lugar: María Cristina', (lugar('maria cristina') || {}).nombre === 'María Cristina', (lugar('maria cristina') || {}).nombre);
 // Un nombre de lugar solo vuela al lugar.
 revisar('«kennedy» solo: vuela a la localidad', P.soloLugar('kennedy', lugar('kennedy')) && (() => { const r = P.responderLugar(lugar('kennedy')); return r.sabe && r.vuelo && r.vuelo.bbox && /Te llevo a la localidad Kennedy\./.test(texto(r)) && r.sugerencias.length === 3; })(), texto(P.responderLugar(lugar('kennedy'))));
 revisar('«llévame a Chapinero» también es solo un lugar', P.soloLugar('llévame a Chapinero', lugar('llévame a Chapinero')));
