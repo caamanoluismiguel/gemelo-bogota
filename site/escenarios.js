@@ -353,8 +353,10 @@
     const a = E.aire, c = cuentaAire(), u = M.UMBRALES[a.umbral];
     const conValor = (x) => x.total - x.sinValor;
     const hijos = [el('h3', { texto: 'Lo que pasaría' })];
-    if (a.colegios) hijos.push(cifra(`${entero(c.colegios.sobre)} de ${entero(conValor(c.colegios))}`, 'estimado', `colegios quedarían sobre la ${u.nombre}${c.colegios.sinValor ? ` (${c.colegios.sinValor} quedan fuera del área de la SDA)` : ''}.`));
-    if (a.salud) hijos.push(cifra(`${entero(c.salud.sobre)} de ${entero(conValor(c.salud))}`, 'estimado', `sedes de la red pública de salud quedarían sobre la ${u.nombre}.`));
+    // «De N» cuenta solo las sedes con valor; las que caen fuera de la superficie se dicen aparte.
+    const fuera = (x) => x.sinValor ? ` Otras ${entero(x.sinValor)} quedan fuera del área que interpola la SDA y no se cuentan.` : '';
+    if (a.colegios) hijos.push(cifra(`${entero(c.colegios.sobre)} de ${entero(conValor(c.colegios))}`, 'estimado', `sedes de colegios con valor en la superficie quedarían sobre la ${u.nombre}.${fuera(c.colegios)}`));
+    if (a.salud) hijos.push(cifra(`${entero(c.salud.sobre)} de ${entero(conValor(c.salud))}`, 'estimado', `sedes de la red pública de salud con valor en la superficie quedarían sobre la ${u.nombre}.${fuera(c.salud)}`));
     if (c.vis) hijos.push(cifra(`${Math.round(c.vis.peor)} a ${Math.round(c.vis.mejor)} km`, 'estimado', `se vería, de la zona más sucia a la más limpia (unos ${Math.round(c.vis.ciudad)} km con el promedio de la ciudad).`));
     if (c.qCol) hijos.push(el('p', { clase: 'nota esc-quiebre' }, `Dónde cambia la respuesta: con la ${u.nombre}, el primer colegio pasa cuando la ciudad promedia ${coma(c.qCol.primero)} µg/m³ y todos cuando promedia ${coma(c.qCol.todos)}. `, B.marca('inferido')));
     const hoy = aireHoy();
@@ -393,7 +395,7 @@
   function horaTexto(v) {
     const h = Math.floor(v), mi = Math.round((v - h) * 60);
     const h12 = h % 12 === 0 ? 12 : h % 12;
-    return `${h12}:${String(mi).padStart(2, '0')} ${h < 12 ? 'a. m.' : 'p. m.'}`;
+    return `${h12}:${String(mi).padStart(2, '0')}\u00a0${h < 12 ? 'a.\u00a0m.' : 'p.\u00a0m.'}`;
   }
   function supuestosArboles() {
     return el('details', { clase: 'mas' }, el('summary', { texto: 'Qué supone esta cuenta' }), el('ul', { clase: 'edn-supuestos' },

@@ -44,8 +44,11 @@
   const fmt1 = new Intl.NumberFormat('es-CO', { maximumFractionDigits: 1 });
   const fmt0 = new Intl.NumberFormat('es-CO', { maximumFractionDigits: 0 });
   const num = (x) => fmt1.format(x);
+  // Un rango con los dos extremos en el mismo formato: «10,3 a 24,0», no «10,3 a 24».
+  const fmtFijo1 = new Intl.NumberFormat('es-CO', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  const numPar = (a, b) => (Number.isInteger(Math.round(a * 10) / 10) && Number.isInteger(Math.round(b * 10) / 10) ? [num(a), num(b)] : [fmtFijo1.format(a), fmtFijo1.format(b)]);
   const entero = (x) => fmt0.format(x);
-  const hora = (ms) => new Date(ms).toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit', timeZone: ZONA });
+  const hora = (ms) => new Date(ms).toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit', timeZone: ZONA }).replace(/\s/g, '\u00a0');
   const fecha = (ms) => new Date(ms).toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'short', timeZone: ZONA });
   const TILDES = { Usaquen: 'Usaquén', Bolivar: 'Bolívar', Engativa: 'Engativá', Fontibon: 'Fontibón', Cristobal: 'Cristóbal', Martires: 'Mártires', Narino: 'Nariño' };
   const ROMANO = /^(?:i{1,3}|iv|vi{0,3}|ix|xi{0,3})$/i;
@@ -274,7 +277,7 @@
     }
     if (noches && noches.esquema === 'noches-frias/1') {
       const pr = (noches.pronostico || []).filter((p) => p.noche_que_termina === n.termina && p.rango_c && Number.isFinite(p.rango_c.bajo));
-      for (const p of pr) r.bloques.push([`Siete modelos esperan en ${p.nombre} entre `, v(`${num(p.rango_c.bajo)} y ${num(p.rango_c.alto)} °C`, 'estimado'), ' de mínima.']);
+      for (const p of pr) r.bloques.push([`Siete modelos esperan en ${p.nombre} entre `, v(`${numPar(p.rango_c.bajo, p.rango_c.alto).join(' y ')} °C`, 'estimado'), ' de mínima.']);
       if (pr.length) r.procedencia.push({ tipo: 'estimado', hora: noches.consultado_utc, viejoMin: 30 * 60, fuente: 'rango entre 7 modelos, Open‑Meteo', licencia: LIC.openmeteo });
       const m = (noches.medido || []).find((x) => Number.isFinite(x.minima_c));
       if (m) {

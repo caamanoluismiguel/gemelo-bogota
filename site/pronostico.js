@@ -4,7 +4,7 @@
 (function () {
   const B = window.Bogotwin;
   const V = B.vivo;
-  const { el, valor, num, meta } = B;
+  const { el, valor, num, numPar, meta } = B;
   const pCuerpo = document.getElementById('pron-cuerpo'), pEstado = document.getElementById('pron-estado');
   const aCuerpo = document.getElementById('aire-cuerpo'), aEstado = document.getElementById('aire-estado');
   if (!pCuerpo || !aCuerpo) return;
@@ -32,7 +32,7 @@
     const lo = Math.floor(Math.min(...temps)) - 1, hi = Math.ceil(Math.max(...temps)) + 1;
     const y = (c) => abT - (abT - arT) * (c - lo) / Math.max(1, hi - lo);
     const yl = (p) => abL - (abL - arL) * p / 100;
-    const resumen = `Temperatura entre ${num(Math.min(...temps))} y ${num(Math.max(...temps))} °C en las próximas 48 horas.`;
+    const resumen = `Temperatura entre ${numPar(Math.min(...temps), Math.max(...temps)).join(' y ')} °C en las próximas 48 horas.`;
     const s = sv('svg', { viewBox: `0 0 ${W} ${H}`, class: 'pron-grafica', role: 'img', 'aria-label': resumen });
     // Rejilla: días a medianoche y horas cada 6. Los rótulos que se montarían se quitan.
     const marcas = [];
@@ -119,7 +119,7 @@
     const { tmin, tmax, lluvia } = V.resumen24(horas, Date.now());
     if (tmin != null) {
       pCuerpo.append(el('div', { clase: 'dato' },
-        valor(`${num(tmin)} a ${num(tmax)} °C`, 'estimado'),
+        valor(`${numPar(tmin, tmax).join(' a ')} °C`, 'estimado'),
         el('span', { clase: 'que', texto: 'Temperatura que espera el modelo en las próximas 24 horas' })));
     }
     if (lluvia) {

@@ -63,8 +63,10 @@
     const frag = document.createDocumentFragment();
     frag.append(el('h3', { texto: 'Lluvia de hoy' }));
     const locs = (f.por_localidad || []).filter(l => l.acumulado_hoy_max_mm != null).sort((a, b) => b.acumulado_hoy_max_mm - a.acumulado_hoy_max_mm);
-    const lloviendo = (f.estaciones || []).filter(e => e.ultimo_minuto_mm > 0).length;
-    const total = (f.estaciones || []).length;
+    // Solo los pluviómetros que reportan hoy, igual que la respuesta de «¿va a llover?».
+    const reportan = (f.estaciones || []).filter(e => !e.sin_dato_hoy && Number.isFinite(e.acumulado_hoy_mm));
+    const lloviendo = reportan.filter(e => e.ultimo_minuto_mm > 0).length;
+    const total = reportan.length;
     frag.append(el('div', { clase: 'dato' },
       valor(`${lloviendo} de ${total}`, 'medido', true),
       el('span', { clase: 'que', texto: 'pluviómetros marcaron lluvia en el último minuto' })));
@@ -137,9 +139,9 @@
     const iso = s.dataset.hora;
     const min = B.minutosDesde(iso);
     if (min == null) { s.textContent = s.dataset.sin; s.classList.add('viejo'); return; }
-    const hora = (min >= 20 * 60 ? B.fechaLocal(iso) + ', ' : '') + B.horaLocal(iso);
+    const cuando = min >= 20 * 60 ? `del ${B.fechaLocal(iso)}, a las ${B.horaLocal(iso)}` : `de las ${B.horaLocal(iso)}`;
     const viejo = min > Number(s.dataset.limite);
-    s.textContent = (viejo ? `${s.dataset.sin}. Lo último es de las ${hora}` : `Datos de las ${hora}`) + `, ${B.edadTexto(min)}`;
+    s.textContent = (viejo ? `${s.dataset.sin}. Lo último es ${cuando}` : `Datos ${cuando}`) + `, ${B.edadTexto(min)}`;
     s.classList.toggle('viejo', viejo);
   }
   setInterval(() => document.querySelectorAll('.hora-dato[data-hora]').forEach(pintarHora), 60000);
@@ -232,7 +234,7 @@
       for (const n of noches) {
         const filas = el('div', { clase: 'filas' });
         for (const p of pron.filter(x => x.noche_que_termina === n)) {
-          filas.append(el('span', { texto: p.nombre }), valor(`${num(p.rango_c.bajo)} a ${num(p.rango_c.alto)} °C`, B.marcaDe(p.etiqueta, 'estimado'), true));
+          filas.append(el('span', { texto: p.nombre }), valor(`${B.numPar(p.rango_c.bajo, p.rango_c.alto).join(' a ')} °C`, B.marcaDe(p.etiqueta, 'estimado'), true));
         }
         nc.append(el('span', { clase: 'que', texto: `Mínima que esperan para la noche que termina el ${B.fechaLocal(n + 'T12:00:00-05:00')}:` }), filas);
       }

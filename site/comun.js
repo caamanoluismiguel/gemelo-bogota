@@ -103,6 +103,9 @@
 
   const fmt1 = new Intl.NumberFormat('es-CO', { maximumFractionDigits: 1 });
   const num = (x) => fmt1.format(x);
+  // Un rango con los dos extremos en el mismo formato: «10,3 a 24,0», no «10,3 a 24».
+  const fmtFijo1 = new Intl.NumberFormat('es-CO', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  const numPar = (a, b) => (Number.isInteger(Math.round(a * 10) / 10) && Number.isInteger(Math.round(b * 10) / 10) ? [num(a), num(b)] : [fmtFijo1.format(a), fmtFijo1.format(b)]);
   // Lo que va en una fila de ficha: los decimales con coma (3,4 y no 3.4) y lo vacío dice «sin
   // dato». Los enteros quedan tal cual, para no meterle puntos de miles a un código.
   function valorFicha(v) {
@@ -111,7 +114,8 @@
     // Un texto como «3.4» también; «1.624» no, que puede ser un mil con punto.
     return /^-?\d+\.\d{1,2}$/.test(String(v)) ? num(Number(v)) : String(v);
   }
-  const horaLocal = (iso) => new Date(iso).toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit', timeZone: 'America/Bogota' });
+  // Con espacios duros: «9:32 p. m.» nunca se parte entre dos renglones.
+  const horaLocal = (iso) => new Date(iso).toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit', timeZone: 'America/Bogota' }).replace(/\s/g, '\u00a0');
   const fechaLocal = (iso) => new Date(iso).toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'short', timeZone: 'America/Bogota' });
 
   const sinTildes = (s) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
@@ -223,5 +227,5 @@
   }
 
   // Se suma a lo que ya haya (sol.js y sombra-geom.js cuelgan sus piezas aquí también).
-  window.Bogotwin = Object.assign(window.Bogotwin || {}, { el, enlace, marca, marcaDe, sello, meta, valor, edad, edadTexto, minutosDesde, num, valorFicha, horaLocal, fechaLocal, sinTildes, nombrePropio, frase, MARCAS, mezclarColor, mezclarValor, cieloArranque, colorFachada, exprFachada, PALETA_FACHADA, TECHO_COLOR, exprTecho });
+  window.Bogotwin = Object.assign(window.Bogotwin || {}, { el, enlace, marca, marcaDe, sello, meta, valor, edad, edadTexto, minutosDesde, num, numPar, valorFicha, horaLocal, fechaLocal, sinTildes, nombrePropio, frase, MARCAS, mezclarColor, mezclarValor, cieloArranque, colorFachada, exprFachada, PALETA_FACHADA, TECHO_COLOR, exprTecho });
 })();
