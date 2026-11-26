@@ -27,3 +27,6 @@ mapa-base/salida/
 
 # Ejemplo local de la tarjeta del cielo (lo vivo se publica en gemelo-bogota-vivo)
 data/cielo/
+
+# Descargas que LM deja a mano para los hitos 3D (modelos de Sketchfab, etc.)
+pipelines/hitos/fuentes/

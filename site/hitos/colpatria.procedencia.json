@@ -1,0 +1,40 @@
+{
+ "hito": "Torre Colpatria",
+ "archivo": "colpatria.glb",
+ "fecha": "2026-11-25",
+ "autor": "Bogotwin (modelado en código: pipelines/hitos/modelar.js)",
+ "licencia": {
+  "nombre": "CC BY 4.0",
+  "url": "https://creativecommons.org/licenses/by/4.0/deed.es"
+ },
+ "atribucion": "Bogotwin, a partir de la huella de UAECD, Catastro Bogotá (CC BY 4.0)",
+ "tipo": "modelado a partir de huella y altura (supuesto ilustrativo, no medido)",
+ "fuentes": [
+  {
+   "que": "Huella de la torre y del remate",
+   "de": "UAECD, Catastro Bogotá, construcciones (CONST_V2), fid 153239 y 154534",
+   "licencia": "CC BY 4.0",
+   "url": "https://datosabiertos.bogota.gov.co/"
+  },
+  {
+   "que": "Alto total de 196 m, 50 pisos, terminada en 1978",
+   "de": "Wikipedia en español, «Torre Colpatria» (cita a SkyscraperPage)",
+   "url": "https://es.wikipedia.org/wiki/Torre_Colpatria"
+  }
+ ],
+ "supuestos": [
+  "Cuerpo hasta 186 m, remate octogonal hasta 192 m y helipuerto hasta 196 m: el reparto es un supuesto; el total es el dato publicado.",
+  "Aletas verticales claras cada 2,6 m sobre fachada de vidrio gris azulado: forma conocida de la fachada, medidas supuestas.",
+  "Sin ventanas, pisos ni luces de la fachada."
+ ],
+ "referencias_visuales": "Fotos de Wikimedia Commons, solo para mirar la forma; ninguna foto va dentro del modelo.",
+ "cambios": "Huella simplificada (puntos en línea recta quitados) y extruida; formas sencillas sin texturas, color por vértice.",
+ "origen": {
+  "lon": -74.0702368,
+  "lat": 4.6109538,
+  "ejes": "x este, y arriba, z sur, en metros; y = 0 en el suelo"
+ },
+ "triangulos": 307,
+ "vertices": 605,
+ "bytes": 20120
+}

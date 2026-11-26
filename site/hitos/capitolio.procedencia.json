@@ -1,0 +1,41 @@
+{
+ "hito": "Capitolio Nacional",
+ "archivo": "capitolio.glb",
+ "fecha": "2026-11-25",
+ "autor": "Bogotwin (modelado en código: pipelines/hitos/modelar.js)",
+ "licencia": {
+  "nombre": "CC BY 4.0",
+  "url": "https://creativecommons.org/licenses/by/4.0/deed.es"
+ },
+ "atribucion": "Bogotwin, a partir de la huella de UAECD, Catastro Bogotá (CC BY 4.0)",
+ "tipo": "modelado a partir de huella y altura (supuesto ilustrativo, no medido)",
+ "fuentes": [
+  {
+   "que": "Huella de las alas, el cuerpo central y los patios",
+   "de": "UAECD, Catastro Bogotá, construcciones (CONST_V2), fid 5454, 1839, 1744, 1280, 1771, 5047, 4500, 4331, 2695",
+   "licencia": "CC BY 4.0",
+   "url": "https://datosabiertos.bogota.gov.co/"
+  },
+  {
+   "que": "Fachada hacia la Plaza de Bolívar con columnata jónica, cuatro patios, piedra",
+   "de": "Wikipedia en español, «Capitolio Nacional de Colombia»",
+   "url": "https://es.wikipedia.org/wiki/Capitolio_Nacional_de_Colombia"
+  }
+ ],
+ "supuestos": [
+  "Alas de 2 pisos a 17 m y cuerpo central de 3 pisos a 21 m (pisos de Catastro; alto por piso supuesto).",
+  "Columnata de 6 × 3 columnas de 13 m con su viga hasta 17 m, en el patio abierto de la fachada.",
+  "Las piezas de 0 pisos de Catastro (patios interiores) a 4 m.",
+  "Techos planos, sin balaustradas ni cornisas."
+ ],
+ "referencias_visuales": "Fotos de Wikimedia Commons, solo para mirar la forma; ninguna foto va dentro del modelo.",
+ "cambios": "Huella simplificada (puntos en línea recta quitados) y extruida; formas sencillas sin texturas, color por vértice.",
+ "origen": {
+  "lon": -74.0765356,
+  "lat": 4.5971959,
+  "ejes": "x este, y arriba, z sur, en metros; y = 0 en el suelo"
+ },
+ "triangulos": 1259,
+ "vertices": 2401,
+ "bytes": 76120
+}

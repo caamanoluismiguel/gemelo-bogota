@@ -1,0 +1,71 @@
+{
+ "_nota": "Ids de tippecanoe de las teselas de Catastro publicadas. Se rehacen con este script en cada release de teselas.",
+ "hitos": {
+  "colpatria": {
+   "z16": [
+    610071,
+    610072
+   ],
+   "z14": [],
+   "z15": [
+    50212,
+    50213
+   ],
+   "z12": [],
+   "z13": []
+  },
+  "catedral-primada": {
+   "z16": [
+    600737,
+    600738,
+    606837,
+    606844
+   ],
+   "z14": [],
+   "z15": [
+    48706
+   ],
+   "z12": [],
+   "z13": [
+    48706
+   ]
+  },
+  "capitolio": {
+   "z16": [
+    600688,
+    600689,
+    600691,
+    600692,
+    601407,
+    601408,
+    601410,
+    601429,
+    601430
+   ],
+   "z14": [
+    48698
+   ],
+   "z15": [
+    48697,
+    48698
+   ],
+   "z12": [],
+   "z13": [
+    48698
+   ]
+  },
+  "santamaria": {
+   "z16": [
+    564801
+   ],
+   "z14": [],
+   "z15": [],
+   "z12": [],
+   "z13": []
+  }
+ },
+ "teselas": {
+  "catastro-pisos-bogota.pmtiles": "0e639c4e1254653fa759d1bc03c1f30913caf15eda9870290268a029aba75239",
+  "catastro-lejos-bogota.pmtiles": "8d2ace6e7092a8024b0fe68f95f2f5079d17e8304dc13adbbe79f82695f8f1e6"
+ }
+}

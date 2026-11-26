@@ -1,0 +1,41 @@
+{
+ "hito": "Catedral Primada de Colombia",
+ "archivo": "catedral-primada.glb",
+ "fecha": "2026-11-25",
+ "autor": "Bogotwin (modelado en código: pipelines/hitos/modelar.js)",
+ "licencia": {
+  "nombre": "CC BY 4.0",
+  "url": "https://creativecommons.org/licenses/by/4.0/deed.es"
+ },
+ "atribucion": "Bogotwin, a partir de la huella de UAECD, Catastro Bogotá (CC BY 4.0)",
+ "tipo": "modelado a partir de huella y altura (supuesto ilustrativo, no medido)",
+ "fuentes": [
+  {
+   "que": "Huella de la nave y de los anexos",
+   "de": "UAECD, Catastro Bogotá, construcciones (CONST_V2), fid 1688, 5669, 122 y 6561. La Capilla del Sagrario (fid 6007) queda aparte",
+   "licencia": "CC BY 4.0",
+   "url": "https://datosabiertos.bogota.gov.co/"
+  },
+  {
+   "que": "Torres de 52 m, fachada neoclásica hacia la Plaza de Bolívar con dos torres",
+   "de": "Wikipedia en español, «Catedral Primada de Colombia»",
+   "url": "https://es.wikipedia.org/wiki/Catedral_Primada_de_Colombia"
+  }
+ ],
+ "supuestos": [
+  "Naves laterales hasta 18 m, nave central hasta 24 m con techo a dos aguas hasta 30 m.",
+  "Cuerpo de la fachada hasta 30 m con frontón hasta 36 m.",
+  "Torres de 8 × 8 m (la huella de Catastro no las separa); cuerpo hasta 34 m, campanario hasta 43 m y remate redondeado hasta 52 m.",
+  "Anexos de 3 pisos a 9 m; el resto de la huella a 10 m."
+ ],
+ "referencias_visuales": "Fotos de Wikimedia Commons, solo para mirar la forma; ninguna foto va dentro del modelo.",
+ "cambios": "Huella simplificada (puntos en línea recta quitados) y extruida; formas sencillas sin texturas, color por vértice.",
+ "origen": {
+  "lon": -74.0750288,
+  "lat": 4.5977906,
+  "ejes": "x este, y arriba, z sur, en metros; y = 0 en el suelo"
+ },
+ "triangulos": 326,
+ "vertices": 622,
+ "bytes": 20716
+}
