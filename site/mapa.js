@@ -134,9 +134,14 @@
       { id: 'paraderos', type: 'circle', source: 'paraderos', minzoom: 13, metadata: { grupo: 'paraderos' }, layout: { visibility: 'none' },
         paint: { 'circle-radius': ['interpolate', ['linear'], ['zoom'], 13, 2, 17, 5], 'circle-color': '#ffffff',
           'circle-stroke-color': '#3d5a80', 'circle-stroke-width': 1.4 } },
-      { id: 'troncal', type: 'circle', source: 'troncal', metadata: { grupo: 'troncal' },
-        paint: { 'circle-radius': ['interpolate', ['linear'], ['zoom'], 10, 2.5, 16, 7], 'circle-color': '#b8312f',
-          'circle-stroke-color': '#ffffff', 'circle-stroke-width': 1.2 } },
+      // Estación de TransMilenio: punto blanco con borde rojo, plano sobre el suelo (el rojo
+      // lleno chocaba con los pisos altos). Gris si el GTFS no le programa buses en día hábil
+      // (estaciones.js pone sin_servicio cuando bajan los buses programados).
+      { id: 'troncal', type: 'circle', source: 'troncal', minzoom: 11, metadata: { grupo: 'troncal' },
+        paint: { 'circle-radius': ['interpolate', ['linear'], ['zoom'], 11, 1.5, 16, 5], 'circle-pitch-alignment': 'map',
+          'circle-color': ['case', ['==', ['get', 'sin_servicio'], true], '#d9d5ce', '#ffffff'],
+          'circle-stroke-color': ['case', ['==', ['get', 'sin_servicio'], true], '#8a857c', '#b8312f'],
+          'circle-stroke-width': ['interpolate', ['linear'], ['zoom'], 11, 1, 14, 2] } },
       { id: 'metro-estaciones', type: 'circle', source: 'metro', filter: ['==', ['get', 'tipo'], 'estacion'], metadata: { grupo: 'metro' },
         paint: { 'circle-radius': ['interpolate', ['linear'], ['zoom'], 10, 3.5, 16, 8], 'circle-color': '#ffffff',
           'circle-stroke-color': '#1d6a7a', 'circle-stroke-width': 2.5 } },
@@ -152,8 +157,9 @@
           'text-size': ['match', ['get', 'nivel'], 'localidad', 13, 11.5],
           'text-transform': ['match', ['get', 'nivel'], 'localidad', 'uppercase', 'none'], 'text-max-width': 8 },
         paint: { 'text-color': '#222', 'text-halo-color': '#fff', 'text-halo-width': 1.4 } },
-      { id: 'estaciones-rotulo', type: 'symbol', source: 'troncal', minzoom: 14, metadata: { grupo: 'troncal' },
-        layout: { 'text-field': ['get', 'nombre'], 'text-font': ['Noto Sans Medium'], 'text-size': 11, 'text-offset': [0, 1.1],
+      { id: 'estaciones-rotulo', type: 'symbol', source: 'troncal', minzoom: 15, metadata: { grupo: 'troncal' },
+        layout: { 'text-field': ['coalesce', ['get', 'corto'], ['get', 'nombre']], 'text-font': ['Noto Sans Medium'],
+          'text-size': ['interpolate', ['linear'], ['zoom'], 15, 10, 17, 12], 'text-offset': [0, 1.1],
           'text-anchor': 'top', 'text-max-width': 9, 'text-optional': true },
         paint: { 'text-color': '#7a1f1d', 'text-halo-color': '#fff', 'text-halo-width': 1.4 } }
     ]
@@ -165,6 +171,15 @@
   // vista viene inclinada, así los enlaces de antes en 2D siguen abriendo en 2D.
   const q0 = new URLSearchParams(location.search);
   const vista0 = location.hash.replace(/^#/, '').split('/');
+  // El rumbo del enlace va de −180 a 180: con 200 o 265 MapLibre descarta toda la vista y abre
+  // la ciudad entera. Se normaliza antes de crear el mapa (265 es lo mismo que −95).
+  if (vista0.length >= 4 && vista0[3] !== '' && Number.isFinite(Number(vista0[3]))) {
+    const b = Number(vista0[3]);
+    if (b < -180 || b > 180) {
+      vista0[3] = String(Math.round((((b + 180) % 360 + 360) % 360 - 180) * 10) / 10);
+      history.replaceState(history.state, '', location.pathname + location.search + '#' + vista0.join('/'));
+    }
+  }
   const conVista = vista0.length >= 3 && vista0.slice(0, 3).every((v) => v !== '' && Number.isFinite(Number(v)));
   const porDefecto = !q0.has('3d') && !conVista;
   const pide3d = q0.has('3d') ? q0.get('3d') === '1' : conVista ? Number(vista0[4]) > 0 : true;
@@ -198,6 +213,17 @@
   let mapaCargado = false;
   mapa.once('load', () => { mapaCargado = true; });
   const trasCarga = (fn) => { if (mapaCargado || mapa.loaded()) fn(); else mapa.once('load', fn); };
+  // Estaciones de TransMilenio y del Metro justo debajo de los rótulos: el 3D, los árboles y
+  // las capas que llegan después se ponen antes de 'rotulos' y taparían los puntos.
+  function subirEstaciones() {
+    const orden = mapa.getLayersOrder ? mapa.getLayersOrder() : [];
+    const i = orden.indexOf('rotulos');
+    if (i < 2 || (orden[i - 2] === 'troncal' && orden[i - 1] === 'metro-estaciones')) return;
+    mapa.moveLayer('troncal', 'rotulos');
+    mapa.moveLayer('metro-estaciones', 'rotulos');
+  }
+  mapa.on('idle', subirEstaciones);
+  if (B.estaciones) trasCarga(() => B.estaciones.poner(mapa));
 
   // Panel: la hoja y las pestañas viven en panel.js; aquí solo se mide lo que tapa del mapa.
   const panel = document.getElementById('panel');
@@ -258,10 +284,10 @@
       // en rayas. Un velo lo tapa; el verde y el agua quedan encima. Solo se ve en 3D y siempre
       // muy lejos, más allá de la foto satelital: va en un tono de sabana apagado, no en el
       // blanco del fondo, para que el horizonte no quede con una franja clara.
-      mapa.addSource('relieve-fuera', { type: 'geojson', data: { type: 'Feature', properties: {}, geometry: { type: 'Polygon', coordinates: [
+      if (!mapa.getSource('relieve-fuera')) mapa.addSource('relieve-fuera', { type: 'geojson', data: { type: 'Feature', properties: {}, geometry: { type: 'Polygon', coordinates: [
         [[-76, 2.5], [-72, 2.5], [-72, 6.5], [-76, 6.5], [-76, 2.5]],
         [[CAJA_REL[0], CAJA_REL[1]], [CAJA_REL[0], CAJA_REL[3]], [CAJA_REL[2], CAJA_REL[3]], [CAJA_REL[2], CAJA_REL[1]], [CAJA_REL[0], CAJA_REL[1]]]] } } });
-      mapa.addLayer({ id: 'relieve-fuera', type: 'fill', source: 'relieve-fuera', metadata: { grupo: 'relieve' },
+      if (!mapa.getLayer('relieve-fuera')) mapa.addLayer({ id: 'relieve-fuera', type: 'fill', source: 'relieve-fuera', metadata: { grupo: 'relieve' },
         paint: { 'fill-color': '#a3a594', 'fill-antialias': false } }, 'verde');
     }
     for (const id of ['relieve', 'relieve-fuera']) if (mapa.getLayer(id)) mapa.setLayoutProperty(id, 'visibility', on ? 'visible' : 'none');
@@ -454,7 +480,8 @@
       b.hidden = !si;
       alguno = alguno || si;
     }
-    leyMapa.hidden = !alguno && (!avisoCapa || avisoCapa.hidden);
+    const aviso3dVisible = !!document.getElementById('aviso-3d') && !document.getElementById('aviso-3d').hidden;
+    leyMapa.hidden = !alguno && (!avisoCapa || avisoCapa.hidden) && !aviso3dVisible;
   }
   if (leyMapa) {
     // La de techos depende del zoom: se revisa al terminar cada movimiento.
@@ -542,8 +569,10 @@
     // queda bajo el suelo de la sabana, con el mapa en blanco. Así la altura sigue al terreno.
     if (alArrancar) {
       // Al arrancar la cámara ya está donde debe (la del enlace o la de inicio): no se mueve.
-      // El giro sin movimiento basta para que la altura siga al terreno.
-      mapa.easeTo({ pitch: mapa.getPitch(), duration: 0, freezeElevation: true });
+      // El giro sin movimiento basta para que la altura siga al terreno. Si el 3D ya se cayó
+      // antes de cargar el mapa, la vista queda plana y sin giro.
+      if (on) mapa.easeTo({ pitch: mapa.getPitch(), duration: 0, freezeElevation: true });
+      else mapa.jumpTo({ pitch: 0, bearing: 0 });
     } else if (on) {
       const zoom = mapa.getZoom();
       if (zoom < 15) {
@@ -559,7 +588,11 @@
     escribir3d(on);
     window.dispatchEvent(new CustomEvent('bogotwin:3d', { detail: { on } }));
   }
-  caja3d.addEventListener('change', () => trasCarga(() => poner3d()));
+  caja3d.addEventListener('change', () => {
+    const a = document.getElementById('aviso-3d');
+    if (a && caja3d.checked && !a.hidden) { a.hidden = true; ponerLeyenda(); }
+    trasCarga(() => poner3d());
+  });
   // Los créditos completos arrancan cerrados (botón ⓘ), en teléfono y en escritorio, para no
   // tapar la ciudad. OpenStreetMap queda siempre a la vista con su enlace a la licencia, como
   // pide la guía de atribución de la OSMF; el resto está a un toque en la ⓘ.
@@ -639,25 +672,59 @@
   // Arranque en 3D (o vuelta al 2D de siempre si no hay WebGL2 o si el relieve no carga).
   const arranca3d = pide3d && conWebGL2;
   if (!arranca3d && porDefecto) mapa.jumpTo(VISTA_2D);
-  if (arranca3d) {
-    caja3d.checked = true;
-    mapa.once('load', () => poner3d('arranque'));
-    // Si el relieve falla antes del primer cuadro en 3D, se vuelve al 2D sin ruido.
-    // Mientras escucha, los demás errores se siguen mostrando como siempre; los del relieve que
-    // lleguen tarde, ya en 2D, se callan.
-    let primerCuadro = false, caido = false;
+  // Si el relieve no carga antes del primer cuadro en 3D, se vuelve al 2D con un aviso y un
+  // botón para reintentar. Cuenta como caída que falle el encabezado del archivo del relieve,
+  // o tres teselas; una tesela suelta no (MapLibre la vuelve a pedir). Mientras escucha, los
+  // demás errores se siguen mostrando como siempre.
+  const aviso3d = document.getElementById('aviso-3d');
+  function quitarTerreno() {
+    mapa.setTerrain(null);
+    if (mapa.getLayer('relieve')) mapa.removeLayer('relieve');
+    for (const id of ['terreno-sombreado', 'terreno']) if (mapa.getSource(id)) mapa.removeSource(id);
+    // El archivo abierto guarda su encabezado fallido: al reintentar se abre de nuevo.
+    if (protocolo.tiles && protocolo.tiles.delete) protocolo.tiles.delete(new URL('terreno-bogota.pmtiles', base).href);
+  }
+  function vigilar3d() {
+    let listo = false, caido = false;
+    const fallos = new Set();   // teselas distintas (las dos fuentes del relieve piden las mismas)
     const alFallar3d = (e) => {
       if (esOrto(e)) return;
       if (!e || !/^terreno/.test(e.sourceId || '')) { console.error((e && e.error) || e); return; }
-      if (caido || primerCuadro) return;
+      if (caido || listo) return;
+      if (e.tile) {
+        const t = e.tile.tileID && e.tile.tileID.canonical;
+        fallos.add(t ? t.z + '/' + t.x + '/' + t.y : fallos.size);
+        if (fallos.size < 3) return;
+      }
       caido = true;
+      mapa.off('error', alFallar3d); mapa.on('error', sinOrto);
       console.warn('El 3D no cargó; queda el mapa en 2D.');
       caja3d.checked = false;
-      poner3d();
-      if (porDefecto) { if (B.quitarSombras) B.quitarSombras(); mapa.jumpTo(VISTA_2D); }
+      trasCarga(() => {
+        poner3d();
+        quitarTerreno();
+        mapa.jumpTo(porDefecto ? VISTA_2D : { pitch: 0, bearing: 0 });
+        if (porDefecto && B.quitarSombras) B.quitarSombras();
+      });
+      if (aviso3d) { aviso3d.hidden = false; ponerLeyenda(); }
     };
+    mapa.off('error', sinOrto);
     mapa.on('error', alFallar3d);
-    mapa.once('idle', () => { primerCuadro = true; if (!caido) { mapa.off('error', alFallar3d); mapa.on('error', sinOrto); } });
+    mapa.once('idle', () => { listo = true; if (!caido) { mapa.off('error', alFallar3d); mapa.on('error', sinOrto); } });
+  }
+  if (aviso3d) {
+    const reintentar = aviso3d.querySelector('button');
+    if (reintentar) reintentar.addEventListener('click', () => {
+      aviso3d.hidden = true; ponerLeyenda();
+      caja3d.checked = true;
+      vigilar3d();
+      trasCarga(() => poner3d());
+    });
+  }
+  if (arranca3d) {
+    caja3d.checked = true;
+    mapa.once('load', () => poner3d('arranque'));
+    vigilar3d();
   } else mapa.on('error', sinOrto);
   B.mapaApi = { mapa, movil, plegar, fijarAlto, pmCat, panel, teselaUrl: (f) => new URL(f, base).href, es3d: () => caja3d.checked, fijarNoche, panelAbierto: () => (movil.matches ? ui.estado.hoja === 'completa' : ui.abierto()), cieloDia: CIELO_DIA };
   // Luz propia de los edificios en la vista de calle (edificios-luz.js): cara al sol cálida,
@@ -975,9 +1042,20 @@
       ventana(ll, [['Sector', B.nombrePropio(String(p.nombre || ''))], ['Pisos promedio', p.pisos_prom], ['Pisos máximo', p.pisos_max], ['Construcciones', p.construcciones]],
         { tipo: 'inferido', fuente: 'promedio ponderado por área, calculado aquí con datos de UAECD, Catastro Bogotá', licencia: { nombre: 'CC BY 4.0', url: 'https://creativecommons.org/licenses/by/4.0/deed.es' } });
     } else if (id === 'troncal') {
-      ventana(ll, [['Estación de TransMilenio', p.nombre]], { tipo: 'de_fuente', fuente: 'TransMilenio S.A.', licencia: { nombre: 'CC BY 4.0', url: 'https://creativecommons.org/licenses/by/4.0/deed.es' } });
+      // Sin estaciones.js (no debería pasar), la ficha simple de siempre.
+      if (!B.estaciones) {
+        ventana(ll, [['Estación de TransMilenio', p.nombre]], { tipo: 'de_fuente', fuente: 'TransMilenio S.A.', licencia: { nombre: 'CC BY 4.0', url: 'https://creativecommons.org/licenses/by/4.0/deed.es' } });
+        return;
+      }
+      const pop = new maplibregl.Popup({ maxWidth: '270px' }).setLngLat(ll);
+      pop.setDOMContent(B.estaciones.ventana(p, ll, () => {
+        // «Ver buses por hora» prende la capa de frecuencia como si se tocara su casilla.
+        const c = document.getElementById('ver-frecuencia');
+        pop.remove();
+        if (c && !c.checked) { c.checked = true; c.dispatchEvent(new Event('change', { bubbles: true })); }
+      })).addTo(mapa);
     } else if (id === 'metro-estaciones') {
-      ventana(ll, [['Metro línea 1', p.nombre], ['Estado', p.estado]], { tipo: 'de_fuente', fuente: 'Empresa Metro de Bogotá vía IDECA', licencia: { nombre: 'CC BY 4.0', url: 'https://creativecommons.org/licenses/by/4.0/deed.es' } });
+      ventana(ll, [['Metro línea 1', B.estaciones ? B.estaciones.nombreMetro(p.nombre) : p.nombre], ['Estado', p.estado]], { tipo: 'de_fuente', fuente: 'Empresa Metro de Bogotá vía IDECA', licencia: { nombre: 'CC BY 4.0', url: 'https://creativecommons.org/licenses/by/4.0/deed.es' } });
     } else if (id === 'paraderos') {
       ventana(ll, [['Paradero', p.nombre], ['Código', p.codigo]], { tipo: 'de_fuente', fuente: 'GTFS del 13 oct 2026', licencia: { nombre: 'CC BY‑SA 4.0', url: 'https://creativecommons.org/licenses/by-sa/4.0/deed.es' } });
     } else if (id === 'lluvia') {

@@ -43,6 +43,10 @@ a { color: var(--acento); }
 .estado { color: var(--tinta-2); margin: 4px 0; }
 .nota { color: var(--tinta-2); font-size: 12.5px; margin: 4px 0; }
 .nota-inline { color: var(--tinta-2); font-size: 12px; }
+/* Muestra del punto de cada estación junto a su casilla: hace de leyenda sin abrir otra caja sobre el mapa. */
+.sw-estacion { display: inline-block; width: 10px; height: 10px; margin-right: 6px; border-radius: 50%; background: #fff; flex: none; vertical-align: -1px; }
+.sw-tm { border: 2px solid #b8312f; }
+.sw-metro { border: 2.5px solid #1d6a7a; }
 
 .dato { margin: 6px 0 8px; }
 .dato .valor { font-size: 28px; font-weight: 650; font-variant-numeric: tabular-nums; }
@@ -441,6 +445,7 @@ body.en-escenario #mapa::after { content: ""; position: absolute; inset: 0; z-in
 .ley-plegable[open] .ley-sub { display: none; }
 .ley-bloque:not([hidden]) ~ .ley-bloque:not([hidden]) { margin-top: 8px; padding-top: 6px; border-top: 1px solid var(--borde); }
 .capa-aviso { margin: 0 0 6px; padding: 4px 8px; border-left: 3px solid var(--acento); font-size: 12.5px; }
+.aviso-boton { display: inline-block; margin-top: 4px; min-height: 32px; padding: 0 10px; border: 1px solid var(--acento); border-radius: 6px; background: var(--papel); color: var(--acento); font: inherit; font-weight: 600; cursor: pointer; }
 @media (min-width: 601px) {
   .pestanas [role="tab"] { min-height: 40px; }
   #panel.plegado #plegar { min-height: 32px; padding: 4px 10px; }

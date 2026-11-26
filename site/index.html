@@ -33,6 +33,7 @@
 <script defer src="panel.js"></script>
 <script defer src="cajas-ocultas.js"></script>
 <script defer src="partes-osm.js"></script>
+<script defer src="estaciones.js"></script>
 <script defer src="mapa.js"></script>
 <script defer src="cielo.js"></script>
 <script defer src="preguntar.js"></script>
@@ -103,8 +104,8 @@
         <label class="toque" data-pestana="ahora" data-tipo="color"><input type="checkbox" id="ver-canales"> Nivel de quebradas, ríos y canales <span class="nota-inline">(11 KB)</span></label>
         <label class="toque" data-pestana="ahora" data-tipo="color"><input type="checkbox" id="ver-frecuencia"> Buses troncales por hora, programados <span class="nota-inline">(36 KB)</span></label>
         <p class="capas-sub">Referencias, se pueden juntar</p>
-        <label class="toque" data-pestana="ahora" data-tipo="referencia"><input type="checkbox" data-grupo="troncal" checked> Estaciones de TransMilenio</label>
-        <label class="toque" data-pestana="ahora" data-tipo="referencia"><input type="checkbox" data-grupo="metro" checked> Metro línea 1 (en obra)</label>
+        <label class="toque" data-pestana="ahora" data-tipo="referencia"><input type="checkbox" data-grupo="troncal" checked> <span class="sw-estacion sw-tm" aria-hidden="true"></span>Estaciones de TransMilenio</label>
+        <label class="toque" data-pestana="ahora" data-tipo="referencia"><input type="checkbox" data-grupo="metro" checked> <span class="sw-estacion sw-metro" aria-hidden="true"></span>Metro línea 1 (en obra)</label>
         <label class="toque" data-pestana="ahora" data-tipo="referencia"><input type="checkbox" data-grupo="paraderos"> Paraderos del SITP <span class="nota-inline">(140 KB)</span></label>
         <p class="nota">Una capa de color a la vez; el peso es lo que se baja al marcarla.</p>
       </fieldset>
@@ -195,6 +196,7 @@
 
 <div class="leyenda-mapa" id="leyenda-mapa" role="region" aria-label="Leyenda del mapa" hidden>
   <p class="capa-aviso" id="capa-aviso" aria-live="polite" hidden></p>
+  <p class="capa-aviso" id="aviso-3d" role="status" hidden>El 3D no cargó y quedó el mapa en 2D. <button type="button" class="aviso-boton">Reintentar 3D</button></p>
   <div class="ley-bloque" data-capa="pisos" hidden>
     <p class="ley-titulo">Pisos de cada construcción</p>
     <div class="leyenda" id="leyenda" aria-hidden="true"></div>

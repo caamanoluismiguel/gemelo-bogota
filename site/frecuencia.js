@@ -87,6 +87,8 @@
     return cambio;
   }
 
+  // Las líneas van debajo de las estaciones y de los rótulos.
+  const debajo = () => ['troncal', 'rotulos'].find((id) => mapaRef.getLayer(id));
   function pintar() {
     if (!encendida || !datos || !mapaRef) return;
     const fc = geojson(datos, estado.tipo, estado.hora);
@@ -97,11 +99,11 @@
       mapaRef.addLayer({ id: BORDE, type: 'line', source: FUENTE, metadata: { grupo: 'frecuencia' },
         layout: { 'line-cap': 'round', 'line-join': 'round' },
         paint: { 'line-color': '#ffffff', 'line-opacity': 0.9,
-          'line-width': ['interpolate', ['linear'], ['zoom'], 10, 5.5, 12, 7.5, 14, 10, 16, 13] } });
+          'line-width': ['interpolate', ['linear'], ['zoom'], 10, 5.5, 12, 7.5, 14, 10, 16, 13] } }, debajo());
       mapaRef.addLayer({ id: CAPA, type: 'line', source: FUENTE, metadata: { grupo: 'frecuencia' },
         layout: { 'line-cap': 'round', 'line-join': 'round' },
         paint: { 'line-color': ['get', 'col'], 'line-width': ['interpolate', ['linear'], ['zoom'], 10, 3.5, 12, 5, 14, 7, 16, 10],
-          'line-opacity': ['case', ['==', ['get', 'v'], 0], 0.6, 1] } });
+          'line-opacity': ['case', ['==', ['get', 'v'], 0], 0.6, 1] } }, debajo());
       mapaRef.on('mouseenter', CAPA, () => { mapaRef.getCanvas().style.cursor = 'pointer'; });
       mapaRef.on('mouseleave', CAPA, () => { mapaRef.getCanvas().style.cursor = ''; });
     }

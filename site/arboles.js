@@ -655,14 +655,17 @@ void main() {
       if (!m.getLayer(op.id + '-credito')) m.addLayer({ id: op.id + '-credito', type: 'circle', source: op.id + '-credito' });
     }
 
+    // Si se apaga mientras llega la cabecera (el 3D que se cae al arrancar), no se dibuja.
+    let quiere = false;
     function prender(m) {
       if (caida || est.activa) return;
+      quiere = true;
       try {
         if (!B.mvt || !raiz.pmtiles) throw new Error('faltan mvt.js o pmtiles');
         if (!pm) pm = new raiz.pmtiles.PMTiles(op.url);
         // El archivo puede no estar publicado todavía: se revisa la cabecera antes de dibujar.
         pm.getHeader().then(() => {
-          if (caida || est.activa) return;
+          if (caida || est.activa || !quiere) return;
           try {
             ponerCredito(m);
             const antes = m.getLayer('rotulos') ? 'rotulos' : undefined;
@@ -675,6 +678,7 @@ void main() {
 
     function apagar(m) {
       est.activa = false;
+      quiere = false;
       try {
         if (m.getLayer(op.id)) m.removeLayer(op.id);
         if (m.getLayer(op.id + '-credito')) m.removeLayer(op.id + '-credito');
