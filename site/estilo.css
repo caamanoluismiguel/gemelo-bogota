@@ -439,6 +439,7 @@ body.en-escenario #mapa::after { content: ""; position: absolute; inset: 0; z-in
 .ley-plegable[open] .ley-sub { display: none; }
 .ley-bloque:not([hidden]) ~ .ley-bloque:not([hidden]) { margin-top: 8px; padding-top: 6px; border-top: 1px solid var(--borde); }
 .capa-aviso { margin: 0 0 6px; padding: 4px 8px; border-left: 3px solid var(--acento); font-size: 12.5px; }
+.aviso-boton { display: inline-block; margin-top: 4px; min-height: 32px; padding: 0 10px; border: 1px solid var(--acento); border-radius: 6px; background: var(--papel); color: var(--acento); font: inherit; font-weight: 600; cursor: pointer; }
 @media (min-width: 601px) {
   .pestanas [role="tab"] { min-height: 40px; }
   #panel.plegado #plegar { min-height: 32px; padding: 4px 10px; }
