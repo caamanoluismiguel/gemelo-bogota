@@ -208,6 +208,15 @@
   mapa.addControl(new maplibregl.NavigationControl({ visualizePitch: false }), 'top-right');
   mapa.addControl(new maplibregl.ScaleControl({ unit: 'metric' }), 'bottom-right');
   window.BogotwinMapa = mapa;
+  // Muy cerca y muy inclinada, la cámara se mete en los edificios. Hasta z17,5 deja 85° (la
+  // vista de arranque usa 79-80 a z17-17,3); de ahí baja suave hasta 72° en z18.
+  const pitchMax = (z) => z <= 17.5 ? 85 : z >= 18 ? 72 : 85 - (z - 17.5) * 26;
+  const ajustarPitchMax = () => {
+    const m = Math.round(pitchMax(mapa.getZoom()) * 10) / 10;
+    if (m !== mapa.getMaxPitch()) mapa.setMaxPitch(m);
+  };
+  mapa.on('zoom', ajustarPitchMax);
+  ajustarPitchMax();
   // 'load' sale una sola vez. Si algo llega después, isStyleLoaded() puede dar falso un rato
   // (una fuente nueva cargando) y esperar otro 'load' lo dejaba colgado para siempre.
   let mapaCargado = false;
