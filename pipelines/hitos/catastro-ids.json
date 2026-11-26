@@ -1,37 +1,35 @@
 {
- "_nota": "Ids de tippecanoe de las teselas de Catastro publicadas. Se rehacen con este script en cada release de teselas.",
+ "_nota": "Ids de las teselas publicadas que tapa cada hito: cerca (Catastro z16), lejos (Catastro z14 y z15) y osm (id_osm de las partes de OSM). Se rehacen con este script en cada release de teselas.",
  "hitos": {
   "colpatria": {
-   "z16": [
+   "cerca": [
     610071,
     610072
    ],
-   "z14": [],
-   "z15": [
+   "lejos": [
     50212,
     50213
    ],
-   "z12": [],
-   "z13": []
+   "osm": [
+    "way/1175248694",
+    "way/1175248695",
+    "way/767352739"
+   ]
   },
   "catedral-primada": {
-   "z16": [
+   "cerca": [
     600737,
     600738,
     606837,
     606844
    ],
-   "z14": [],
-   "z15": [
+   "lejos": [
     48706
    ],
-   "z12": [],
-   "z13": [
-    48706
-   ]
+   "osm": []
   },
   "capitolio": {
-   "z16": [
+   "cerca": [
     600688,
     600689,
     600691,
@@ -42,30 +40,24 @@
     601429,
     601430
    ],
-   "z14": [
-    48698
-   ],
-   "z15": [
+   "lejos": [
     48697,
     48698
    ],
-   "z12": [],
-   "z13": [
-    48698
-   ]
+   "osm": []
   },
   "santamaria": {
-   "z16": [
+   "cerca": [
     564801
    ],
-   "z14": [],
-   "z15": [],
-   "z12": [],
-   "z13": []
+   "lejos": [
+    45294
+   ],
+   "osm": []
   }
  },
  "teselas": {
-  "catastro-pisos-bogota.pmtiles": "0e639c4e1254653fa759d1bc03c1f30913caf15eda9870290268a029aba75239",
-  "catastro-lejos-bogota.pmtiles": "8d2ace6e7092a8024b0fe68f95f2f5079d17e8304dc13adbbe79f82695f8f1e6"
+  "catastro-pisos-bogota.pmtiles": "e2c22f254facfd2dc7071eacd3b177bfb8b5b3d5cda5d944d0f8ba4e4b686469",
+  "osm-3d-bogota.pmtiles": "391114958e6d730e8f926455b367d7734dd256dd6f28e6cd4ddd4cec6b6b8a3b"
  }
 }

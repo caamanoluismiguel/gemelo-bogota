@@ -3,14 +3,17 @@
 //
 // Los ids los pone tippecanoe al armar las teselas: cambian si se rehacen las teselas. Por eso
 // salen de aquí, del archivo publicado, y no se escriben a mano. Después de cada release de
-// teselas: node pipelines/hitos/catastro-ids.js [carpeta de salida] [catastro-lejos.pmtiles]
+// teselas: node pipelines/hitos/catastro-ids.js [carpeta de salida]
 // y luego node pipelines/hitos/modelar.js (escribe el catálogo con los ids nuevos).
 //
-// Qué se oculta:
-//   z16 (construcciones, cada edificio): el que tiene su centro dentro de la huella del hito.
-//   z12 a z15 (huellas unidas por manzana): solo la unión que el hito cubre casi entera (80 %
-//   o más de su área). Si la unión trae vecinos, se queda: es mejor una caja de más bajo el
-//   modelo que un hueco en la manzana de al lado.
+// Qué se oculta (lo lee site/cajas-ocultas.js):
+//   cerca (z16, cada construcción): la que tiene su centro dentro de la huella del hito.
+//   lejos (z14 y z15, huellas unidas por manzana): la unión que el hito cubre en buena parte
+//   (70 % o más de su área en z15 o en z14). Las dos zooms salen del mismo archivo y comparten
+//   numeración, así que una unión escogida en z15 se esconde también en z14, donde la tesela la
+//   simplifica y puede asomar por fuera. Si la unión trae vecinos grandes, se queda.
+//   osm (partes de OSM, capa «partes» de osm-3d-bogota.pmtiles): la pieza con su centro dentro
+//   de la huella, por su id_osm (las partes no traen id de tippecanoe).
 const fs = require('fs');
 const path = require('path');
 const { abrir } = require('../../pruebas/pmtiles-leer');
@@ -119,7 +122,7 @@ function partoDentro(anillosM, huellaM) {
 
 // Ids que tapa la huella (lista de polígonos en lon/lat) en una zoom de un archivo.
 // modo 'centro': el centro del objeto dentro; modo 'cubre': 80 % del objeto dentro.
-function idsBajo(pm, z, huella, modo, minimo) {
+function idsBajo(pm, z, huella, modo, minimo, capa, clave) {
   const lons = huella.flat(3).filter((_, i) => i % 2 === 0), lats = huella.flat(3).filter((_, i) => i % 2 === 1);
   const lon0 = (Math.min(...lons) + Math.max(...lons)) / 2, lat0 = (Math.min(...lats) + Math.max(...lats)) / 2;
   const m = aMetros(lon0, lat0);
@@ -132,7 +135,7 @@ function idsBajo(pm, z, huella, modo, minimo) {
     const b = pm.tesela(z, x, y);
     if (!b) continue;
     const ll = (o) => teselaALonLat(z, x, y, o.ext);
-    for (const o of objetosConId(b, 'construcciones')) {
+    for (const o of objetosConId(b, capa || 'construcciones')) {
       const f = ll(o);
       const am = o.anillos.map((r) => r.map((q) => m(...f(q))));
       // Lejos de la huella (sin cruce de cajas): ni se mira.
@@ -146,10 +149,11 @@ function idsBajo(pm, z, huella, modo, minimo) {
         ok = enAlguno([sx / n, sy / n], huellaM) && partoDentro(am, huellaM) >= 0.5;
       } else ok = partoDentro(am, huellaM) >= (minimo || 0.8);
       if (!ok) continue;
-      if (o.id == null) sinId.push(o.props); else ids.add(o.id);
+      const v = clave ? o.props[clave] : o.id;
+      if (v == null) sinId.push(o.props); else ids.add(v);
     }
   }
-  return { ids: [...ids].sort((a, b) => a - b), sinId: sinId.length };
+  return { ids: [...ids].sort((a, b) => (typeof a === 'number' ? a - b : String(a).localeCompare(String(b)))), sinId: sinId.length };
 }
 
 function huellasPorHito(geojson) {
@@ -162,21 +166,22 @@ module.exports = { objetosConId, idsBajo, huellasPorHito, dentro, aMetros, tesel
 
 if (require.main === module) {
   const salida = process.argv[2] || path.join(__dirname, '../../mapa-base/salida');
-  const lejos = process.argv[3] || path.join(salida, 'catastro-lejos-bogota.pmtiles');
   const H = huellasPorHito(JSON.parse(fs.readFileSync(path.join(__dirname, 'huellas-catastro.geojson'))));
   const pisos = abrir(path.join(salida, 'catastro-pisos-bogota.pmtiles'));
-  const pmL = fs.existsSync(lejos) ? abrir(lejos) : null;
-  const out = { _nota: 'Ids de tippecanoe de las teselas de Catastro publicadas. Se rehacen con este script en cada release de teselas.', hitos: {} };
+  const rutaOsm = path.join(salida, 'osm-3d-bogota.pmtiles');
+  const pmO = fs.existsSync(rutaOsm) ? abrir(rutaOsm) : null;
+  const out = { _nota: 'Ids de las teselas publicadas que tapa cada hito: cerca (Catastro z16), lejos (Catastro z14 y z15) y osm (id_osm de las partes de OSM). Se rehacen con este script en cada release de teselas.', hitos: {} };
   for (const [hito, huella] of Object.entries(H)) {
-    const r = { z16: idsBajo(pisos, 16, huella, 'centro').ids };
-    for (const z of [14, 15]) r['z' + z] = idsBajo(pisos, z, huella, 'cubre').ids;
-    if (pmL) for (const z of [12, 13]) r['z' + z] = idsBajo(pmL, z, huella, 'cubre').ids;
+    const lejos = new Set();
+    for (const z of [14, 15]) for (const id of idsBajo(pisos, z, huella, 'cubre', 0.7).ids) lejos.add(id);
+    const r = { cerca: idsBajo(pisos, 16, huella, 'centro').ids, lejos: [...lejos].sort((a, b) => a - b),
+      osm: pmO ? idsBajo(pmO, 16, huella, 'centro', null, 'partes', 'id_osm').ids : [] };
     out.hitos[hito] = r;
     console.log(hito, JSON.stringify(r));
   }
   out.teselas = {};
   const hash = (f) => require('crypto').createHash('sha256').update(fs.readFileSync(f)).digest('hex');
   out.teselas['catastro-pisos-bogota.pmtiles'] = hash(path.join(salida, 'catastro-pisos-bogota.pmtiles'));
-  if (pmL) out.teselas['catastro-lejos-bogota.pmtiles'] = hash(lejos);
+  if (pmO) out.teselas['osm-3d-bogota.pmtiles'] = hash(rutaOsm);
   fs.writeFileSync(path.join(__dirname, 'catastro-ids.json'), JSON.stringify(out, null, 1) + '\n');
 }

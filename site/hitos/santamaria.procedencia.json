@@ -26,7 +26,7 @@
   "Muro exterior de 15 m de ladrillo con cornisa clara; sin los arcos de herradura.",
   "Barrera de 1,6 m y graderío de 9 escalones hasta 12 m; galería cubierta de 12 a 15 m.",
   "El anexo de la huella va a la misma altura del anillo.",
-  "El ruedo es plano y va a la altura del punto más alto del relieve dentro del ruedo; el relieve del mapa no conoce la excavación de la plaza."
+  "El ruedo es plano y va a lo más alto entre el relieve del ruedo y el del contorno menos 3 m; el relieve del mapa no conoce la excavación de la plaza."
  ],
  "referencias_visuales": "Fotos de Wikimedia Commons, solo para mirar la forma; ninguna foto va dentro del modelo.",
  "cambios": "Huella simplificada (puntos en línea recta quitados) y extruida; formas sencillas sin texturas, color por vértice.",

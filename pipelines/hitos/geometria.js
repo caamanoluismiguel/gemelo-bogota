@@ -141,7 +141,13 @@ function marco(origen, grados) {
 
 // ── Malla ───────────────────────────────────────────────────────────────────
 class Malla {
-  constructor() { this.pos = []; this.nor = []; this.col = []; }
+  constructor() { this.pos = []; this.nor = []; this.col = []; this.sombra = []; }
+  // Piezas que hacen sombra en el mapa (sombras-capa.js): cada prisma que arranca en el suelo,
+  // con su anillo exterior y su alto. Lo fino (aletas, columnas) no cuenta.
+  sombraDe(anillo, alto) {
+    if (Math.abs(areaConSigno(anillo)) < 4 || !(alto > 0)) return;
+    this.sombra.push({ anillo: anillo.map(([e, n]) => [Math.round(e * 10) / 10, Math.round(n * 10) / 10]), alto: Math.round(alto * 10) / 10 });
+  }
   get triangulos() { return this.pos.length / 9; }
   // a, b, c: [e, n, arriba]. Normal plana calculada; color [r, g, b] de 0 a 255.
   tri(a, b, c, color) {
@@ -170,6 +176,7 @@ class Malla {
   }
   // Prisma: muros de todos los anillos y tapa arriba. anillos: [exterior, ...huecos].
   prisma(anillos, y0, y1, colorMuro, colorTecho) {
+    if (y0 <= 2) this.sombraDe(anillos[0], y1);
     this.muros(anillos[0], y0, y1, colorMuro, false);
     for (const h of anillos.slice(1)) this.muros(h, y0, y1, colorMuro, true);
     this.tapa(anillos, y1, colorTecho || colorMuro);

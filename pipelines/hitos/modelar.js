@@ -85,15 +85,20 @@ function colpatria() {
   }
   // Remate: la planta octogonal de Catastro (la más alta) hasta la azotea, y el helipuerto.
   M.prisma([corona], CUERPO, AZOTEA, C.coronaCol, C.azotea);
+  // Sombra: la del remate y la del helipuerto se cuentan desde el suelo, como la del cuerpo.
+  M.sombraDe(corona, AZOTEA);
   let cx = 0, cy = 0;
   for (const q of corona) { cx += q[0]; cy += q[1]; }
   cx /= corona.length; cy /= corona.length;
   const H = G.marco([cx, cy], Math.atan2(torre[1][1] - torre[0][1], torre[1][0] - torre[0][0]) * 180 / Math.PI);
   M.caja(H, -5, 5, -5, 5, AZOTEA, TOPE - 0.6, C.coronaCol, C.azotea);
   M.caja(H, -6.5, 6.5, -6.5, 6.5, TOPE - 0.6, TOPE, C.azotea, C.azotea);
+  M.sombraDe([H.pt(-5, -5), H.pt(5, -5), H.pt(5, 5), H.pt(-5, 5)], TOPE);
   return {
     id: 'colpatria', nombre: 'Torre Colpatria', origen: o, malla: M, alto: TOPE, fids: [153239, 154534], planta: torre,
     altoTexto: '196 m (Wikipedia, que cita a SkyscraperPage)',
+    altos: [{ que: 'Alto', valor: '196 m', tipo: 'de_fuente', de: 'Wikipedia, que cita a SkyscraperPage' },
+      { que: 'Cuerpo y remate', valor: '186 m y 192 m', tipo: 'supuesto' }],
     fuentes: [
       { que: 'Huella de la torre y del remate', de: 'UAECD, Catastro Bogotá, construcciones (CONST_V2), fid 153239 y 154534', licencia: 'CC BY 4.0', url: 'https://datosabiertos.bogota.gov.co/' },
       { que: 'Alto total de 196 m, 50 pisos, terminada en 1978', de: 'Wikipedia en español, «Torre Colpatria» (cita a SkyscraperPage)', url: 'https://es.wikipedia.org/wiki/Torre_Colpatria' }
@@ -148,10 +153,14 @@ function catedral() {
     A.columna(c, 3.2, 1.9, 46, 49, 8, C.cupula);
     A.columna(c, 1.9, 0.6, 49, 50.6, 8, C.cupula, true);
     A.columna(c, 0.6, 0.5, 50.6, 52, 6, C.cupula, true);
+    // Sombra de la torre con el campanario y la base de la cúpula (lo fino de arriba no cuenta).
+    A.sombraDe([M.pt(fa, t0), M.pt(fa + 8, t0), M.pt(fa + 8, t1), M.pt(fa, t1)], 46);
   }
   return {
     id: 'catedral-primada', nombre: 'Catedral Primada de Colombia', origen: o, malla: A, alto: 52, fids: [1688, 5669, 122, 6561], planta: nave[0],
     altoTexto: 'torres de 52 m (Wikipedia); la nave es un supuesto',
+    altos: [{ que: 'Torres', valor: '52 m', tipo: 'de_fuente', de: 'Wikipedia' },
+      { que: 'Nave', valor: '24 m, techo hasta 30 m', tipo: 'supuesto' }],
     fuentes: [
       { que: 'Huella de la nave y de los anexos', de: 'UAECD, Catastro Bogotá, construcciones (CONST_V2), fid 1688, 5669, 122 y 6561. La Capilla del Sagrario (fid 6007) queda aparte', licencia: 'CC BY 4.0', url: 'https://datosabiertos.bogota.gov.co/' },
       { que: 'Torres de 52 m, fachada neoclásica hacia la Plaza de Bolívar con dos torres', de: 'Wikipedia en español, «Catedral Primada de Colombia»', url: 'https://es.wikipedia.org/wiki/Catedral_Primada_de_Colombia' }
@@ -194,6 +203,7 @@ function capitolio() {
   return {
     id: 'capitolio', nombre: 'Capitolio Nacional', origen: o, malla: A, alto: 21, fids: fs_.map((f) => f.properties.fid), planta: fs_.flatMap((f) => enMetros(f, m)[0]),
     altoTexto: 'alas a 17 m y cuerpo central a 21 m (supuesto)',
+    altos: [{ que: 'Alto', valor: 'alas a 17 m, cuerpo central a 21 m', tipo: 'supuesto' }],
     fuentes: [
       { que: 'Huella de las alas, el cuerpo central y los patios', de: 'UAECD, Catastro Bogotá, construcciones (CONST_V2), fid ' + fs_.map((f) => f.properties.fid).join(', '), licencia: 'CC BY 4.0', url: 'https://datosabiertos.bogota.gov.co/' },
       { que: 'Fachada hacia la Plaza de Bolívar con columnata jónica, cuatro patios, piedra', de: 'Wikipedia en español, «Capitolio Nacional de Colombia»', url: 'https://es.wikipedia.org/wiki/Capitolio_Nacional_de_Colombia' }
@@ -240,9 +250,12 @@ function santamaria() {
   const A = new G.Malla();
   const BARRERA = 1.6, ALTO_GRADA = 12, GALERIA = 15, PASOS = 9;
   // La plaza está en ladera (unos 15 m de desnivel de oeste a este en el relieve del mapa): el
-  // suelo del modelo es el ruedo («sueloEn», el punto más alto del relieve en el ruedo) y el
-  // muro exterior baja 16 m para cubrir el lado bajo.
-  const FONDO = -16;
+  // suelo del modelo es el ruedo («sueloEn»). Va a lo más alto entre el relieve del ruedo y el
+  // del contorno menos 3 m, así del lado alto (oriente) el muro asoma al menos 12 m y el relieve
+  // no se lo come. El muro exterior baja 22 m: es el faldón que cubre el lado bajo.
+  const FONDO = -22, BAJO_CONTORNO = -3;
+  // Sombra: el anillo entero hasta la cornisa.
+  A.sombraDe(ext, GALERIA);
   // Muro exterior de ladrillo con una cornisa clara en lo alto, y cubierta de la galería.
   A.muros(ext, FONDO, GALERIA - 1.5, C.ladrillo, false);
   A.muros(ext, GALERIA - 1.5, GALERIA, C.cornisa, false);
@@ -266,8 +279,10 @@ function santamaria() {
   }
   return {
     id: 'santamaria', nombre: 'Plaza de toros La Santamaría', origen: o, malla: A, alto: GALERIA, fids: [179966], planta: ext,
-    sueloEn: [[cx, cy]].concat(ruedo.filter((_, i) => i % Math.ceil(ruedo.length / 12) === 0)).map(([e, n]) => [Math.round(e * 10) / 10, Math.round(n * 10) / 10]),
+    sueloEn: [[cx, cy]].concat(ruedo.filter((_, i) => i % Math.ceil(ruedo.length / 12) === 0)).map(([e, n]) => [Math.round(e * 10) / 10, Math.round(n * 10) / 10])
+      .concat(ext.filter((_, i) => i % Math.ceil(ext.length / 16) === 0).map(([e, n]) => [Math.round(e * 10) / 10, Math.round(n * 10) / 10, BAJO_CONTORNO])),
     altoTexto: 'muro exterior de 15 m (supuesto)',
+    altos: [{ que: 'Alto', valor: 'muro exterior de 15 m', tipo: 'supuesto' }],
     fuentes: [
       { que: 'Huella del anillo y del ruedo (el hueco de la huella)', de: 'UAECD, Catastro Bogotá, construcciones (CONST_V2), fid 179966', licencia: 'CC BY 4.0', url: 'https://datosabiertos.bogota.gov.co/' },
       { que: 'Plaza de ladrillo de estilo neomudéjar, inaugurada en 1931', de: 'Wikipedia en español, «Plaza de toros de Santamaría»', url: 'https://es.wikipedia.org/wiki/Plaza_de_toros_de_Santamar%C3%ADa' }
@@ -275,7 +290,7 @@ function santamaria() {
     supuestos: ['Muro exterior de 15 m de ladrillo con cornisa clara; sin los arcos de herradura.',
       'Barrera de 1,6 m y graderío de 9 escalones hasta 12 m; galería cubierta de 12 a 15 m.',
       'El anexo de la huella va a la misma altura del anillo.',
-      'El ruedo es plano y va a la altura del punto más alto del relieve dentro del ruedo; el relieve del mapa no conoce la excavación de la plaza.']
+      'El ruedo es plano y va a lo más alto entre el relieve del ruedo y el del contorno menos 3 m; el relieve del mapa no conoce la excavación de la plaza.']
   };
 }
 
@@ -298,14 +313,17 @@ function escribir(h) {
   const oc = ids.hitos[h.id] || {};
   return {
     id: h.id, nombre: h.nombre, lon: h.origen[0], lat: h.origen[1], glb: 'hitos/' + h.id + '.glb', bytes: r.glb.length,
-    triangulos: r.triangulos, alto: h.alto, altoTexto: h.altoTexto, tipo: 'modelado',
+    triangulos: r.triangulos, alto: h.alto, altoTexto: h.altoTexto, altos: h.altos, tipo: 'modelado',
     fuente: 'Bogotwin, con la huella de UAECD, Catastro Bogotá',
     licencia: CC_BY,
     procedencia: 'hitos/' + h.id + '.procedencia.json',
     contorno: envolvente(h.planta),
     ...(h.sueloEn ? { sueloEn: h.sueloEn } : {}),
-    // Cajas de Catastro que tapa el modelo, por zoom de tesela (catastro-ids.js).
-    ocultar: { z14: oc.z14 || [], z15: oc.z15 || [], z16: oc.z16 || [] }
+    // Lo que tapa el modelo (catastro-ids.js): cajas de Catastro de cerca (z16) y de lejos
+    // (z14 y z15), y partes de OSM por su id_osm.
+    ocultar: { cerca: oc.cerca || [], lejos: oc.lejos || [], osm: oc.osm || [] },
+    // Piezas que hacen sombra en el mapa (sombras-capa.js): anillo en metros desde lon/lat y alto.
+    sombra: h.malla.sombra
   };
 }
 
@@ -313,14 +331,9 @@ if (require.main === module) {
   fs.mkdirSync(SALIDA, { recursive: true });
   const hitos = [colpatria(), catedral(), santamaria(), capitolio()].map(escribir);
   const catalogo = {
-    _nota: 'Hitos 3D del mapa (site/hitos.js). Lo escribe pipelines/hitos/modelar.js; los ids de «ocultar» son de las teselas de Catastro del release indicado y se rehacen con catastro-ids.js.',
+    _nota: 'Hitos 3D del mapa (site/hitos.js). Lo escribe pipelines/hitos/modelar.js; los ids de «ocultar» son de las teselas publicadas del release indicado y se rehacen con catastro-ids.js.',
     teselas: ids.teselas,
-    hitos,
-    pendientes: [
-      { id: 'virgilio-barco', nombre: 'Biblioteca Virgilio Barco', tipo: 'fotogrametria', autor: 'arielbustamanteg (Sketchfab)', licencia: CC_BY,
-        url: 'https://sketchfab.com/3d-models/biblioteca-virgilio-barco-fd45e98d7166409daf9cbe53baf31fc5',
-        falta: 'LM baja de Sketchfab (con su cuenta) el formato glTF y deja el .zip en pipelines/hitos/fuentes/virgilio-barco/. Falta reducirlo a 50.000 triángulos y una textura de 1024 px, ubicarlo y escribir su procedencia.' }
-    ]
+    hitos
   };
   fs.writeFileSync(path.join(SALIDA, 'catalogo.json'), JSON.stringify(catalogo, null, 1) + '\n');
   for (const h of hitos) console.log(h.id.padEnd(18), String(h.triangulos).padStart(6), 'triángulos', String(h.bytes).padStart(8), 'bytes');
