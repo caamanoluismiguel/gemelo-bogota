@@ -1076,7 +1076,9 @@
         if (c && !c.checked) { c.checked = true; c.dispatchEvent(new Event('change', { bubbles: true })); }
       })).addTo(mapa);
     } else if (id === 'metro-estaciones') {
-      ventana(ll, [['Metro línea 1', B.estaciones ? B.estaciones.nombreMetro(p.nombre) : p.nombre], ['Estado', p.estado]], { tipo: 'de_fuente', fuente: 'Empresa Metro de Bogotá vía IDECA', licencia: { nombre: 'CC BY 4.0', url: 'https://creativecommons.org/licenses/by/4.0/deed.es' } });
+      // Nombre de presentación; el de la fuente queda a la vista si cambia, como en TransMilenio.
+      const nombreM = B.estaciones ? B.estaciones.nombreMetro(p.nombre) : p.nombre;
+      ventana(ll, [['Metro línea 1', nombreM], ['Estado', p.estado]].concat(nombreM !== p.nombre ? [['En la fuente', p.nombre]] : []), { tipo: 'de_fuente', fuente: 'Empresa Metro de Bogotá vía IDECA', licencia: { nombre: 'CC BY 4.0', url: 'https://creativecommons.org/licenses/by/4.0/deed.es' } });
     } else if (id === 'paraderos') {
       ventana(ll, [['Paradero', p.nombre], ['Código', p.codigo]], { tipo: 'de_fuente', fuente: 'GTFS del 13 oct 2026', licencia: { nombre: 'CC BY‑SA 4.0', url: 'https://creativecommons.org/licenses/by-sa/4.0/deed.es' } });
     } else if (id === 'lluvia') {
