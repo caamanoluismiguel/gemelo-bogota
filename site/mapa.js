@@ -58,7 +58,14 @@
     // De lejos (sin «techo» ni «tono») los techos medidos salen grises: el supuesto va apagado
     // hacia ese gris para que lo no medido no resalte más que lo medido.
     const apagado = exp.map((v, i) => (i > 1 && typeof v === 'string' ? B.mezclarColor(v, deNoche(GRIS_SUPUESTO), 0.55) : v));
-    return campo === 'pisos' ? B.exprTecho(B.exprFachada(apagado, deNoche), deNoche) : exp;
+    if (campo !== 'pisos') return exp;
+    // De lejos (z13 o menos) todos los techos, medidos y supuestos, bajan algo de saturación por
+    // igual: el dato no cambia, pero las tejas no compiten con las estaciones ni con el agua.
+    const deLejos = (c) => B.mezclarColor(deNoche(c), deNoche(GRIS_SUPUESTO), 0.35);
+    const apagadoLejos = exp.map((v, i) => (i > 1 && typeof v === 'string' ? B.mezclarColor(v, deNoche(GRIS_SUPUESTO), 0.7) : v));
+    return ['interpolate', ['linear'], ['zoom'],
+      13, B.exprTecho(B.exprFachada(apagadoLejos, deLejos), deLejos),
+      14, B.exprTecho(B.exprFachada(apagado, deNoche), deNoche)];
   };
   const VERDE_2D = ['match', ['get', 'clase'], 'reserva', '#dde9d3', 'paramo', '#e3e8cf', 'bosque', '#bcd6b0', '#cfe3c4'];
   const VERDE_3D = ['match', ['get', 'clase'], 'reserva', '#9fc287', 'paramo', '#b3bf86', 'bosque', '#76a763', '#93c27c'];

@@ -435,6 +435,8 @@ body.en-escenario #mapa::after { content: ""; position: absolute; inset: 0; z-in
 .ley-plegable > summary::after { content: '+'; margin-left: auto; font-weight: 600; font-size: 16px; color: var(--acento); }
 .ley-plegable[open] > summary::after { content: '−'; }
 .ley-plegable[open] > summary { margin-bottom: 4px; }
+.ley-sub { display: block; font-weight: 400; font-size: 12px; margin-top: 1px; }
+.ley-plegable[open] .ley-sub { display: none; }
 .ley-bloque:not([hidden]) ~ .ley-bloque:not([hidden]) { margin-top: 8px; padding-top: 6px; border-top: 1px solid var(--borde); }
 .capa-aviso { margin: 0 0 6px; padding: 4px 8px; border-left: 3px solid var(--acento); font-size: 12.5px; }
 @media (min-width: 601px) {
