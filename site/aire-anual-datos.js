@@ -128,5 +128,39 @@
     });
   }
 
-  B.aireAnualDatos = { nombre, TILDES, OMS, META_2030, NORMA, CORTES, COLORES, ETIQUETAS, clase, colorDe, enAnillo, enPoligono, franjaEn, areaKm2, areasPorClase, comparar, coma };
+  // ── Historia de cada estación (IDEAM, datos/aire/historia-estaciones.json) ──
+  // Un año con menos del 75 % de días medidos no alcanza para un promedio anual confiable: es el
+  // mismo umbral que usa la SDA para dibujar su superficie. Ese año se pinta desvaído. Sin dato de
+  // representatividad también cuenta como poco.
+  const REP_MIN = 75;
+  const pocaRep = (rep) => !(Number.isFinite(rep) && rep >= REP_MIN);
+
+  // Las estaciones como puntos GeoJSON; «i» apunta a la estación en el JSON para la ventana.
+  function historiaGeojson(h) {
+    return { type: 'FeatureCollection', features: h.estaciones.map((e, i) => ({ type: 'Feature',
+      properties: { i, n: e.n }, geometry: { type: 'Point', coordinates: [e.lon, e.lat] } })) };
+  }
+
+  // Geometría de la fila de barras: una por año, alto proporcional al promedio, con la guía de la
+  // OMS y la norma como rayas. El tope es el mayor valor o la norma, lo que sea más alto, para que
+  // la raya de la norma siempre quepa. Devuelve números, no SVG: lo dibuja aire-anual.js.
+  function barrasHistoria(serie, { ancho, alto, oms, norma, hueco = 2 }) {
+    const vals = serie.filter(Boolean).map((p) => p[0]);
+    const tope = Math.max(norma, ...vals) * 1.08;
+    const paso = ancho / serie.length;
+    const y = (v) => alto - (v / tope) * alto;
+    const barras = serie.map((p, i) => p && { i, v: p[0], rep: p[1], poca: pocaRep(p[1]),
+      x: i * paso + hueco / 2, w: Math.max(1, paso - hueco), y: y(p[0]), h: alto - y(p[0]) }).filter(Boolean);
+    return { tope, paso, barras, yOms: y(oms), yNorma: y(norma) };
+  }
+
+  // Primer y último año con días suficientes: la frase de cómo cambió el aire en la estación.
+  function resumenHistoria(serie, anios) {
+    const buenos = serie.map((p, i) => p && !pocaRep(p[1]) ? { anio: anios[i], v: p[0] } : null).filter(Boolean);
+    const pocos = serie.filter((p) => p && pocaRep(p[1])).length;
+    if (!buenos.length) return { buenos: 0, pocos, primero: null, ultimo: null };
+    return { buenos: buenos.length, pocos, primero: buenos[0], ultimo: buenos[buenos.length - 1] };
+  }
+
+  B.aireAnualDatos = { REP_MIN, pocaRep, historiaGeojson, barrasHistoria, resumenHistoria, nombre, TILDES, OMS, META_2030, NORMA, CORTES, COLORES, ETIQUETAS, clase, colorDe, enAnillo, enPoligono, franjaEn, areaKm2, areasPorClase, comparar, coma };
 })();
