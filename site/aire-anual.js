@@ -230,9 +230,14 @@
     const s = sv('svg', { viewBox: `0 0 ${W} ${H + PIE}`, class: 'historia-barras', role: 'img',
       'aria-label': (r.primero ? `${v.etiqueta}: de ${D.coma(r.primero.v)} µg/m³ en ${r.primero.anio} a ${D.coma(r.ultimo.v)} en ${r.ultimo.anio}.` : `${v.etiqueta}: ningún año con días suficientes.`)
         + ` Guía de la OMS ${v.oms}, norma ${v.norma}.` + (r.pocos ? ` ${r.pocos} años con pocos días medidos.` : '') });
+    // Un solo color por contaminante: el color no dice nada del año. Los años con pocos días van huecos.
+    const tono = v.etiqueta === 'PM2,5' ? '#7a1f5c' : '#5b6b7c';
     for (const b of g.barras) {
-      const rect = sv('rect', { x: b.x.toFixed(1), y: b.y.toFixed(1), width: b.w.toFixed(1), height: Math.max(0.5, b.h).toFixed(1),
-        fill: v.etiqueta === 'PM2,5' ? D.colorDe(b.v) : '#6b7b8c', class: b.poca ? 'g-poca' : 'g-barra' });
+      const borde = 0.6;
+      const rect = sv('rect', b.poca
+        ? { x: (b.x + borde).toFixed(1), y: (b.y + borde).toFixed(1), width: Math.max(0.5, b.w - 2 * borde).toFixed(1), height: Math.max(0.5, b.h - borde).toFixed(1),
+            fill: '#ffffff', stroke: tono, class: 'g-poca' }
+        : { x: b.x.toFixed(1), y: b.y.toFixed(1), width: b.w.toFixed(1), height: Math.max(0.5, b.h).toFixed(1), fill: tono, class: 'g-barra' });
       const t = sv('title', {});
       t.textContent = `${anios[b.i]}: ${D.coma(b.v)} µg/m³` + (b.rep == null ? '' : `, ${b.rep} % de los días`);
       rect.append(t);
@@ -281,7 +286,7 @@
       else if (r.primero.anio === r.ultimo.anio) caja.append(el('p', { clase: 'nota' }, 'Un solo año con días suficientes: ', B.valor(`${D.coma(r.ultimo.v)} en ${r.ultimo.anio}`, 'medido', true), '.'));
       else caja.append(el('p', { clase: 'nota' }, 'Pasó de ', B.valor(`${D.coma(r.primero.v)} en ${r.primero.anio}`, 'medido', true), ' a ', B.valor(`${D.coma(r.ultimo.v)} en ${r.ultimo.anio}`, 'medido', true), '.'));
     }
-    caja.append(el('p', { clase: 'nota' }, el('span', { clase: 'g-clave' }), `Las barras claras son años con menos del ${D.REP_MIN} % de los días medidos; su promedio dice menos y no cuenta en la frase de arriba.`));
+    caja.append(el('p', { clase: 'nota' }, el('span', { clase: 'g-clave' }), `Las barras huecas son años con menos del ${D.REP_MIN} % de los días medidos; su promedio dice menos y no cuenta en la frase de arriba.`));
     if (e.nota) caja.append(el('p', { clase: 'nota', texto: e.nota }));
     caja.append(tablaAnios(e));
     caja.append(B.meta({ tipo: 'medido', licencia: LIC.estaciones, fuente: FUENTE_HIST }));

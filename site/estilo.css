@@ -353,20 +353,19 @@ body.en-escenario #mapa::after { content: ""; position: absolute; inset: 0; z-in
 .pm25-punto[data-k="salud"] { background: #fff; border: 2.5px solid #0f6b62; }
 .pm25-pop .valor { font-weight: 650; }
 .pm25-punto[data-k="estaciones"] { width: 12px; height: 12px; background: #ffd23f; border: 2.5px solid #1f1f1f; }
-/* Historia de una estación: barras sólidas por año, rayas de la OMS y de la norma, años con pocos días en claro. */
+/* Historia de una estación: un color sólido por contaminante, rayas de la OMS y de la norma, años con pocos días en barras huecas. */
 .historia-pop { max-height: min(56vh, 520px); overflow-y: auto; overscroll-behavior: contain; padding-right: 4px; }
 .historia-pop .bicis-nombre { font-weight: 650; }
 .historia-titulo { margin-top: 8px; }
 .historia-barras { display: block; width: 100%; max-width: 250px; height: auto; margin-top: 2px; }
-.historia-barras .g-barra { stroke: rgba(0,0,0,.35); stroke-width: .5; }
-.historia-barras .g-poca { opacity: .3; stroke: #1f1f1f; stroke-width: .6; stroke-dasharray: 2 1.5; }
+.historia-barras .g-poca { stroke-width: 1.2; }
 .historia-barras line.g-norma { stroke: #8a4b00; stroke-width: 1.2; stroke-dasharray: 4 2; }
 .historia-barras line.g-oms { stroke: #2f6b3a; stroke-width: 1.2; }
 .historia-barras .g-rotulo { font: 600 9.5px system-ui, sans-serif; }
 .historia-barras text.g-norma { fill: #8a4b00; }
 .historia-barras text.g-oms { fill: #2f6b3a; }
 .historia-barras .g-anio { font: 9.5px system-ui, sans-serif; fill: #4a4a4a; }
-.g-clave { display: inline-block; width: 10px; height: 10px; margin-right: 6px; vertical-align: -1px; background: #f768a1; opacity: .3; outline: 1px dashed #1f1f1f; }
+.g-clave { display: inline-block; width: 10px; height: 10px; margin-right: 6px; vertical-align: -1px; box-sizing: border-box; background: #ffffff; border: 1.5px solid #7a1f5c; }
 .g-poca-txt { color: var(--aviso); font-size: 12px; }
 .historia-tabla { margin-top: 6px; font-size: 12.5px; }
 .historia-tabla summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
