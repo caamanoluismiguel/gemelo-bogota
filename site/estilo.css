@@ -114,6 +114,15 @@ details.mas summary { cursor: pointer; font-weight: 600; margin-top: 10px; min-h
 .pagina th { background: #ece9e3; }
 .pagina .aviso { background: var(--papel); border: 1px solid var(--borde); border-radius: 8px; padding: 12px 14px; }
 .tabla { overflow-x: auto; }
+.fichas { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: 12px; }
+.ficha { background: var(--papel); border: 1px solid var(--borde); border-radius: 8px; padding: 12px 14px; font-size: 14px; }
+.pagina .ficha h3 { font-size: 15px; margin: 0 0 8px; }
+.ficha dl { display: grid; grid-template-columns: 88px 1fr; gap: 4px 10px; margin: 0; }
+.ficha dt { color: var(--tinta-2); }
+.ficha dd { margin: 0; overflow-wrap: anywhere; }
+.ficha-bajar { margin: 10px 0 0; padding-top: 8px; border-top: 1px solid var(--borde); }
+.ficha-bajar a { display: inline-block; min-height: 44px; line-height: 44px; font-weight: 600; overflow-wrap: anywhere; }
+.ficha-bajar span { color: var(--tinta-2); font-size: 13px; }
 .sin-mapa { max-width: 420px; margin: 40px auto; padding: 14px 16px; background: var(--papel); border: 1px solid var(--borde); border-radius: 8px; }
 @media (min-width: 601px) { .sin-mapa { margin-left: 400px; } }
 
