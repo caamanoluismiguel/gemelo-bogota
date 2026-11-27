@@ -1,0 +1,498 @@
+{
+  "esquema": "noches-frias/1",
+  "fecha": "2026-11-27",
+  "consultado_utc": "2026-11-27T11:41:08+00:00",
+  "relleno": false,
+  "pronostico_faltante": false,
+  "ventana_noche": {
+    "inicio_local": "2026-11-26T18:00:00-05:00",
+    "fin_local": "2026-11-27T06:00:00-05:00",
+    "regla": "Noche que termina la mañana de «fecha»: de 18:00 del día anterior a 06:00, hora de Bogotá (UTC-5), ambas incluidas. Misma ventana para lo medido y lo pronosticado."
+  },
+  "umbrales": {
+    "noche_fria_c": 6.0,
+    "helada_c": 0.0,
+    "nota": "«Helada» solo si una estación midió 0 °C o menos a 2 m. Esto es un registro, no una alerta: las alertas oficiales son del IDEAM y del IDIGER."
+  },
+  "medido": [
+    {
+      "estacion": "SKBO",
+      "nombre": "Aeropuerto El Dorado",
+      "lugar": "Fontibón, occidente de Bogotá",
+      "lat": 4.706,
+      "lon": -74.151,
+      "altura_m": 2547,
+      "etiqueta": "medido",
+      "minima_c": 12.0,
+      "hora_minima_local": "2026-11-27T06:00:00-05:00",
+      "reportes_en_punto": 13,
+      "reportes_esperados": 13,
+      "ventana_completa": true,
+      "observaciones": [
+        {
+          "hora_local": "2026-11-26T18:00:00-05:00",
+          "temperatura_c": 17.0,
+          "tipo": "METAR",
+          "texto": "METAR SKBO 262300Z 24003KT 170V280 8000 VCSH FEW020CB SCT050 17/16 Q1025 NOSIG RMK CB VCSH/NW"
+        },
+        {
+          "hora_local": "2026-11-26T18:15:00-05:00",
+          "temperatura_c": 15.0,
+          "tipo": "SPECI",
+          "texto": "SPECI SKBO 262315Z VRB02KT 8000 R14R/0600D MIFG FEW020CB SCT050 15/15 Q1026 NOSIG RMK CB VCTS/NW"
+        },
+        {
+          "hora_local": "2026-11-26T19:00:00-05:00",
+          "temperatura_c": 14.0,
+          "tipo": "METAR",
+          "texto": "METAR SKBO 270000Z VRB02KT 8000 FEW030 14/14 Q1026 NOSIG RMK BR"
+        },
+        {
+          "hora_local": "2026-11-26T19:40:00-05:00",
+          "temperatura_c": 16.0,
+          "tipo": "SPECI",
+          "texto": "SPECI SKBO 270040Z VRB01KT 8000 FEW030 BKN040 16/15 Q1027 NOSIG RMK BR"
+        },
+        {
+          "hora_local": "2026-11-26T20:00:00-05:00",
+          "temperatura_c": 16.0,
+          "tipo": "METAR",
+          "texto": "METAR SKBO 270100Z VRB01KT 8000 FEW030 BKN040 16/15 Q1028 NOSIG RMK BR"
+        },
+        {
+          "hora_local": "2026-11-26T21:00:00-05:00",
+          "temperatura_c": 16.0,
+          "tipo": "METAR",
+          "texto": "METAR SKBO 270200Z 20005KT 160V240 9000 FEW030 16/12 Q1029 NOSIG RMK BR"
+        },
+        {
+          "hora_local": "2026-11-26T22:00:00-05:00",
+          "temperatura_c": 14.0,
+          "tipo": "METAR",
+          "texto": "METAR SKBO 270300Z VRB01KT 9999 FEW040 14/12 Q1029 NOSIG"
+        },
+        {
+          "hora_local": "2026-11-26T23:00:00-05:00",
+          "temperatura_c": 13.0,
+          "tipo": "METAR",
+          "texto": "METAR SKBO 270400Z COR 06002KT 9999 FEW040 BKN080 13/12 Q1029 NOSIG"
+        },
+        {
+          "hora_local": "2026-11-27T00:00:00-05:00",
+          "temperatura_c": 14.0,
+          "tipo": "METAR",
+          "texto": "METAR SKBO 270500Z VRB02KT 9999 FEW030 BKN050 14/12 Q1029 NOSIG"
+        },
+        {
+          "hora_local": "2026-11-27T01:00:00-05:00",
+          "temperatura_c": 15.0,
+          "tipo": "METAR",
+          "texto": "METAR SKBO 270600Z 10004KT 060V130 9999 FEW030 SCT060 15/12 Q1028 NOSIG"
+        },
+        {
+          "hora_local": "2026-11-27T02:00:00-05:00",
+          "temperatura_c": 14.0,
+          "tipo": "METAR",
+          "texto": "METAR SKBO 270700Z 07004KT 9999 BKN038 14/12 Q1028 NOSIG"
+        },
+        {
+          "hora_local": "2026-11-27T03:00:00-05:00",
+          "temperatura_c": 14.0,
+          "tipo": "METAR",
+          "texto": "METAR SKBO 270800Z 07006KT 9999 SCT060 14/11 Q1027 NOSIG"
+        },
+        {
+          "hora_local": "2026-11-27T04:00:00-05:00",
+          "temperatura_c": 13.0,
+          "tipo": "METAR",
+          "texto": "METAR SKBO 270900Z 04004KT 9999 BKN065 13/11 Q1027 NOSIG"
+        },
+        {
+          "hora_local": "2026-11-27T05:00:00-05:00",
+          "temperatura_c": 13.0,
+          "tipo": "METAR",
+          "texto": "METAR SKBO 271000Z 03005KT 360V060 9999 BKN070 13/11 Q1027 NOSIG"
+        },
+        {
+          "hora_local": "2026-11-27T05:31:00-05:00",
+          "temperatura_c": 13.0,
+          "tipo": "SPECI",
+          "texto": "SPECI SKBO 271031Z 05005KT 9999 FEW020 SCT080 13/10 Q1028 NOSIG"
+        },
+        {
+          "hora_local": "2026-11-27T06:00:00-05:00",
+          "temperatura_c": 12.0,
+          "tipo": "METAR",
+          "texto": "METAR SKBO 271100Z 05006KT 9999 SCT080 12/10 Q1027 NOSIG"
+        }
+      ],
+      "fuente": {
+        "nombre": "METAR de la Aerocivil, servidos por el Aviation Weather Center (NOAA/NWS)",
+        "url": "https://aviationweather.gov/api/data/metar",
+        "licencia": "Dominio público (NOAA/NWS): https://www.weather.gov/disclaimer",
+        "atribucion": "Observaciones METAR vía aviationweather.gov (NOAA/NWS)",
+        "notas": "El METAR da la temperatura en grados enteros y cada hora; la mínima real entre dos reportes puede ser más baja. Es el aire a 2 m en la pista del aeropuerto, no en cada calle.",
+        "url_consulta": "https://aviationweather.gov/api/data/metar?ids=SKBO%2CSKGY&format=json&hours=15&date=2026-11-27T12%3A00%3A00Z",
+        "consultado_utc": "2026-11-27T11:41:08+00:00"
+      },
+      "noche_fria": false,
+      "helada_a_2m": false
+    },
+    {
+      "estacion": "SKGY",
+      "nombre": "Aeropuerto Guaymaral",
+      "lugar": "Suba, norte de Bogotá",
+      "lat": 4.812,
+      "lon": -74.065,
+      "altura_m": 2557,
+      "etiqueta": "medido",
+      "minima_c": 12.0,
+      "hora_minima_local": "2026-11-27T06:00:00-05:00",
+      "reportes_en_punto": 13,
+      "reportes_esperados": 13,
+      "ventana_completa": true,
+      "observaciones": [
+        {
+          "hora_local": "2026-11-26T18:00:00-05:00",
+          "temperatura_c": 17.0,
+          "tipo": "METAR",
+          "texto": "METAR SKGY 262300Z 19004KT 170V230 8000 VCSH SCT045 BKN055 17/14 Q1026 RMK VCSH/W"
+        },
+        {
+          "hora_local": "2026-11-26T19:00:00-05:00",
+          "temperatura_c": 15.0,
+          "tipo": "METAR",
+          "texto": "METAR SKGY 270000Z AUTO 12003KT 9999NDV // BKN052/// 15/11 Q1027"
+        },
+        {
+          "hora_local": "2026-11-26T20:00:00-05:00",
+          "temperatura_c": 14.0,
+          "tipo": "METAR",
+          "texto": "METAR SKGY 270100Z AUTO 15005KT 110V170 CAVOK 14/11 Q1028"
+        },
+        {
+          "hora_local": "2026-11-26T21:00:00-05:00",
+          "temperatura_c": 13.0,
+          "tipo": "METAR",
+          "texto": "METAR SKGY 270200Z AUTO VRB02KT CAVOK 13/11 Q1029"
+        },
+        {
+          "hora_local": "2026-11-26T22:00:00-05:00",
+          "temperatura_c": 14.0,
+          "tipo": "METAR",
+          "texto": "METAR SKGY 270300Z AUTO 11005KT CAVOK 14/10 Q1029"
+        },
+        {
+          "hora_local": "2026-11-26T23:00:00-05:00",
+          "temperatura_c": 14.0,
+          "tipo": "METAR",
+          "texto": "METAR SKGY 270400Z AUTO VRB02KT 9999NDV // BKN042/// OVC047/// 14/11 Q1029"
+        },
+        {
+          "hora_local": "2026-11-27T00:00:00-05:00",
+          "temperatura_c": 15.0,
+          "tipo": "METAR",
+          "texto": "METAR SKGY 270500Z AUTO 11006KT 9999NDV // SCT037/// OVC045/// 15/11 Q1029"
+        },
+        {
+          "hora_local": "2026-11-27T01:00:00-05:00",
+          "temperatura_c": 14.0,
+          "tipo": "METAR",
+          "texto": "METAR SKGY 270600Z AUTO VRB01KT 9999NDV // FEW034/// OVC081/// 14/11 Q1028"
+        },
+        {
+          "hora_local": "2026-11-27T02:00:00-05:00",
+          "temperatura_c": 13.0,
+          "tipo": "METAR",
+          "texto": "METAR SKGY 270700Z AUTO 13005KT 9999NDV // OVC083/// 13/09 Q1028"
+        },
+        {
+          "hora_local": "2026-11-27T03:00:00-05:00",
+          "temperatura_c": 14.0,
+          "tipo": "METAR",
+          "texto": "METAR SKGY 270800Z AUTO 06004KT 020V080 9999NDV // OVC083/// 14/09 Q1027"
+        },
+        {
+          "hora_local": "2026-11-27T04:00:00-05:00",
+          "temperatura_c": 13.0,
+          "tipo": "METAR",
+          "texto": "METAR SKGY 270900Z AUTO VRB02KT 9999NDV // OVC084/// 13/09 Q1028"
+        },
+        {
+          "hora_local": "2026-11-27T05:00:00-05:00",
+          "temperatura_c": 13.0,
+          "tipo": "METAR",
+          "texto": "METAR SKGY 271000Z AUTO 03005KT CAVOK 13/09 Q1028"
+        },
+        {
+          "hora_local": "2026-11-27T06:00:00-05:00",
+          "temperatura_c": 12.0,
+          "tipo": "METAR",
+          "texto": "METAR SKGY 271100Z VRB02KT 9000 BKN100 12/08 Q1028"
+        }
+      ],
+      "fuente": {
+        "nombre": "METAR de la Aerocivil, servidos por el Aviation Weather Center (NOAA/NWS)",
+        "url": "https://aviationweather.gov/api/data/metar",
+        "licencia": "Dominio público (NOAA/NWS): https://www.weather.gov/disclaimer",
+        "atribucion": "Observaciones METAR vía aviationweather.gov (NOAA/NWS)",
+        "notas": "El METAR da la temperatura en grados enteros y cada hora; la mínima real entre dos reportes puede ser más baja. Es el aire a 2 m en la pista del aeropuerto, no en cada calle.",
+        "url_consulta": "https://aviationweather.gov/api/data/metar?ids=SKBO%2CSKGY&format=json&hours=15&date=2026-11-27T12%3A00%3A00Z",
+        "consultado_utc": "2026-11-27T11:41:08+00:00"
+      },
+      "noche_fria": false,
+      "helada_a_2m": false
+    }
+  ],
+  "pronostico": [
+    {
+      "estacion": "SKBO",
+      "nombre": "Aeropuerto El Dorado",
+      "etiqueta": "estimado",
+      "noche_que_termina": "2026-11-28",
+      "ventana_local": {
+        "inicio": "2026-11-27T18:00:00-05:00",
+        "fin": "2026-11-28T06:00:00-05:00"
+      },
+      "anticipacion_dias": 1,
+      "minima_c_por_modelo": {
+        "ecmwf_ifs025": 10.1,
+        "ecmwf_aifs025_single": 13.9,
+        "gfs_seamless": 8.2,
+        "icon_seamless": 11.3,
+        "gem_seamless": 8.1,
+        "meteofrance_seamless": 12.3,
+        "jma_seamless": 9.5
+      },
+      "modelos_sin_dato": [],
+      "rango_c": {
+        "bajo": 8.1,
+        "alto": 13.9
+      },
+      "mediana_c": 10.1,
+      "modelos_bajo_umbral_noche_fria": 0,
+      "punto_modelo": {
+        "lat": 4.75,
+        "lon": -74.25,
+        "altura_m": 2547.0
+      },
+      "fuente": {
+        "nombre": "Open-Meteo, API de pronóstico",
+        "url": "https://api.open-meteo.com/v1/forecast",
+        "licencia": "CC BY 4.0: https://open-meteo.com/en/licence (API gratis solo para uso no comercial)",
+        "atribucion": "Weather data by Open-Meteo.com (https://open-meteo.com/)",
+        "notas": "Temperatura a 2 m por hora de cada modelo, ajustada por Open-Meteo a la altura de la estación. El rango es entre modelos; que discrepen es lo esperado y es justo lo que el rango muestra.",
+        "url_consulta": "https://api.open-meteo.com/v1/forecast?latitude=4.706%2C4.812&longitude=-74.151%2C-74.065&elevation=2547%2C2557&hourly=temperature_2m&models=ecmwf_ifs025%2Cecmwf_aifs025_single%2Cgfs_seamless%2Cicon_seamless%2Cgem_seamless%2Cmeteofrance_seamless%2Cjma_seamless&timezone=GMT&start_date=2026-11-27&end_date=2026-11-30",
+        "consultado_utc": "2026-11-27T11:41:08+00:00"
+      }
+    },
+    {
+      "estacion": "SKBO",
+      "nombre": "Aeropuerto El Dorado",
+      "etiqueta": "estimado",
+      "noche_que_termina": "2026-11-29",
+      "ventana_local": {
+        "inicio": "2026-11-28T18:00:00-05:00",
+        "fin": "2026-11-29T06:00:00-05:00"
+      },
+      "anticipacion_dias": 2,
+      "minima_c_por_modelo": {
+        "ecmwf_ifs025": 11.6,
+        "ecmwf_aifs025_single": 14.4,
+        "gfs_seamless": 9.8,
+        "icon_seamless": 11.7,
+        "gem_seamless": 9.8,
+        "meteofrance_seamless": 14.1,
+        "jma_seamless": 11.4
+      },
+      "modelos_sin_dato": [],
+      "rango_c": {
+        "bajo": 9.8,
+        "alto": 14.4
+      },
+      "mediana_c": 11.6,
+      "modelos_bajo_umbral_noche_fria": 0,
+      "punto_modelo": {
+        "lat": 4.75,
+        "lon": -74.25,
+        "altura_m": 2547.0
+      },
+      "fuente": {
+        "nombre": "Open-Meteo, API de pronóstico",
+        "url": "https://api.open-meteo.com/v1/forecast",
+        "licencia": "CC BY 4.0: https://open-meteo.com/en/licence (API gratis solo para uso no comercial)",
+        "atribucion": "Weather data by Open-Meteo.com (https://open-meteo.com/)",
+        "notas": "Temperatura a 2 m por hora de cada modelo, ajustada por Open-Meteo a la altura de la estación. El rango es entre modelos; que discrepen es lo esperado y es justo lo que el rango muestra.",
+        "url_consulta": "https://api.open-meteo.com/v1/forecast?latitude=4.706%2C4.812&longitude=-74.151%2C-74.065&elevation=2547%2C2557&hourly=temperature_2m&models=ecmwf_ifs025%2Cecmwf_aifs025_single%2Cgfs_seamless%2Cicon_seamless%2Cgem_seamless%2Cmeteofrance_seamless%2Cjma_seamless&timezone=GMT&start_date=2026-11-27&end_date=2026-11-30",
+        "consultado_utc": "2026-11-27T11:41:08+00:00"
+      }
+    },
+    {
+      "estacion": "SKBO",
+      "nombre": "Aeropuerto El Dorado",
+      "etiqueta": "estimado",
+      "noche_que_termina": "2026-11-30",
+      "ventana_local": {
+        "inicio": "2026-11-29T18:00:00-05:00",
+        "fin": "2026-11-30T06:00:00-05:00"
+      },
+      "anticipacion_dias": 3,
+      "minima_c_por_modelo": {
+        "ecmwf_ifs025": 13.3,
+        "ecmwf_aifs025_single": 14.4,
+        "gfs_seamless": 11.2,
+        "icon_seamless": 12.0,
+        "gem_seamless": 9.5,
+        "meteofrance_seamless": 14.7,
+        "jma_seamless": 10.6
+      },
+      "modelos_sin_dato": [],
+      "rango_c": {
+        "bajo": 9.5,
+        "alto": 14.7
+      },
+      "mediana_c": 12.0,
+      "modelos_bajo_umbral_noche_fria": 0,
+      "punto_modelo": {
+        "lat": 4.75,
+        "lon": -74.25,
+        "altura_m": 2547.0
+      },
+      "fuente": {
+        "nombre": "Open-Meteo, API de pronóstico",
+        "url": "https://api.open-meteo.com/v1/forecast",
+        "licencia": "CC BY 4.0: https://open-meteo.com/en/licence (API gratis solo para uso no comercial)",
+        "atribucion": "Weather data by Open-Meteo.com (https://open-meteo.com/)",
+        "notas": "Temperatura a 2 m por hora de cada modelo, ajustada por Open-Meteo a la altura de la estación. El rango es entre modelos; que discrepen es lo esperado y es justo lo que el rango muestra.",
+        "url_consulta": "https://api.open-meteo.com/v1/forecast?latitude=4.706%2C4.812&longitude=-74.151%2C-74.065&elevation=2547%2C2557&hourly=temperature_2m&models=ecmwf_ifs025%2Cecmwf_aifs025_single%2Cgfs_seamless%2Cicon_seamless%2Cgem_seamless%2Cmeteofrance_seamless%2Cjma_seamless&timezone=GMT&start_date=2026-11-27&end_date=2026-11-30",
+        "consultado_utc": "2026-11-27T11:41:08+00:00"
+      }
+    },
+    {
+      "estacion": "SKGY",
+      "nombre": "Aeropuerto Guaymaral",
+      "etiqueta": "estimado",
+      "noche_que_termina": "2026-11-28",
+      "ventana_local": {
+        "inicio": "2026-11-27T18:00:00-05:00",
+        "fin": "2026-11-28T06:00:00-05:00"
+      },
+      "anticipacion_dias": 1,
+      "minima_c_por_modelo": {
+        "ecmwf_ifs025": 11.7,
+        "ecmwf_aifs025_single": 13.2,
+        "gfs_seamless": 7.3,
+        "icon_seamless": 11.2,
+        "gem_seamless": 6.9,
+        "meteofrance_seamless": 11.0,
+        "jma_seamless": 11.5
+      },
+      "modelos_sin_dato": [],
+      "rango_c": {
+        "bajo": 6.9,
+        "alto": 13.2
+      },
+      "mediana_c": 11.2,
+      "modelos_bajo_umbral_noche_fria": 0,
+      "punto_modelo": {
+        "lat": 4.75,
+        "lon": -74.0,
+        "altura_m": 2557.0
+      },
+      "fuente": {
+        "nombre": "Open-Meteo, API de pronóstico",
+        "url": "https://api.open-meteo.com/v1/forecast",
+        "licencia": "CC BY 4.0: https://open-meteo.com/en/licence (API gratis solo para uso no comercial)",
+        "atribucion": "Weather data by Open-Meteo.com (https://open-meteo.com/)",
+        "notas": "Temperatura a 2 m por hora de cada modelo, ajustada por Open-Meteo a la altura de la estación. El rango es entre modelos; que discrepen es lo esperado y es justo lo que el rango muestra.",
+        "url_consulta": "https://api.open-meteo.com/v1/forecast?latitude=4.706%2C4.812&longitude=-74.151%2C-74.065&elevation=2547%2C2557&hourly=temperature_2m&models=ecmwf_ifs025%2Cecmwf_aifs025_single%2Cgfs_seamless%2Cicon_seamless%2Cgem_seamless%2Cmeteofrance_seamless%2Cjma_seamless&timezone=GMT&start_date=2026-11-27&end_date=2026-11-30",
+        "consultado_utc": "2026-11-27T11:41:08+00:00"
+      }
+    },
+    {
+      "estacion": "SKGY",
+      "nombre": "Aeropuerto Guaymaral",
+      "etiqueta": "estimado",
+      "noche_que_termina": "2026-11-29",
+      "ventana_local": {
+        "inicio": "2026-11-28T18:00:00-05:00",
+        "fin": "2026-11-29T06:00:00-05:00"
+      },
+      "anticipacion_dias": 2,
+      "minima_c_por_modelo": {
+        "ecmwf_ifs025": 12.7,
+        "ecmwf_aifs025_single": 13.8,
+        "gfs_seamless": 9.2,
+        "icon_seamless": 11.7,
+        "gem_seamless": 9.2,
+        "meteofrance_seamless": 14.5,
+        "jma_seamless": 12.5
+      },
+      "modelos_sin_dato": [],
+      "rango_c": {
+        "bajo": 9.2,
+        "alto": 14.5
+      },
+      "mediana_c": 12.5,
+      "modelos_bajo_umbral_noche_fria": 0,
+      "punto_modelo": {
+        "lat": 4.75,
+        "lon": -74.0,
+        "altura_m": 2557.0
+      },
+      "fuente": {
+        "nombre": "Open-Meteo, API de pronóstico",
+        "url": "https://api.open-meteo.com/v1/forecast",
+        "licencia": "CC BY 4.0: https://open-meteo.com/en/licence (API gratis solo para uso no comercial)",
+        "atribucion": "Weather data by Open-Meteo.com (https://open-meteo.com/)",
+        "notas": "Temperatura a 2 m por hora de cada modelo, ajustada por Open-Meteo a la altura de la estación. El rango es entre modelos; que discrepen es lo esperado y es justo lo que el rango muestra.",
+        "url_consulta": "https://api.open-meteo.com/v1/forecast?latitude=4.706%2C4.812&longitude=-74.151%2C-74.065&elevation=2547%2C2557&hourly=temperature_2m&models=ecmwf_ifs025%2Cecmwf_aifs025_single%2Cgfs_seamless%2Cicon_seamless%2Cgem_seamless%2Cmeteofrance_seamless%2Cjma_seamless&timezone=GMT&start_date=2026-11-27&end_date=2026-11-30",
+        "consultado_utc": "2026-11-27T11:41:08+00:00"
+      }
+    },
+    {
+      "estacion": "SKGY",
+      "nombre": "Aeropuerto Guaymaral",
+      "etiqueta": "estimado",
+      "noche_que_termina": "2026-11-30",
+      "ventana_local": {
+        "inicio": "2026-11-29T18:00:00-05:00",
+        "fin": "2026-11-30T06:00:00-05:00"
+      },
+      "anticipacion_dias": 3,
+      "minima_c_por_modelo": {
+        "ecmwf_ifs025": 13.1,
+        "ecmwf_aifs025_single": 13.7,
+        "gfs_seamless": 10.7,
+        "icon_seamless": 11.9,
+        "gem_seamless": 9.2,
+        "meteofrance_seamless": 14.3,
+        "jma_seamless": 11.8
+      },
+      "modelos_sin_dato": [],
+      "rango_c": {
+        "bajo": 9.2,
+        "alto": 14.3
+      },
+      "mediana_c": 11.9,
+      "modelos_bajo_umbral_noche_fria": 0,
+      "punto_modelo": {
+        "lat": 4.75,
+        "lon": -74.0,
+        "altura_m": 2557.0
+      },
+      "fuente": {
+        "nombre": "Open-Meteo, API de pronóstico",
+        "url": "https://api.open-meteo.com/v1/forecast",
+        "licencia": "CC BY 4.0: https://open-meteo.com/en/licence (API gratis solo para uso no comercial)",
+        "atribucion": "Weather data by Open-Meteo.com (https://open-meteo.com/)",
+        "notas": "Temperatura a 2 m por hora de cada modelo, ajustada por Open-Meteo a la altura de la estación. El rango es entre modelos; que discrepen es lo esperado y es justo lo que el rango muestra.",
+        "url_consulta": "https://api.open-meteo.com/v1/forecast?latitude=4.706%2C4.812&longitude=-74.151%2C-74.065&elevation=2547%2C2557&hourly=temperature_2m&models=ecmwf_ifs025%2Cecmwf_aifs025_single%2Cgfs_seamless%2Cicon_seamless%2Cgem_seamless%2Cmeteofrance_seamless%2Cjma_seamless&timezone=GMT&start_date=2026-11-27&end_date=2026-11-30",
+        "consultado_utc": "2026-11-27T11:41:08+00:00"
+      }
+    }
+  ],
+  "errores": [],
+  "notas": [],
+  "licencia_registro": "CC BY 4.0. Cita las fuentes de cada valor."
+}
