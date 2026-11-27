@@ -1,0 +1,32 @@
+# Bogotwin
+
+> Bogotwin es un visor gratuito de Bogotá en el navegador: el mapa en 3D con los cerros y los edificios, las sombras a la hora que elijas, el aire, la lluvia, los ríos, TransMilenio y el Metro. Está hecho con datos abiertos y cada número lleva una marca que dice si es medido, de fuente, inferido, estimado o supuesto.
+
+English: Bogotwin is a free browser-based 3D viewer of Bogotá, Colombia, built only from open data; every dataset below keeps its source licence, and the files can be downloaded as they are.
+
+Sitio: https://caamanoluismiguel.github.io/gemelo-bogota/
+Fuentes y licencias de cada capa: https://caamanoluismiguel.github.io/gemelo-bogota/fuentes.html
+Código (AGPL-3.0): https://github.com/caamanoluismiguel/gemelo-bogota
+
+Cómo citar: nombra la fuente original de cada archivo y su licencia, y di que la copia viene de Bogotwin. Lo que derives de un archivo CC BY-SA sale con CC BY-SA. Nunca mezclamos en un mismo archivo datos CC BY-SA con datos CC BY-NC ni con OpenStreetMap (ODbL).
+
+## Datos que puedes bajar
+
+- [PM2,5 promedio de 2025 por zonas](https://caamanoluismiguel.github.io/gemelo-bogota/datos/aire/pm25-anual-2025.geojson): Secretaría Distrital de Ambiente (SDA), interpolado por la SDA desde las estaciones de la RMCAB. CC BY 4.0. Todo 2025, bajado el 24 nov 2026.
+- [PM2,5 y PM10 de cada año en 22 estaciones, 2011 a 2025](https://caamanoluismiguel.github.io/gemelo-bogota/datos/aire/historia-estaciones.json): IDEAM, conjunto kekd-7v7h de datos.gov.co, con lo que midió la RMCAB. Promedio anual de los promedios diarios y porcentaje de días con dato. CC BY-SA 4.0. Conjunto actualizado el 19 oct 2026.
+- [Colegios](https://caamanoluismiguel.github.io/gemelo-bogota/datos/aire/colegios-sed.geojson): Secretaría de Educación del Distrito (SED), publicado por IDECA. CC BY-SA 4.0. Corte del 30 sep 2026.
+- [Sedes de la red pública de salud](https://caamanoluismiguel.github.io/gemelo-bogota/datos/aire/salud-red-publica.geojson): Secretaría Distrital de Salud (SDS). CC BY 4.0. Ficha del 13 jun 2025.
+- [Estaciones troncales de TransMilenio](https://caamanoluismiguel.github.io/gemelo-bogota/datos/transporte/troncales.geojson): TransMilenio S.A. CC BY 4.0. Bajado el 23 nov 2026.
+- [Metro línea 1, estaciones y trazado](https://caamanoluismiguel.github.io/gemelo-bogota/datos/transporte/metro-l1.geojson): Empresa Metro de Bogotá, publicado por IDECA. CC BY 4.0. Bajado el 23 nov 2026.
+- [Paraderos del SITP](https://caamanoluismiguel.github.io/gemelo-bogota/datos/transporte/paraderos-sitp.geojson): TransMilenio S.A., GTFS estático. CC BY-SA 4.0. Archivo del 13 oct 2026.
+- [Buses troncales programados por hora](https://caamanoluismiguel.github.io/gemelo-bogota/datos/transporte/troncal-frecuencia.json): calculado por Bogotwin con el GTFS de TransMilenio S.A. Es lo programado, no lo que pasa en la calle. CC BY-SA 4.0. 25 nov 2026.
+- [Localidades, UPL, sectores y barrios (nombres y rectángulos)](https://caamanoluismiguel.github.io/gemelo-bogota/datos/buscador.json): Secretaría Distrital de Planeación (SDP) y Catastro Bogotá (UAECD). CC BY 4.0. Bajado el 23 nov 2026.
+
+## Procedencia
+
+- [Procedencia de los archivos del aire](https://caamanoluismiguel.github.io/gemelo-bogota/datos/aire/procedencia.json): de dónde se bajó cada uno, cuándo y su huella sha256.
+- [Catálogo de los hitos 3D](https://caamanoluismiguel.github.io/gemelo-bogota/hitos/catalogo.json): cómo se hizo cada modelo y con qué licencia.
+
+## Lo que no está aquí
+
+El mapa base (OpenStreetMap, ODbL), el 3D de Catastro y las fotos aéreas van en teselas y no tienen descarga en el sitio. Lo que cambia a cada rato (lluvia y ríos del IDIGER con CC BY-NC 4.0, bicis, pronóstico de Open-Meteo) lo toma el navegador de su fuente o de nuestro repo de datos y no se guarda aquí. El detalle de cada uno está en fuentes.html.
