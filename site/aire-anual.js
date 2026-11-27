@@ -202,6 +202,22 @@
     popup = new maplibregl.Popup({ maxWidth: '280px' }).setLngLat(lngLat).setDOMContent(caja).addTo(mapaRef);
   }
 
+  // En el teléfono la historia no cabe junto a la leyenda y la barra del sol: la estación sube cerca
+  // del borde de arriba, la ventana cuelga hacia abajo hasta la hoja del panel, y la leyenda y la
+  // barra se esconden mientras esté abierta (estilo.css, body.historia-abierta).
+  function abrirHistoria(lngLat, caja) {
+    const cont = mapaRef.getContainer();
+    if (cont.clientWidth > 600) { abrir(lngLat, caja); return; }
+    if (popup) popup.remove();
+    const arriba = 64;
+    const panel = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--alto-panel')) || 0;
+    caja.style.maxHeight = Math.max(220, cont.clientHeight - panel - arriba - 40) + 'px';
+    mapaRef.easeTo({ center: lngLat, offset: [0, arriba - cont.clientHeight / 2], duration: 300 });
+    document.body.classList.add('historia-abierta');
+    popup = new maplibregl.Popup({ maxWidth: 'min(300px, calc(100vw - 24px))', anchor: 'top' }).setLngLat(lngLat).setDOMContent(caja).addTo(mapaRef);
+    popup.on('close', () => document.body.classList.remove('historia-abierta'));
+  }
+
   // ── Historia de una estación: una barra por año con la guía de la OMS y la norma como rayas ──
   const SVG = 'http://www.w3.org/2000/svg';
   const sv = (tag, attrs) => { const n = document.createElementNS(SVG, tag); for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, String(v)); return n; };
@@ -284,7 +300,7 @@
     if (f.layer.id === 'pm25-estaciones') {
       const e = historia && historia.estaciones[Number(f.properties.i)];
       if (!e) return false;
-      abrir([lon, lat], ventanaEstacion(e));
+      abrirHistoria([lon, lat], ventanaEstacion(e));
       return true;
     }
     const pr = f.properties, salud = f.layer.id === 'pm25-salud';

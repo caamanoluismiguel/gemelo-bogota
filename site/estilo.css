@@ -345,6 +345,7 @@ body.en-escenario #mapa::after { content: ""; position: absolute; inset: 0; z-in
 .pm25-pop .valor { font-weight: 650; }
 .pm25-punto[data-k="estaciones"] { width: 12px; height: 12px; background: #ffd23f; border: 2.5px solid #1f1f1f; }
 /* Historia de una estación: barras sólidas por año, rayas de la OMS y de la norma, años con pocos días en claro. */
+.historia-pop { max-height: min(56vh, 520px); overflow-y: auto; overscroll-behavior: contain; padding-right: 4px; }
 .historia-pop .bicis-nombre { font-weight: 650; }
 .historia-titulo { margin-top: 8px; }
 .historia-barras { display: block; width: 100%; max-width: 250px; height: auto; margin-top: 2px; }
@@ -486,6 +487,8 @@ body.en-escenario #mapa::after { content: ""; position: absolute; inset: 0; z-in
   .pestanas [role="tab"] { font-size: 13px; padding: 6px 2px; }
   .leyenda-mapa { left: 8px; right: auto; width: min(300px, calc(100% - 16px)); bottom: calc(var(--alto-panel, 0px) + 44px); max-height: 30vh; }
   #panel:not([data-hoja="asomada"]) ~ .leyenda-mapa { display: none; }
+  /* La historia de una estación es alta: mientras está abierta, la leyenda y la barra del sol se apartan. */
+  body.historia-abierta .leyenda-mapa, body.historia-abierta #sol-barra { visibility: hidden; }
   body:has(#panel[data-hoja="completa"]) .maplibregl-ctrl-top-right, body:has(#panel[data-hoja="completa"]) .maplibregl-ctrl-scale { visibility: hidden; }
 }
 .leyenda-mapa .bicis-ley { display: grid; grid-template-columns: 1fr 1fr; gap: 0 10px; margin: 2px 0; }
